@@ -26,9 +26,15 @@ credenciales_directas= {
   "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40tienda-pedidos-68111.iam.gserviceaccount.com",
   "universe_domain": "googleapis.com"
 }
+# 🎯 LIMPIEZA MATEMÁTICA: Repara los saltos de línea de la llave para que internet conecte en un milisegundo
 if not firebase_admin._apps:
+    raw_key = credenciales_directas.get("private_key", "")
+    # Reemplaza los enters sueltos de texto por el formato real de Google
+    credenciales_directas["private_key"] = raw_key.replace("\\n", "\n")
+    
     cred = credentials.Certificate(credenciales_directas)
     firebase_admin.initialize_app(cred)
+
 db = firestore.client()
 print("🚀 ¡Conexión Nativa Indestructible Establecida con Firebase Cloud!")
 
