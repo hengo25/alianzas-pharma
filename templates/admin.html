@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"><title>Admin - Alianzas Pharma</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #333; margin: 0; padding: 40px 20px; text-align: center; }
+        .container { max-width: 950px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+        h1, h2 { color: #2c3e50; text-align: left; }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; }
+        .form-group input { width: 95%; padding: 11px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 1rem; outline: none; }
+        .search-box { width: 95%; padding: 12px 20px; border: 2px solid #3498db; border-radius: 30px; font-size: 1.05rem; margin-bottom: 25px; outline: none; display: inline-block; }
+        .btn-submit { background: #2ecc71; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: bold; width: 100%; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; border: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
+        th { background: #34495e; color: white; font-weight: 600; }
+        
+        .col-stock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-width: 100px; padding: 10px; }
+        .fila-botones { display: flex; gap: 6px; justify-content: center; margin-top: 4px; }
+        .btn-mini { border: none; color: white; padding: 5px 12px; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 0.9rem; min-width: 38px; }
+        
+        .btn-action-del { background: #fee2e2; color: #ef4444; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.85rem; font-family: sans-serif; display: inline-block; }
+        .btn-action-edit { background: #e0f2fe; color: #0284c7; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 0.85rem; font-family: sans-serif; display: inline-block; margin-right: 5px; cursor: pointer; border: none; }
+        
+        .texto-verde { color: #27ae60; font-weight: bold; font-size: 1.05rem; }
+        .texto-rojo { color: #e74c3c; font-weight: bold; font-size: 1.05rem; }
+        .notif-badge { background: #e74c3c; color: white; font-size: 0.78rem; font-weight: bold; border-radius: 50%; padding: 3px 7px; position: absolute; top: -6px; right: -8px; box-shadow: 0 2px 6px rgba(231,76,60,0.4); display: none; }
+
+        /* 🟢 ESTILOS PREMIUM PARA LA VENTANA FLOTANTE DE EDICIÓN */
+        .modal-edicion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; }
+        .modal-contenido { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); width: 400px; text-align: left; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display:flex; justify-content:space-between; margin-bottom:25px; flex-wrap:wrap; gap:10px; align-items:center;">
+            <a href="/" style="color:#3498db; font-weight:bold; text-decoration:none;">← Catálogo Público</a> 
+            <div style="display:flex; gap:12px; align-items:center;">
+                <a href="/ver-clientes" style="background:#f39c12; color:white; padding:10px 16px; border-radius:20px; text-decoration:none; font-weight:bold;">👥 Ver Droguerías</a>
+                <a href="/ver-pedidos" id="link-pedidos" style="background:#9b59b6; color:white; padding:10px 16px; border-radius:20px; text-decoration:none; font-weight:bold; position:relative; display:inline-flex; align-items:center; gap:6px;">
+                    <span>🔔</span> Ver Pedidos
+                    <span id="campana-contador" class="notif-badge">0</span>
+                </a>
+            </div>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px; margin-bottom: 20px;">
+            <img src="/static/logo.jpeg" style="max-height: 50px; border-radius: 6px;">
+            <h1 style="color: #2c3e50; margin: 0; font-size: 1.8rem;">Panel de Control | ALIANZAS PHARMA 🛠️</h1>
+        </div>
+        
+        <!-- FORMULARIO 1: SOLO PARA AGREGAR PRODUCTOS NUEVOS -->
+        <form method="POST" action="/admin" enctype="multipart/form-data" style="background:#f8f9fa; padding:20px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:30px;">
+            <h2>Agregar Nuevo Producto a Bodega</h2>
+            <div class="form-group"><label>Nombre del Medicamento:</label><input type="text" name="nombre" placeholder="Ej. ACETAMINOFEN 500 MG" required></div>
+            <div class="form-group"><label>Precio de Venta ($):</label><input type="number" name="precio" placeholder="Ej. 15000" required></div>
+            <div class="form-group"><label>Existencias en Bodega:</label><input type="number" name="existencias" placeholder="Ej. 100" min="0" required></div>
+            <div class="form-group"><label>Subir Foto del Producto:</label><input type="file" name="foto" required></div>
+            <button type="submit" class="btn-submit">Guardar y Publicar Medicamento</button>
+        </form>
+
+        <h2 style="margin-bottom:15px;">Medicamentos en Bodega</h2>
+        <input type="text" id="buscador-admin" class="search-box" placeholder="🔍 Buscar producto en bodega por nombre..." onkeyup="filtrarAdmin()"><br>
+
+        <table>
+            <thead><tr><th>Foto</th><th style="width: 45%;">Nombre</th><th>Precio</th><th>Existencias</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-cuerpo-admin">
+                 {% for p in productos %}{% set idx = loop.index0 %}
+                <tr class="f-adm tarjeta-bodega-global" data-index="{{ idx }}" style="display: none;">
+
+                    <td><img src="{{ p.imagen }}" style="max-height:45px; border-radius:4px;"></td>
+                    <td class="nombre-producto-td"><b>{{ p.nombre }}</b></td>
+                    <td>${{ p.precio }}</td>
+                    <td>
+                        <div class="col-stock">
+                            <span class="{% if p.existencias > 0 %}texto-verde{% else %}texto-rojo{% endif %}">{{ p.existencias }} uds</span>
+                            <div class="fila-botones">
+                                <form action="/actualizar-stock/{{ p.id }}" method="POST" style="display:inline;"><input type="hidden" name="cantidad_cambio" value="-1"><button type="submit" class="btn-mini" style="background:#e67e22;">-1</button></form>
+                                <form action="/actualizar-stock/{{ p.id }}" method="POST" style="display:inline;"><input type="hidden" name="cantidad_cambio" value="1"><button type="submit" class="btn-mini" style="background:#3498db;">+1</button></form>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <!-- BOTÓN CON DATOS STANDARIZADOS HTML5 -->
+                        <button type="button" class="btn-action-edit" 
+                                data-id="{{ p.id }}" 
+                                data-nombre="{{ p.nombre }}" 
+                                data-precio="{{ p.precio }}" 
+                                data-stock="{{ p.existencias }}" 
+                                onclick="abrirVentanaEdicion(this)">Editar</button>
+                        <a href="/eliminar/{{ p.id }}" class="btn-action-del" onclick="return confirm('¿Borrar producto del catálogo?')">Eliminar</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+            <!-- 🧭 CONTROLES DE PAGINACIÓN DINÁMICOS CONECTADOS A PYTHON -->
+                <!-- 🧭 CONTROLES DE PAGINACIÓN GLOBAL INTERACTIVOS -->
+        <div style="margin:25px 0; display:flex; justify-content:center; gap:10px; align-items:center;">
+            <button id="btn-ant-admin" class="btn-mini" style="background:#3498db; padding:6px 14px; border-radius:20px; font-size:0.9rem; min-width:60px;" onclick="cambiarPaginaAdmin(-1)">« Ant</button>
+            <span id="texto-pagi-admin" style="font-weight:600; color:#475569; font-family:sans-serif;">Página 1</span>
+            <button id="btn-sig-admin" class="btn-mini" style="background:#3498db; padding:6px 14px; border-radius:20px; font-size:0.9rem; min-width:60px;" onclick="cambiarPaginaAdmin(1)">Sig »</button>
+        </div>
+
+
+    </div>
+
+    <!-- 🟢 FORMULARIO 2: VENTANA FLOTANTE BLINDADA EXCLUSIVA PARA EDICIÓN -->
+    <div id="modal-editar-producto" class="modal-edicion">
+        <div class="modal-contenido">
+            <h2 id="modal-titulo" style="margin-top:0; font-size:1.4rem; color:#0284c7;">✏️ Editar Producto</h2>
+            <form method="POST" id="form-modal-editar" enctype="multipart/form-data">
+                <div class="form-group"><label>Nombre del Medicamento:</label><input type="text" name="nombre" id="mod-nombre" required></div>
+                <div class="form-group"><label>Precio de Venta ($):</label><input type="number" name="precio" id="mod-precio" required></div>
+                <div class="form-group"><label>Existencias en Bodega:</label><input type="number" name="existencias" id="mod-stock" required></div>
+                <div class="form-group"><label>Cambiar Foto (Opcional):</label><input type="file" name="foto"></div>
+                <br>
+                <button type="submit" class="btn-submit" style="background:#3498db;">Actualizar Cambios en Firebase 💾</button>
+                <button type="button" class="btn-submit" style="background:#94a3b8;" onclick="cerrarVentanaEdicion()">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let paginaActualAdmin = 1; 
+        const limitePorPaginaAdmin = 10;
+        let modoBusquedaActivo = false;
+
+        function cambiarPaginaAdmin(direccion) {
+            if (modoBusquedaActivo) return;
+            let filas = document.querySelectorAll(".tarjeta-bodega-global");
+            let totalFilas = filas.length;
+            let maxPaginas = Math.ceil(totalFilas / limitePorPaginaAdmin) || 1;
+
+            paginaActualAdmin += direccion;
+            if (paginaActualAdmin < 1) paginaActualAdmin = 1;
+            if (paginaActualAdmin > maxPaginas) paginaActualAdmin = maxPaginas;
+
+            filas.forEach((fila, i) => {
+                let inicio = (paginaActualAdmin - 1) * limitePorPaginaAdmin;
+                let fin = inicio + limitePorPaginaAdmin;
+                fila.style.display = (i >= inicio && i < fin) ? "" : "none";
+            });
+
+            document.getElementById("texto-pagi-admin").innerText = "Página " + paginaActualAdmin + " de " + maxPaginas;
+            document.getElementById("btn-ant-admin").disabled = (paginaActualAdmin === 1);
+            document.getElementById("btn-sig-admin").disabled = (paginaActualAdmin === maxPaginas);
+            
+            document.getElementById("btn-ant-admin").style.opacity = (paginaActualAdmin === 1) ? "0.4" : "1";
+            document.getElementById("btn-sig-admin").style.opacity = (paginaActualAdmin === maxPaginas) ? "0.4" : "1";
+        }
+
+        // 🔍 FILTRADO GLOBAL INTERACTIVO CORREGIDO
+        function filtrarAdmin() {
+            let f = document.getElementById("buscador-admin").value.toLowerCase().trim();
+            let filas = document.querySelectorAll(".tarjeta-bodega-global");
+            let btnAnt = document.getElementById("btn-ant-admin");
+            let btnSig = document.getElementById("btn-sig-admin");
+            let txtPagi = document.getElementById("texto-pagi-admin");
+
+            if (f === "") {
+                modoBusquedaActivo = false;
+                cambiarPaginaAdmin(0);
+                return;
+            }
+
+            modoBusquedaActivo = true;
+            if(btnAnt) btnAnt.disabled = true; 
+            if(btnSig) btnSig.disabled = true;
+            if(btnAnt) btnAnt.style.opacity = "0.4"; 
+            if(btnSig) btnSig.style.opacity = "0.4";
+            if(txtPagi) txtPagi.innerText = "Modo Búsqueda 🔍";
+
+            filas.forEach(fila => {
+                let nombreMedicamento = fila.querySelector(".nombre-producto-td").innerText.toLowerCase();
+                fila.style.display = nombreMedicamento.includes(f) ? "" : "none";
+            });
+        }
+
+        function abrirVentanaEdicion(boton) {
+            let id = boton.getAttribute('data-id');
+            let nombre = boton.getAttribute('data-nombre');
+            let precio = boton.getAttribute('data-precio');
+            let stock = boton.getAttribute('data-stock');
+
+            // 🔌 Conexión blindada buscando cualquier formulario de edición activo
+            let formularioEdicion = document.getElementById('form-modal-editar') || document.querySelector('.modal-contenido form');
+            if (formularioEdicion) {
+                formularioEdicion.action = "/actualizar-stock/" + id;
+            }
+            
+            document.getElementById('modal-titulo').innerText = "✏️ Editar: " + nombre;
+            document.getElementById('mod-nombre').value = nombre;
+            document.getElementById('mod-precio').value = parseInt(precio);
+            document.getElementById('mod-stock').value = parseInt(stock);
+
+            document.getElementById('modal-editar-producto').style.display = "flex";
+        }
+
+        function cerrarVentanaEdicion() {
+            document.getElementById('modal-editar-producto').style.display = "none";
+        }
+
+        function chequearPedidosVisual() {
+            fetch('/api/conteo-pendientes')
+                .then(res => res.json())
+                .then(data => {
+                    let total = data.conteo || 0;
+                    let badge = document.getElementById('campana-contador');
+                    if (total > 0 && badge) { badge.innerText = total; badge.style.display = "block"; } else if(badge) { badge.style.display = "none"; }
+                }).catch(err => console.log("Sincronizando..."));
+        }
+        
+        setInterval(chequearPedidosVisual, 3000);
+        
+        window.onload = function() {
+            cambiarPaginaAdmin(0);
+            chequearPedidosVisual();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,282 @@
+    <!DOCTYPE html>
+<html lang="es">
+<head>
+            <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px;">
+            <img src="/static/logo.jpeg" style="max-height: 60px; border-radius: 8px;">
+            <h1 style="color: #2c3e50; margin: 0; font-family: sans-serif; font-size: 2.2rem; letter-spacing: 1px;">ALIANZAS <span style="color: #8b5cf6;">PHARMA</span></h1>
+        </div>
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 20px; margin: 0; color: #333; }
+        .encabezado-tienda { background: white; padding: 15px 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; }
+        .btn-premium-nav { color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .layout-tienda { display: flex; gap: 30px; max-width: 1350px; margin: 0 auto; align-items: flex-start; }
+        .columna-izquierda { flex: 1; text-align: center; }
+        .columna-derecha { width: 460px; position: sticky; top: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .search-box { width: 100%; max-width: 400px; padding: 11px 20px; border-radius: 20px; border: 2px solid #3498db; outline: none; font-size: 1rem; margin-bottom: 15px; display: inline-block; }
+        .row { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        .card { background: white; padding: 15px; width: 220px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); position: relative; display: flex; flex-direction: column; justify-content: space-between; text-align: center; }
+        .card img { max-height: 130px; object-fit: contain; width: 100%; border-radius: 6px; }
+        .agotado { opacity: 0.4; pointer-events: none; }
+        .badge { background: #e74c3c; color: white; padding: 4px 8px; border-radius: 4px; position: absolute; top: 10px; right: 10px; font-weight: bold; font-size: 0.8rem; }
+        .btn-cant { background: #e2e8f0; border: none; width: 32px; height: 34px; border-radius: 50%; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .btn-primary { background: #3498db; color: white; border: none; padding: 10px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; }
+        .btn-success { background: #2ecc71; color: white; border: none; padding: 14px; border-radius: 25px; width: 100%; font-size: 1.1rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(46,204,113,0.2); }
+        .seccion { background: white; padding: 22px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid #e2e8f0; text-align: left; }
+        .contenedor-tabla-carrito { max-height: 320px; overflow-y: auto; padding-right: 5px; }
+        .t-car { width: 100%; border-collapse: collapse; }
+        .t-car td { padding: 12px 5px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+        .btn-del { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 5px 9px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-pagi { background: white; color: #3498db; border: 2px solid #3498db; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .btn-pagi:disabled { border-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width:1350px; margin: 0 auto; padding: 10px 0;">
+        <div class="encabezado-tienda">
+            <span style="font-size:1.15rem; color:#2c3e50;">👋 Hola, <b>{{ cliente.nombre }}</b> (NIT: {{ cliente.nit }})</span>
+            <div style="display:flex; gap:10px;">
+                <a href="/mis-pedidos" class="btn-premium-nav" style="background:#f39c12;">📋 Mis Pedidos</a>
+                <a href="/logout-cliente" class="btn-premium-nav" style="background:#e74c3c;">🚪 Salir</a>
+            </div>
+        </div>
+        <h1 style="color: #2c3e50; font-family: sans-serif; text-align: left; font-size: 1.8rem; margin-top: 15px;">Catálogo de Productos | Alianzas Pharma</h1>
+
+    </div>
+
+    <div class="layout-tienda">
+        <div class="columna-izquierda">
+            <input type="text" id="buscador" class="search-box" placeholder="🔍 Buscar medicamento por nombre..." onkeyup="filtrar()"><br>
+            <div class="row">
+                {% for p in productos %}
+                <div class="card {% if p.existencias <= 0 %}agotado{% endif %} tarjeta-prod">
+                    {% if p.existencias <= 0 %}<span class="badge">AGOTADO</span>{% endif %}
+                    <img src="{{ p.imagen }}">
+                    <h3 class="name-f" style="margin:10px 0 5px 0; color:#34495e; font-size:1.1rem;">{{ p.nombre }}</h3>
+                    <p style="color:#7f8c8d; margin:0 0 10px 0; font-size:0.9rem;">Stock: <b>{{ p.existencias }}</b> ud &nbsp;&nbsp; <span style="color:#27ae60; font-weight:bold; font-size:1.15rem;">${{ p.precio }}</span></p>
+                    <div style="margin-bottom:12px;">
+                        <button class="btn-cant btn-restar-cant" data-id="{{ p.id }}">-</button>
+                        <span id="c-{{ p.id }}" style="font-weight:bold; margin:0 8px; font-size:1.1rem;">1</span>
+                        <button class="btn-cant btn-sumar-cant" data-id="{{ p.id }}" data-max="{{ p.existencias }}">+</button>
+                    </div>
+                    <button class="btn-primary btn-add-car" data-id="{{ p.id }}" data-nombre="{{ p.nombre }}" data-precio="{{ p.precio }}" data-max="{{ p.existencias }}">Agregar al Carrito</button>
+                </div>
+                {% endfor %}
+            </div>
+            <div style="margin:25px 0; display:flex; justify-content:center; gap:10px; align-items:center;">
+                <button id="pagi-ant" class="btn-pagi" onclick="pagi(-1)">« Ant</button> 
+                <span id="p-txt" style="font-weight:600; color:#475569;">Pág 1</span> 
+                <button id="pagi-sig" class="btn-pagi" onclick="pagi(1)">Sig »</button>
+            </div>
+        </div>
+
+        <div class="columna-derecha">
+            <div class="seccion">
+                <h3 style="text-align:center; color:#2c3e50; margin:0 0 12px 0;">Tu Pedido Actual 🛒</h3>
+                <div id="car-msg" style="text-align:center; color:#94a3b8; padding:15px; font-weight:500;">El carrito está vacío.</div>
+                <div class="contenedor-tabla-carrito" id="tabla-contenedor" style="display:none;">
+                    <table class="t-car">
+                        <thead><tr style="color:#64748b; font-size:0.85rem;"><th align="left">Producto</th><th align="center">Cantidad</th><th align="left">Subtotal</th><th align="right">Quitar</th></tr></thead>
+                        <tbody id="cuerpo-car"></tbody>
+                    </table>
+                </div>
+                <div id="aviso-minimo" style="color:#e67e22; font-weight:600; font-size:0.9rem; margin-top:10px; text-align:center; display:none;">⚠️ Pedido mínimo requerido: $150.000</div>
+                <h4 id="tot" style="color:#27ae60; text-align:right; margin:15px 0 0 0; font-size:1.25rem; border-top:2px solid #f1f5f9; padding-top:10px; display:none;">Total: $<span id="v-tot">0</span></h4>
+                <button class="btn-success" onclick="send()" style="margin-top:15px; width:100%; border-radius:8px;">Finalizar e Enviar Pedido (<span id="contador">0</span> ud)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let car = [], pg = 1; const lim = 12;
+        const clienteFijo = { nombre: "{{ cliente.nombre }}", telefono: "{{ cliente.telefono }}", direccion: "{{ cliente.direccion }}", nit: "{{ cliente.nit }}" };
+
+        // 🔌 ESCUCHADOR MAESTRO DE CLICS RECONECTADO
+        document.addEventListener('click', function(e) {
+            if (!e.target) return;
+            
+            // Botón de Restar (-) de las tarjetas
+            if (e.target.classList.contains('btn-restar-cant')) {
+                let id = e.target.getAttribute('data-id'); 
+                let el = document.getElementById("c-" + id);
+                let n = parseInt(el.innerText) - 1; 
+                if (n < 1) n = 1; 
+                el.innerText = n;
+            }
+            
+            // Botón de Sumar (+) de las tarjetas
+            if (e.target.classList.contains('btn-sumar-cant')) {
+                let id = e.target.getAttribute('data-id'); 
+                let max = parseInt(e.target.getAttribute('data-max'));
+                let el = document.getElementById("c-" + id);
+                let n = parseInt(el.innerText) + 1; 
+                if (n > max) { alert("Solo quedan " + max + " uds."); n = max; } 
+                el.innerText = n;
+            }
+            
+            // Botón azul "Agregar al Carrito"
+            if (e.target.classList.contains('btn-add-car')) {
+                let id = e.target.getAttribute('data-id');
+                let nombre = e.target.getAttribute('data-nombre');
+                let precio = parseFloat(e.target.getAttribute('data-precio'));
+                let max = parseInt(e.target.getAttribute('data-max'));
+                
+                let c = parseInt(document.getElementById("c-" + id).innerText); 
+                let ex = car.find(x => x.id === id);
+                
+                if (ex) {
+                    if (ex.cantidad + c > max) { alert("Supera el inventario de " + max + " ud."); return; } 
+                    ex.cantidad += c;
+                } else { 
+                    car.push({id: id, nombre: nombre, precio: precio, cantidad: c, maxStock: max}); 
+                }
+                draw(); 
+                document.getElementById("c-" + id).innerText = 1;
+            }
+            
+            // Botones interactivos dentro de la barra lateral
+            if (e.target.classList.contains('btn-menos-car')) { alterarCar(parseInt(e.target.getAttribute('data-index')), -1); }
+            if (e.target.classList.contains('btn-mas-car')) { alterarCar(parseInt(e.target.getAttribute('data-index')), 1); }
+            if (e.target.classList.contains('btn-del-car')) { car.splice(parseInt(e.target.getAttribute('data-index')), 1); draw(); }
+        });
+
+        function pagi(v) {
+            let t = document.querySelectorAll(".tarjeta-prod"); 
+            let max_p = Math.ceil(t.length / lim) || 1;
+            pg += v; if(pg < 1) pg = 1; if(pg > max_p) pg = max_p;
+            for(let i=0; i<t.length; i++) t[i].style.display = (i >= (pg - 1) * lim && i < pg * lim) ? "" : "none";
+            document.getElementById("p-txt").innerText = "Página " + pg + " de " + max_p;
+            document.getElementById('pagi-ant').disabled = (pg === 1); 
+            document.getElementById('pagi-sig').disabled = (pg === max_p);
+        }
+
+        function filtrar() {
+            let f = document.getElementById("buscador").value.toLowerCase(); 
+            let t = document.querySelectorAll(".tarjeta-prod");
+            if (f === "") { pagi(0); return; }
+            for(let i=0; i<t.length; i++) { 
+                let n = t[i].querySelector(".name-f").innerText.toLowerCase(); 
+                t[i].style.display = n.includes(f) ? "" : "none"; 
+            }
+        }
+
+        function alterarCar(index, cambio) {
+            let item = car[index]; 
+            let n = item.cantidad + cambio;
+            if (n < 1) { car.splice(index, 1); draw(); return; }
+            if (n > item.maxStock) { alert("Solo quedan " + item.maxStock + " uds."); return; }
+            item.cantidad = n; 
+            draw();
+        }
+
+        function draw() {
+            let t = document.getElementById("cuerpo-car"), elTabCont = document.getElementById('tabla-contenedor'), elTot = document.getElementById('tot'), msg = document.getElementById('car-msg'), aviso = document.getElementById('aviso-minimo'), btn = document.querySelector('.btn-success');
+            t.innerHTML = ""; let tot = 0, items = 0;
+            if (car.length === 0) { elTabCont.style.display = "none"; elTot.style.display = "none"; msg.style.display = "block"; aviso.style.display = "none"; document.getElementById('contador').innerText = 0; return; }
+            msg.style.display = "none"; elTabCont.style.display = "block"; elTot.style.display = "block";
+            
+            car.forEach((x, i) => { 
+                t.innerHTML += `<tr>
+                    <td><b>${x.nombre}</b></td>
+                    <td>
+                        <div style="display: inline-flex; align-items: center; gap: 6px; background: #f1f5f9; padding: 3px 8px; border-radius: 20px; border: 1px solid #e2e8f0;">
+                            <button class="btn-cant btn-menos-car" data-index="${i}">-</button>
+                            <span style="font-weight:700;font-size:0.95rem;width:15px;text-align:center;">${x.cantidad}</span>
+                            <button class="btn-cant btn-mas-car" data-index="${i}">+</button>
+                        </div>
+                    </td>
+                    <td style="color:#27ae60;font-weight:bold;">$${x.precio*x.cantidad}</td>
+                    <td><button class="btn-del btn-del-car" data-index="${i}">✕</button></td>
+                </tr>`; 
+                tot += x.precio*x.cantidad; items += x.cantidad;
+            });
+            document.getElementById("v-tot").innerText = tot; 
+            document.getElementById('contador').innerText = items;
+            
+            // 🛑 FRENO VISUAL DEL MONTO MÍNIMO DE $150.000
+            if (tot < 150000) {
+                aviso.style.display = "block";
+                btn.style.background = "#94a3b8";
+                btn.style.cursor = "not-allowed";
+            } else {
+                aviso.style.display = "none";
+                btn.style.background = "#2ecc71";
+                btn.style.cursor = "pointer";
+            }
+        }
+
+                       function send() {
+            if(!car.length) return alert("El carrito está vacío.");
+            let totalFactura = car.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
+            if (totalFactura < 150000) { alert("⚠️ El monto mínimo para realizar un pedido es de $150.000 COP."); return; }
+            
+            // 🎯 ENCIENDE LA VENTANA FLOTANTE CON TU LOGO EN EL CENTRO
+            const pantallaCarga = document.getElementById('pantalla-carga-pharma');
+            if (pantallaCarga) { pantallaCarga.style.display = "flex"; }
+            
+            const botonEnviar = document.querySelector('.btn-success');
+            if (botonEnviar) {
+                botonEnviar.disabled = true;
+                botonEnviar.style.setProperty('background-color', '#94a3b8', 'important');
+                botonEnviar.innerText = "⌛ Procesando Pedido...";
+            }
+            
+            // Captura los datos exactos del cliente inyectados por Python de forma segura
+            const infoCliente = {
+                nombre: document.querySelector('.encabezado-tienda b').innerText,
+                nit: clienteFijo.nit,
+                telefono: clienteFijo.telefono,
+                direccion: clienteFijo.direccion
+            };
+            
+            // Envío directo al carril exclusivo del servidor
+            fetch('/hacer-pedido', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ articulos: car, cliente: infoCliente })
+            })
+            .then(res => res.json())
+            .then(data => {
+                // Al recibir la confirmación de Firebase, dispara el aviso y limpia
+                alert("¡Pedido enviado con éxito!\n💰 Valor Total: $" + totalFactura.toLocaleString('es-CO'));
+                window.location.reload();
+            }).catch(err => {
+                if (pantallaCarga) { pantallaCarga.style.display = "none"; }
+                if (botonEnviar) { botonEnviar.disabled = false; botonEnviar.style.background = "#2ecc71"; botonEnviar.innerText = "Finalizar e Enviar Pedido"; }
+                alert("Hubo un problema de conexión con Firebase Cloud.");
+            });
+        }
+
+
+        
+        window.onload = function() { pagi(0); };
+    </script>
+
+    <!-- 🟢 MODAL DE CARGA MAESTRO DE ALIANZAS PHARMA -->
+    <div id="pantalla-carga-pharma" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(244, 246, 249, 0.85); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; flex-direction: column;">
+        <div style="background: white; padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); text-align: center; width: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+            <!-- Contenedor del Logo con bordes redondeados suaves -->
+            <div style="width: 110px; height: 110px; background: #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.03);">
+                <img src="/static/logo.jpeg" style="max-width: 90px; max-height: 90px; object-fit: contain; border-radius: 12px;">
+            </div>
+            
+            <!-- Barra de progreso lineal animada idéntica al ejemplo -->
+            <div style="width: 85%; height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; position: relative;">
+                <div style="position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, #38bdf8, #8b5cf6, #ec4899); border-radius: 10px; animation: progresoPharma 1.6s infinite ease-in-out;"></div>
+            </div>
+            <span style="font-family: sans-serif; font-size: 0.95rem; color: #475569; font-weight: 600; letter-spacing: 0.5px;">Procesando orden...</span>
+        </div>
+    </div>
+
+    <!-- Estilos de animación puros para la barra lineal -->
+    <style>
+        @keyframes progresoPharma {
+            0% { left: -100%; }
+            50% { left: 0%; }
+            100% { left: 100%; }
+        }
+    </style>
+
+
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mis Pedidos - Alianzas Pharma</title>
+    <style>
+        body { font-family: monospace; background-color: #1e1e1e; color: #d4d4d4; padding: 40px; font-size: 14px; line-height: 1.5; }
+        .panel { max-width: 700px; margin: 0 auto; background: #252526; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-left: 5px solid #f39c12; }
+        .btn { display: inline-block; background: #3498db; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-bottom: 20px; font-family: sans-serif; }
+        .btn:hover { background: #2980b9; }
+        .pedido-caja { border-bottom: 2px dashed #444; padding-bottom: 20px; margin-bottom: 25px; position: relative; text-align: left; }
+        .badge-estado { color: white; padding: 3px 8px; border-radius: 4px; float: right; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
+        .estado-despachado { background-color: #2ecc71; }
+        .estado-pendiente { background-color: #e67e22; }
+        .btn-del-ped { background-color: #e74c3c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.85rem; font-family: sans-serif; }
+        .btn-del-ped:hover { background-color: #c0392b; }
+        .btn-limpiar { background-color: #2f3542; color: #a4b0be; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.85rem; font-family: sans-serif; border: 1px solid #57606f; }
+        .btn-limpiar:hover { background-color: #57606f; color: white; }
+    </style>
+</head>
+<body>
+    <div style="text-align: center;">
+        <a href="/" class="btn">← Volver al Catálogo Comercial</a>
+    </div>
+    <div class="panel">
+        <h1>📋 HISTORIAL DE COMPRAS: {{ cliente.nombre }}</h1>
+        <p style="color:#858585; margin-bottom: 20px;">Droguería asociada con NIT: {{ cliente.nit }}</p>
+        
+        {% for ped in pedidos %}
+        <div class="pedido-caja">
+            <span style="color: #f39c12; font-weight: bold;">ID ORDEN: {{ ped.id }}</span>
+            
+            <span class="badge-estado {% if ped.estado == 'Despachado' %}estado-despachado{% else %}estado-pendiente{% endif %}">
+                {{ ped.estado }}
+            </span><br><br>
+            
+            📦 <b>MEDICAMENTOS SOLICITADOS:</b><br>
+            {% for art in ped.articulos %}
+              - {{ art.nombre }} (Cantidad: {{ art.cantidad }} uds) - Subtotal: ${{ art.precio * art.cantidad }}<br>
+            {% endfor %}<br>
+            
+            💰 <b>TOTAL COMPRA FACTURADA:</b> ${{ ped.total }}<br>
+            
+            <div style="margin-top: 15px; text-align: right;">
+                {% if ped.estado == 'Pendiente' %}
+                <!-- 🗑️ Si está pendiente, SOLO sale el botón rojo de cancelar -->
+                <a href="/eliminar-mi-pedido/{{ ped.id }}" class="btn-del-ped" onclick="return activarCargaCancelar()">🗑️ Cancelar Pedido</a>
+                {% else %}
+                <!-- 🚚 Si está despachado, se activa el camión y el botón gris al tiempo -->
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span style="color:#2ecc71; font-weight:bold; font-family:sans-serif; font-size:0.9rem;">🚚 ¡Pedido despachado en ruta de distribución!</span>
+                    <a href="/limpiar-mi-historial/{{ ped.id }}" class="btn-limpiar" onclick="return activarCargaLimpiar()">✕ Borrar del listado</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <p style="text-align:center; color:#7f8c8d; padding: 20px 0;">Aún no has registrado compras o despachos con este NIT.</p>
+        {% endfor %}
+    </div>
+
+    <!-- 🟢 MODAL DE CARGA EN VIVO PARA ALIANZAS PHARMA -->
+    <div id="pantalla-carga-cancelar" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(244, 246, 249, 0.85); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; flex-direction: column;">
+        <div style="background: white; padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); text-align: center; width: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+            <div style="width: 110px; height: 110px; background: #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.03);">
+                <img src="/static/logo.jpeg" style="max-width: 90px; max-height: 90px; object-fit: contain; border-radius: 12px;">
+            </div>
+            <div style="width: 85%; height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; position: relative;">
+                <div style="position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, #ec4899, #8b5cf6, #38bdf8); border-radius: 10px; animation: progresoCancelar 1.6s infinite ease-in-out;"></div>
+            </div>
+            <span style="font-family: sans-serif; font-size: 0.95rem; color: #475569; font-weight: 600; letter-spacing: 0.5px;">Cancelando orden...</span>
+        </div>
+    </div>
+
+    <script>
+        function activarCargaCancelar() {
+            const confirmacion = confirm('¿Está seguro de eliminar el pedido? Su pedido ya no va a ser despachado.');
+            if (confirmacion) {
+                const modal = document.getElementById('pantalla-carga-cancelar');
+                if (modal) modal.style.display = 'flex';
+                return true;
+            }
+            return false;
+        }
+
+        function activarCargaLimpiar() {
+            const confirmacion = confirm('Su pedido sera limpiado de la bandeja y pronto sera despachado.');
+            if (confirmacion) {
+                const modal = document.getElementById('pantalla-carga-cancelar');
+                if (modal) {
+                    modal.querySelector('span').innerText = "Limpiando bandeja...";
+                    modal.style.display = 'flex';
+                }
+                return true;
+            }
+            return false;
+        }
+    </script>
+
+    <style>
+        @keyframes progresoCancelar {
+            0% { left: -100%; }
+            50% { left: 0%; }
+            100% { left: 100%; }
+        }
+    </style>
+</body>
+</html>

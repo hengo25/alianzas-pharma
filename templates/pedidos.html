@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Pedidos en la Nube - Henry</title>
+    <style>
+        body { font-family: monospace; background-color: #1e1e1e; color: #d4d4d4; padding: 40px; font-size: 14px; line-height: 1.5; }
+        .panel { max-width: 700px; margin: 0 auto; background: #252526; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-left: 5px solid #9b59b6; }
+        .btn { display: inline-block; background: #3498db; color: white; padding: 10px 15px; border-radius: 5px; text-decoration: none; font-weight: bold; margin-bottom: 20px; font-family: sans-serif; }
+        .btn:hover { background: #2980b9; }
+        .pedido-caja { border-bottom: 2px dashed #444; padding-bottom: 20px; margin-bottom: 25px; position: relative; text-align: left; }
+        
+        /* Clases CSS fijas y limpias para evitar que el editor se pinte de rojo */
+        .badge-estado { color: white; padding: 3px 8px; border-radius: 4px; float: right; font-weight: bold; font-size: 0.85rem; text-transform: uppercase; }
+        .estado-despachado { background-color: #2ecc71; }
+        .estado-pendiente { background-color: #e67e22; }
+        
+        .btn-del-ped { background-color: #e74c3c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.85rem; font-family: sans-serif; }
+        .btn-del-ped:hover { background-color: #c0392b; }
+        .btn-check-ped { background-color: #2ecc71; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.85rem; font-family: sans-serif; }
+        .btn-check-ped:hover { background-color: #27ae60; }
+    </style>
+</head>
+<body>
+    <div style="text-align: center;">
+        <a href="/admin" class="btn">← Volver al Panel de Admin</a>
+        <a href="/logout" class="btn" style="background:#94a3b8; margin-left: 10px;">Salir 🚪</a>
+    </div>
+    <div class="panel">
+        <h1>HISTORIAL DE PEDIDOS</h1>
+        
+        {% for ped in pedidos %}
+        <div class="pedido-caja">
+            <span style="color: #9b59b6; font-weight: bold;">ID ORDEN: {{ ped.id }}</span>
+            
+            <!-- Inyección limpia mediante clases CSS sin alterar los estilos inline -->
+            <span class="badge-estado {% if ped.estado == 'Despachado' %}estado-despachado{% else %}estado-pendiente{% endif %}">
+                {{ ped.estado }}
+            </span><br>
+            
+            👤 <b>CLIENTE:</b> {{ ped.cliente.nombre }}<br>
+            📞 <b>TELÉFONO:</b> {{ ped.cliente.telefono }}<br>
+            📍 <b>DIRECCIÓN:</b> {{ ped.cliente.direccion }}<br>
+            📦 <b>PRODUCTOS:</b><br>
+            {% for art in ped.articulos %}
+              - {{ art.nombre }} (Cantidad: {{ art.cantidad }})<br>
+            {% endfor %}
+            💰 <b>TOTAL FACTURA:</b> ${{ ped.total }}<br>
+            
+            <div style="margin-top: 15px; text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
+                <a href="/descargar-pdf/{{ ped.id }}" style="background-color: #3498db; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.85rem; font-family: sans-serif;">🖨️ Descargar PDF</a>
+                <a href="/eliminar-pedido/{{ ped.id }}" class="btn-del-ped" onclick="return confirm('¿Borrar pedido?')">🗑️ Borrar</a>
+                {% if ped.estado == 'Pendiente' %}
+                <a href="/cambiar-estado/{{ ped.id }}" class="btn-check-ped">✓ Despachar</a>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <p style="text-align:center; color:#7f8c8d;">No hay pedidos.</p>
+        {% endfor %}
+        
+        <!-- Paginación de pedidos -->
+        <div id="pagi-ped" style="text-align:center; margin-top:20px; font-family: sans-serif;"></div>
+    </div>
+
+    <script>
+        let p = 1;
+        function pag() {
+            let d = document.querySelectorAll(".pedido-caja");
+            if (d.length === 0) return;
+            for (let i = 0; i < d.length; i++) {
+                d[i].style.display = (i >= (p - 1) * 5 && i < p * 5) ? "" : "none";
+            }
+            let maxP = Math.ceil(d.length / 5);
+            document.getElementById("pagi-ped").innerHTML = 
+                (p > 1 ? '<button onclick="p--;pag()" style="padding:5px 10px; cursor:pointer;">« Ant</button> ' : "") +
+                '<span style="color:white; margin: 0 10px; font-weight:bold;">Pág ' + p + ' de ' + maxP + '</span>' +
+                (p < maxP ? ' <button onclick="p++;pag()" style="padding:5px 10px; cursor:pointer;">Sig »</button>' : "");
+        }
+        window.onload = pag;
+    </script>
+</body>
+</html>

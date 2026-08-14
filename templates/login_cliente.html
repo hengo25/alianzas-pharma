@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"><title>Ingreso Droguerías - Alianzas Pharma</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; width: 320px; }
+        input { width: 90%; padding: 11px; margin-bottom: 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; font-size: 1rem; }
+        button { background: #3498db; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 97%; font-size: 1rem; }
+        button:hover { background: #2980b9; }
+        a { color: #3498db; text-decoration: none; font-weight: 600; font-size: 0.9rem; }
+        
+        /* 🔔 MODAL DE CARGA ANIDADO */
+        .notif-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(244, 246, 249, 0.85); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; flex-direction: column; }
+        @keyframes progresoLogin { 0% { left: -100%; } 50% { left: 0%; } 100% { left: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <img src="/static/logo.jpeg" style="max-height: 100px; margin-bottom: 10px;">
+        <h2 style="color:#2c3e50; margin: 0 0 5px 0; font-family: sans-serif; letter-spacing: 1px;">ALIANZAS <span style="color: #8b5cf6;">PHARMA</span></h2>
+        <p style="color:#64748b; font-size:0.9rem; margin-bottom:20px; font-weight: bold;">Portal de Pedidos para Droguerías Afiliadas</p>
+        
+        <form method="POST" id="form-login">
+            <input type="text" name="nit" placeholder="Escribe el NIT de la Droguería" required><br>
+            <input type="password" name="password" placeholder="Contraseña secreta" required><br><br>
+            <button type="submit">Iniciar Sesión</button>
+        </form>
+        <br>
+        <div style="display:flex; justify-content:space-between; padding:0 5px;">
+            <a href="/registro-cliente">Crear Cuenta 📝</a>
+            <a href="/recuperar-clave" style="color:#e67e22;">Olvidé mi clave 🔑</a>
+        </div>
+    </div>
+
+    <!-- 🟢 TARJETA DE VERIFICACIÓN ALIANZAS PHARMA -->
+    <div id="carga-login-pharma" class="notif-modal">
+        <div style="background: white; padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); text-align: center; width: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+            <div style="width: 110px; height: 110px; background: #fff; border-radius: 20px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.03);">
+                <img src="/static/logo.jpeg" style="max-width: 90px; max-height: 90px; object-fit: contain; border-radius: 12px;">
+            </div>
+            <div style="width: 85%; height: 6px; background: #e2e8f0; border-radius: 10px; overflow: hidden; position: relative;">
+                <div style="position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, #38bdf8, #8b5cf6, #ec4899); border-radius: 10px; animation: progresoLogin 1.6s infinite ease-in-out;"></div>
+            </div>
+            <span style="font-family: sans-serif; font-size: 0.95rem; color: #475569; font-weight: 600; letter-spacing: 0.5px;">Verificando credenciales...</span>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('form-login').addEventListener('submit', function() {
+            document.getElementById('carga-login-pharma').style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
