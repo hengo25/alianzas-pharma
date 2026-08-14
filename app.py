@@ -81,8 +81,9 @@ def obtener_cliente_logueado():
 
 # --- RUTAS DE CLIENTES Y DROGUERÍAS ---
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def inicio():
+
     cliente = obtener_cliente_logueado()
     # 🎯 ANTI-BUCLE VERCEL: Si no hay sesión, pinta el formulario directo sin hacer redirecciones de red
     if not cliente:
