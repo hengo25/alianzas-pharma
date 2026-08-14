@@ -25,7 +25,11 @@ if config_firebase_env:
         credenciales_directas = json.loads(config_firebase_env)
         if not firebase_admin._apps:
             cred = credentials.Certificate(credenciales_directas)
-            firebase_admin.initialize_app(cred)
+                        # 🎯 ENLACE MAESTRO ABSOLUTO: Obliga a Google a conectar la base de datos sin perderse en internet
+            firebase_admin.initialize_app(cred, {
+                'databaseURL': 'https://TU_PROJECT_ID_://firebaseio.com'
+            })
+
         db = firestore.client()
         print("🚀 ¡Conexión Establecida por Variable de Entorno!")
     except Exception as e:
