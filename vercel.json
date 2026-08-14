@@ -8,6 +8,18 @@
   ],
   "routes": [
     {
+      "src": "/login-cliente",
+      "dest": "app.py"
+    },
+    {
+      "src": "/hacer-pedido",
+      "dest": "app.py"
+    },
+    {
+      "src": "/api/conteo-pendientes",
+      "dest": "app.py"
+    },
+    {
       "src": "/(.*)",
       "dest": "app.py"
     }

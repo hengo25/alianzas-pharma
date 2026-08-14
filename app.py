@@ -6,6 +6,9 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 app = Flask(__name__)
+# 🔌 CONECTOR GLOBAL PARA SERVIDORES DE INTERNET
+main = app 
+
 
 CLAVE_ADMIN = "henry123"
 
