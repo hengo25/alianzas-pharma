@@ -28,7 +28,8 @@
         <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 25px; font-weight: bold;">Portal de Pedidos para Droguerías Afiliadas</p>
         
         <!-- FORMULARIO DIRECTO CON ACCIÓN RELATIVA LIMPIA PARA VERCEL -->
-        <form method="POST" action="/login-cliente" id="form-login-pharma" onsubmit="activarCargaPharma(event)">
+            <form method="POST" action="/login-cliente" id="form-login-pharma">
+
             <input type="text" name="nit" placeholder="Escribe el NIT de la Droguería" required>
             <input type="password" name="password" placeholder="Contraseña secreta" required>
             <button type="submit" class="btn" id="btn-ingresar-submit">Iniciar Sesión</button>
