@@ -115,14 +115,20 @@ def limpiar_mi_historial(id_ped):
 @app.route('/login-cliente', methods=['GET', 'POST'])
 def login_cliente():
     if request.method == 'POST':
-        nit, password = request.form.get('nit').strip(), request.form.get('password').strip()
+        nit = request.form.get('nit').strip()
+        password = request.form.get('password').strip()
         doc = db.collection("clientes").document(nit).get()
+        
         if doc.exists and doc.to_dict().get('password') == password:
             resp = make_response(redirect(url_for('inicio')))
-            resp.set_cookie('cliente_nit', nit, max_age=60*60*24*30)
+            resp.headers['Set-Cookie'] = f"cliente_nit={nit}; Path=/; HttpOnly; SameSite=Lax"
             return resp
-        return """<html><head><title>Error de Ingreso</title><style>body{font-family:'Segoe UI',sans-serif;background:#f4f6f9;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .box{background:white;padding:40px 30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.05);text-align:center;width:320px;} .btn{display:inline-block;background:#e74c3c;color:white;padding:12px 24px;border-radius:25px;text-decoration:none;font-weight:bold;font-size:1rem;margin-top:10px;box-shadow:0 4px 12px rgba(231,76,60,0.2);transition:background 0.2s;} .btn:hover{background:#c0392b;}</style></head><body><div class="box"><img src="/logo.jpeg" style="max-height:80px; margin-bottom:10px;"><h2 style="color:#e74c3c; margin:0 0 10px 0;">❌ Acceso Denegado</h2><p style="color:#64748b; font-size:0.95rem; margin:0 0 25px 0; line-height:1.4;">El NIT o la contraseña secreta ingresados no coinciden en la plataforma de Alianzas Pharma.</p><a href="/login-cliente" class="btn">Volver a Intentarlo</a></div></body></html>"""
-    return render_template('login_cliente.html')
+            
+        return """<html><head><title>Error</title><style>body{font-family:sans-serif;background:#f4f6f9;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .box{background:white;padding:40px;border-radius:16px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.05);}</style></head><body><div class="box"><h2>❌ Datos Incorrectos</h2><p>El NIT o contraseña no coinciden.</p><a href="/login-cliente" style="background:#3498db;color:white;padding:10px 20px;border-radius:20px;text-decoration:none;font-weight:bold;">Intentar de Nuevo</a></div></body></html>"""
+            
+    # 🎯 PARCHE MAESTRO: HTML nativo directo desde Python para internet sin depender de carpetas
+    return """<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ingreso - Alianzas Pharma</title><style>body{font-family:'Segoe UI',sans-serif;background:#f4f6f9;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .box{background:white;padding:40px 30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.05);text-align:center;width:320px;} input{width:92%;padding:12px;margin-bottom:12px;border:1px solid #cbd5e1;border-radius:8px;outline:none;font-size:1rem;} .btn{background:#3498db;color:white;border:none;padding:12px;border-radius:25px;font-weight:bold;cursor:pointer;width:100%;font-size:1rem;margin-top:10px;box-shadow:0 4px 12px rgba(52,152,219,0.2);} .btn:hover{background:#2980b9;}</style></head><body><div class="box"><img src="https://vercel.com" style="max-height:45px; margin-bottom:15px;"><h2 style="color:#2c3e50; margin:0 0 5px 0; font-size:1.4rem;">ALIANZAS PHARMA</h2><p style="color:#64748b; font-size:0.85rem; margin-bottom:25px; font-weight:bold;">Portal de Pedidos para Droguerías Afiliadas</p><form method="POST" action="/login-cliente"><input type="text" name="nit" placeholder="Escribe el NIT de la Droguería" required><input type="password" name="password" placeholder="Contraseña secreta" required><button type="submit" class="btn">Iniciar Sesión</button></form><div style="display:flex; justify-content:space-between; margin-top:25px;"><a href="/registro-cliente" style="color:#3498db; text-decoration:none; font-size:0.85rem; font-weight:600;">Crear Cuenta</a><a href="/recuperar-clave" style="color:#e67e22; text-decoration:none; font-size:0.85rem; font-weight:600;">Olvidé mi clave</a></div></div></body></html>"""
+
 
 @app.route('/registro-cliente', methods=['GET', 'POST'])
 def registro_cliente():
