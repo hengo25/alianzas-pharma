@@ -1,13 +1,15 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response
+from flask_cors import CORS  # 🔌 NUEVO: Controlador de tráfico seguro para internet
+
 import firebase_admin
 from firebase_admin import credentials, firestore
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 app = Flask(__name__)
-# 🔌 CONECTOR GLOBAL PARA SERVIDORES DE INTERNET
-main = app 
+CORS(app)  # 🔓 Abre las compuertas lógicas seguros para los celulares en internet
+main = app
 
 
 CLAVE_ADMIN = "henry123"
@@ -121,7 +123,7 @@ def login_cliente():
         
         if doc.exists and doc.to_dict().get('password') == password:
             resp = make_response(redirect(url_for('inicio')))
-            resp.headers['Set-Cookie'] = f"cliente_nit={nit}; Path=/; HttpOnly; SameSite=Lax"
+            resp.headers['Set-Cookie'] = f"cliente_nit={nit}; Path=/; HttpOnly; Secure; SameSite=None"
             return resp
             
         return """<html><head><title>Error</title><style>body{font-family:sans-serif;background:#f4f6f9;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .box{background:white;padding:40px;border-radius:16px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.05);}</style></head><body><div class="box"><h2>❌ Datos Incorrectos</h2><p>El NIT o contraseña no coinciden.</p><a href="/login-cliente" style="background:#3498db;color:white;padding:10px 20px;border-radius:20px;text-decoration:none;font-weight:bold;">Intentar de Nuevo</a></div></body></html>"""
