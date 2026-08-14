@@ -16,19 +16,35 @@ CLAVE_ADMIN = "henry123"
 # 🎯 CONFIGURACIÓN BLINDADA PARA LA NUBE DE VERCEL
 import json
 
-# 🎯 ENLACE GLOBAL SEGURO: Lee la llave directo de las variables de entorno de Vercel
+# 🎯 ENLACE INDESTRUCTIBLE: Intenta conectar por variable de entorno, si falla no congela el servidor
+db = None
 config_firebase_env = os.environ.get("FIREBASE_CREDENTIALS")
 
 if config_firebase_env:
     try:
-        # Cargamos el texto limpio como un diccionario real de Python
         credenciales_directas = json.loads(config_firebase_env)
         if not firebase_admin._apps:
             cred = credentials.Certificate(credenciales_directas)
             firebase_admin.initialize_app(cred)
         db = firestore.client()
-        print("🚀 ¡Conexión por Variable de Entorno Establecida con éxito!")
+        print("🚀 ¡Conexión Establecida por Variable de Entorno!")
     except Exception as e:
+        print(f"❌ Error en JSON de Firebase: {e}")
+
+# 💾 PLAN B DE RESPALDO: Si lo anterior falló o no existe, lee el archivo físico directo
+if db is None:
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        ruta_llave = os.path.join(base_dir, "llave-firebase.json")
+        if os.path.exists(ruta_llave):
+            if not firebase_admin._apps:
+                cred = credentials.Certificate(ruta_llave)
+                firebase_admin.initialize_app(cred)
+            db = firestore.client()
+            print("🚀 ¡Conexión Establecida por Archivo Físico de Respaldo!")
+    except Exception as e:
+        print(f"❌ Error crítico en Plan B de Firebase: {e}")
+
         print(f"❌ Error al procesar JSON de Firebase: {e}")
 else:
     print("⚠️ No se encontró la variable FIREBASE_CREDENTIALS, usando modo local...")
