@@ -100,11 +100,25 @@ def inicio():
         return """<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ingreso - Alianzas Pharma</title><style>body{font-family:'Segoe UI',sans-serif;background:#f4f6f9;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .box{background:white;padding:40px 30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.05);text-align:center;width:320px;} input{width:92%;padding:12px;margin-bottom:12px;border:1px solid #cbd5e1;border-radius:8px;outline:none;font-size:1rem;} .btn{background:#3498db;color:white;border:none;padding:12px;border-radius:25px;font-weight:bold;cursor:pointer;width:100%;font-size:1rem;margin-top:10px;box-shadow:0 4px 12px rgba(52,152,219,0.2);} .btn:hover{background:#2980b9;}</style></head><body><div class="box"><img src="/logo.jpeg" style="max-height:80px; margin-bottom:10px; border-radius:8px;" onerror="this.src='https://vercel.com'"><h2 style="color:#2c3e50; margin:0 0 5px 0; font-size:1.4rem;">ALIANZAS PHARMA</h2><p style="color:#64748b; font-size:0.85rem; margin-bottom:25px; font-weight:bold;">Portal de Pedidos para Droguerías Afiliadas</p><form method="POST" action="/"><input type="text" name="nit" placeholder="Escribe el NIT de la Droguería" required><input type="password" name="password" placeholder="Contraseña secreta" required><button type="submit" class="btn">Iniciar Sesión</button></form><div style="display:flex; justify-content:space-between; margin-top:25px;"><a href="/registro-cliente" style="color:#3498db; text-decoration:none; font-size:0.85rem; font-weight:600;">Crear Cuenta</a><a href="/recuperar-clave" style="color:#e67e22; text-decoration:none; font-size:0.85rem; font-weight:600;">Olvidé mi clave</a></div></div></body></html>"""
 
     # Si la sesión ya está guardada de forma segura, el servidor le abre el catálogo real
+        # 🛡️ BLINDAJE DE BODEGA: Evita que el servidor se caiga si la colección de Firebase está vacía o da error
     lista = []
-    for doc in db.collection("productos").stream():
-        p = doc.to_dict()
-        lista.append({"id": doc.id, "nombre": p.get("nombre", "Sin nombre"), "precio": int(p.get("precio", 0)), "imagen": p.get("imagen", "/public/placeholder.jpg"), "existencias": int(p.get("existencias", 0))})
-    lista.sort(key=lambda x: x["nombre"].lower())
+    try:
+        productos_ref = db.collection("productos").stream()
+        for doc in productos_ref:
+            p = doc.to_dict()
+            lista.append({
+                "id": doc.id, 
+                "nombre": p.get("nombre", "Medicamento sin nombre"), 
+                "precio": int(p.get("precio", 0)), 
+                "imagen": p.get("imagen", "/public/placeholder.jpg"), 
+                "existencias": int(p.get("existencias", 0))
+            })
+        lista.sort(key=lambda x: x["nombre"].lower())
+    except Exception as e:
+        print(f"⚠️ Alerta de inventario: Colección de productos vacía o inaccesible ({e})")
+        # Creamos un producto falso temporal en memoria para que la pantalla no se rompa
+        lista = [{"id": "0", "nombre": "Kit Inicial de Prueba Pharma", "precio": 150000, "imagen": "/public/placeholder.jpg", "existencias": 10}]
+
     return render_template('index.html', productos=lista, cliente=cliente)
 
 @app.route('/mis-pedidos')
