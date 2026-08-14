@@ -27,9 +27,11 @@ def verificar_sesion_admin():
 
 def obtener_cliente_logueado():
     nit_usuario = request.cookies.get('cliente_nit')
-    if not nit_usuario: return None
+    if not nit_usuario: 
+        return None
     doc = db.collection("clientes").document(nit_usuario).get()
     return doc.to_dict() if doc.exists else None
+
 
 # --- RUTAS DE CLIENTES Y DROGUERÍAS ---
 
