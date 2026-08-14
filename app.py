@@ -199,17 +199,29 @@ def registro_cliente():
 @app.route('/recuperar-clave', methods=['GET', 'POST'])
 def recuperar_clave():
     if request.method == 'POST':
-        nit = request.form.get('nit').strip()
-        telefono = request.form.get('telefono').strip()
+        nit = request.form.get('nit', '').strip()
+        password = request.form.get('password', '').strip()
         doc = db.collection("clientes").document(nit).get()
         
-        if doc.exists and doc.to_dict().get('telefono') == telefono:
-            clave_secreta = doc.to_dict().get('password')
-            return f"""<html><head><title>Clave Recuperada</title><style>body{{font-family:'Segoe UI',sans-serif;background:#f4f6f9;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}} .box{{background:white;padding:40px 30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.05);text-align:center;width:320px;}} .btn{{display:inline-block;background:#3498db;color:white;padding:12px 24px;border-radius:25px;text-decoration:none;font-weight:bold;font-size:1rem;margin-top:15px;box-shadow:0 4px 12px rgba(52,152,219,0.2);}}</style></head><body><div class="box"><img src="/public/logo.jpeg" style="max-height:80px; margin-bottom:10px;"><h2 style="color:#2c3e50; margin:0 0 15px 0;">🔐 Clave Recuperada</h2><p style="color:#64748b; font-size:0.95rem; margin:0;">Tu contraseña secreta para ingresar es:</p><div style="background:#f1f5f9; padding:15px; border-radius:10px; font-size:1.4rem; font-weight:bold; color:#8b5cf6; margin:15px 0; border:1px dashed #cbd5e1; letter-spacing:1px;">{clave_secreta}</div><a href="/login-cliente" class="btn">Regresar al Login</a></div></body></html>"""
-            
-        return """<html><head><title>Error de Validación</title><style>body{font-family:'Segoe UI',sans-serif;background:#f4f6f9;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .box{background:white;padding:40px 30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.05);text-align:center;width:320px;} .btn{display:inline-block;background:#e74c3c;color:white;padding:12px 24px;border-radius:25px;text-decoration:none;font-weight:bold;font-size:1rem;margin-top:10px;box-shadow:0 4px 12px rgba(231,76,60,0.2);}</style></head><body><div class="box"><img src="/public/logo.jpeg" style="max-height:80px; margin-bottom:10px;"><h2 style="color:#e74c3c; margin:0 0 10px 0;">❌ Validación Fallida</h2><p style="color:#64748b; font-size:0.95rem; margin:0 0 25px 0; line-height:1.4;">El NIT o el teléfono ingresados no coinciden con ninguna droguería registrada.</p><a href="/recuperar-clave" class="btn">Intentar de Nuevo</a></div></body></html>"""
-        
-    return """<html><head><title>Recuperar Clave - Alianzas Pharma</title><style>body{font-family:'Segoe UI',sans-serif;background:#f4f6f9;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .box{background:white;padding:35px 30px;border-radius:16px;box-shadow:0 10px 25px rgba(0,0,0,0.05);text-align:center;width:320px;} input{width:90%;padding:11px;margin-bottom:12px;border:1px solid #cbd5e1;border-radius:8px;outline:none;font-size:1rem;} button{background:#e67e22;color:white;border:none;padding:12px;border-radius:8px;font-weight:bold;cursor:pointer;width:97%;font-size:1rem;box-shadow:0 4px 10px rgba(230,126,34,0.2);} button:hover{background:#e67e22;} a{color:#3498db;text-decoration:none;font-weight:600;font-size:0.9rem;display:inline-block;margin-top:15px;}</style></head><body><div class="box"><img src="/public/logo.jpeg" style="max-height:80px; margin-bottom:10px;"><h2 style="color:#2c3e50; margin:0 0 5px 0; letter-spacing:0.5px;">Recuperar Clave 🔑</h2><p style="color:#64748b; font-size:0.85rem; margin-bottom:20px; font-weight:bold;">Ingresa tus datos para validar tu identidad</p><form method="POST"><input type="text" name="nit" placeholder="Escribe tu NIT" required><br><input type="text" name="telefono" placeholder="Teléfono asociado" required><br><br><button type="submit">Ver Mi Clave Secreta</button></form><a href="/login-cliente">← Volver al Portal</a></div></body></html>"""
+        if doc.exists and doc.to_dict().get('password') == password:
+            # 🎯 CARGA DIRECTA ANTI-BUCLE: Trae los productos de inmediato sin redirecciones circulares
+            lista = []
+            try:
+                for d in db.collection("productos").stream():
+                    p = d.to_dict()
+                    lista.append({"id": d.id, "nombre": p.get("nombre", "Medicamento"), "precio": int(p.get("precio", 0)), "imagen": p.get("imagen", "/public/placeholder.jpg"), "existencias": int(p.get("existencias", 0))})
+                lista.sort(key=lambda x: x["nombre"].lower())
+            except:
+                lista = [{"id": "0", "nombre": "Kit Inicial de Prueba", "precio": 150000, "imagen": "/public/placeholder.jpg", "existencias": 10}]
+                
+            cliente_data = doc.to_dict()
+            resp = make_response(render_template('index.html', productos=lista, cliente=cliente_data))
+            resp.headers['Set-Cookie'] = f"cliente_nit={nit}; Path=/; HttpOnly; Secure; SameSite=None"
+            return resp
+        else:
+            # Si se equivoca, le pintamos la tarjeta de error nativa
+            return """<html><head><title>Error</title><style>body{font-family:sans-serif;background:#f4f6f9;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .box{background:white;padding:40px;border-radius:16px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.05);}</style></head><body><div class="box"><h2>❌ Datos Incorrectos</h2><p>El NIT o contraseña ingresados no coinciden en Alianzas Pharma.</p><a href="/" style="background:#3498db;color:white;padding:10px 20px;border-radius:20px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:15px;">Intentar de Nuevo</a></div></body></html>"""
+
 
 @app.route('/logout-cliente')
 def logout_cliente():
