@@ -114,9 +114,11 @@ def ingresar_portal():
                 lista = [{"id": "0", "nombre": "Kit Inicial de Prueba Pharma", "precio": 150000, "imagen": "/public/placeholder.jpg", "existencias": 10}]
                 
             cliente_data = doc.to_dict()
+                        # 🛡️ MÉTODO NATIVO INDESTRUCTIBLE: Genera la cookie de forma segura y compatible con HTTPS
             resp = make_response(render_template('index.html', productos=lista, cliente=cliente_data))
-            resp.headers['Set-Cookie'] = f"cliente_nit={nit}; Path=/; HttpOnly; Secure; SameSite=None"
+            resp.set_cookie('cliente_nit', nit, path='/', httponly=True, secure=True, samesite='None')
             return resp
+
     except Exception as e:
         print(f"Error login: {e}")
         
