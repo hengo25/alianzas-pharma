@@ -1,4 +1,6 @@
 import os
+# encendido definitivo alianzas pharma en vivo
+
 import json
 from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response
 from flask_cors import CORS
