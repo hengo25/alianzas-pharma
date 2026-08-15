@@ -12,8 +12,13 @@
       "dest": "/public/$1"
     },
     {
+      "src": "/ingresar-portal",
+      "dest": "app.py"
+    },
+    {
       "src": "/(.*)",
       "dest": "app.py"
     }
   ]
 }
+
