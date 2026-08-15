@@ -12,32 +12,35 @@ CORS(app)
 main = app
 
 CLAVE_ADMIN = "henry123"
-
-# 🎯 ENLACE INDESTRUCTIBLE VERCEL: Conexión nativa por variable de entorno sin colisiones de archivos
 import base64
 import json
 
-# 🎯 ENLACE MAESTRO BASE64: Conexión nativa libre de saltos de línea rotos
+# 🎯 ENLACE INDESTRUCTIBLE GOOGLE: Inicialización nativa anti-errores de librería
 config_firebase_env = os.environ.get("FIREBASE_CREDENTIALS")
 
 if config_firebase_env:
     try:
-        # Intentamos traducir el bloque de letras corridas Base64 en memoria real
         try:
             decoded_bytes = base64.b64decode(config_firebase_env.strip())
             credenciales_directas = json.loads(decoded_bytes.decode("utf-8"))
-        except Exception as e:
-            # Si la variable ya era un JSON normal, la lee directo
+        except:
             credenciales_directas = json.loads(config_firebase_env)
             
         if not firebase_admin._apps:
             if "private_key" in credenciales_directas:
                 credenciales_directas["private_key"] = credenciales_directas["private_key"].replace("\\n", "\n")
             cred = credentials.Certificate(credenciales_directas)
-            firebase_admin.initialize_app(cred)
-        print("🚀 ¡Conexión en Línea Única Establecida con Firebase Cloud con Éxito!")
+            # Guardamos la referencia de la app inicializada
+            firebase_app = firebase_admin.initialize_app(cred)
+        else:
+            firebase_app = firebase_admin._apps[0]
+            
+        # 🔗 TRUCO DE ORO: Forzamos a Firestore a leer la aplicación de forma explícita para destruir el error TRIBUTO
+        db = firestore.client(app=firebase_app)
+        print("🚀 ¡Conexión Firestore Establecida sin Conflictos Internos!")
     except Exception as e:
         print(f"❌ Error al procesar JSON de Firebase: {e}")
+
 
 db = firestore.client()
 
