@@ -87,6 +87,7 @@ def inicio():
     return render_template('index.html', productos=lista, cliente=cliente)
 
 # 🚀 CARRIL 2: Validador de Firebase (Ruta exclusiva de procesamiento de contraseñas)
+# 🚀 CARRIL EXCLUSIVO: Validador de Firebase para internet (Destruye la carga infinita)
 @app.route('/ingresar-portal', methods=['POST'])
 def ingresar_portal():
     nit = request.form.get('nit', '').strip()
@@ -95,7 +96,7 @@ def ingresar_portal():
     try:
         doc = db.collection("clientes").document(nit).get()
         if doc.exists and doc.to_dict().get('password') == password:
-            # Redirección limpia al inicio con cookies habilitadas para HTTPS
+            # Redirección limpia al catálogo con cookies habilitadas para HTTPS
             resp = make_response(redirect(url_for('inicio')))
             resp.headers['Set-Cookie'] = f"cliente_nit={nit}; Path=/; HttpOnly; Secure; SameSite=None"
             return resp
