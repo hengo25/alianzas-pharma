@@ -20,7 +20,7 @@ if config_firebase_env:
     try:
         credenciales_directas = json.loads(config_firebase_env)
         if not firebase_admin._apps:
-            # Limpieza matemática automática incorporada de saltos de línea
+            # Limpieza matemática automática incorporada de saltos de línea de la llave
             if "private_key" in credenciales_directas:
                 credenciales_directas["private_key"] = credenciales_directas["private_key"].replace("\\n", "\n")
             cred = credentials.Certificate(credenciales_directas)
