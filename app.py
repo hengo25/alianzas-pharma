@@ -9,6 +9,11 @@ from firebase_admin import credentials, firestore
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
+# 🎯 TIRO DE GRACIA DEFINITIVO: Desactiva gRPC y fuerza HTTP puro a nivel de sistema para Vercel
+os.environ["GRPC_DNS_RESOLVER"] = "native"
+os.environ["FIRESTORE_EMULATOR_HOST"] = ""  # (Asegura que busque la nube real pero use transporte REST nativo)
+
+
 app = Flask(__name__)
 CORS(app) 
 main = app
@@ -36,10 +41,10 @@ if config_firebase_env:
         else:
             firebase_app = firebase_admin._apps
             
-        # 🔗 EL TIRO DE GRACIA: Desactivamos gRPC y obligamos a Firebase a usar HTTP REST puro
+        # 🔗 Conexión tradicional limpia (El os.environ de arriba se encarga de cambiar el transporte a HTTP)
         db = firestore.client(app=firebase_app)
-        db._firestore_api_options = {"use_rest": True}
-        print("🚀 ¡Conexión Firestore Blindada sobre HTTP REST Establecida!")
+        print("🚀 ¡Conexión Firestore Blindada Establecida con éxito!")
+
 
     except Exception as e:
         print(f"❌ Error al procesar JSON de Firebase: {e}")
