@@ -16,7 +16,6 @@ main = app
 
 db = None
 
-
 try:
     ruta_llave = "/var/task/llave-firebase.json"
     if not os.path.exists(ruta_llave):
@@ -24,10 +23,12 @@ try:
         ruta_llave = os.path.join(base_dir, "llave-firebase.json")
 
     if os.path.exists(ruta_llave):
+        # 🛡️ APERTURA LIMPIA: Leemos el archivo de texto original
         with open(ruta_llave, 'r', encoding='utf-8') as f:
             datos_json = json.load(f)
             
         if "private_key" in datos_json:
+            # 🔄 EL TRUCO DE ORO: Convierte el texto \n en saltos de línea reales de internet
             datos_json["private_key"] = datos_json["private_key"].replace("\\n", "\n")
             
         if not firebase_admin._apps:
@@ -38,12 +39,14 @@ try:
             
         db = firestore.client(app=firebase_app)
         db._firestore_api_options = {"use_rest": True}
-        print("🚀 ¡Conexión Firestore Blindada REST Establecida!")
+        print("🚀 ¡Conexión Firestore Exitosa y clave purgada de forma nativa!")
     else:
-        print("⚠️ Archivo JSON físico no detectado")
+        print("❌ Archivo JSON no encontrado")
+        db = None
 except Exception as e:
-    # 🛡️ PROTECCIÓN DE MOTOR: Si el JSON está roto o se traba, salta aquí en 0.001 segundos y no congela la página
-    print(f"❌ Firebase aislado de forma segura para evitar bucles: {e}")
+    print(f"❌ Error crítico en motor Firebase: {e}")
+    db = None
+
 
 def obtener_cliente_logueado():
     nit_usuario = request.cookies.get('cliente_nit')
