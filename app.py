@@ -36,10 +36,10 @@ if config_firebase_env:
         else:
             firebase_app = firebase_admin._apps
             
-        # 🔗 EL TIRO DE GRACIA: Forzamos a Firestore a usar HTTP puro (REST) para saltarse el Firewall de Vercel
+        # 🔗 EL TIRO DE GRACIA: Desactivamos gRPC y obligamos a Firebase a usar HTTP REST puro
         db = firestore.client(app=firebase_app)
         db._firestore_api_options = {"use_rest": True}
-        print("🚀 ¡Conexión Firestore Blindada sobre HTTP Establecida!")
+        print("🚀 ¡Conexión Firestore Blindada sobre HTTP REST Establecida!")
 
     except Exception as e:
         print(f"❌ Error al procesar JSON de Firebase: {e}")
