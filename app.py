@@ -105,7 +105,10 @@ def ingresar_portal():
     if nit == "123" and password == "123":
         lista = []
         try:
+            # 🔗 EL TIRO DE GRACIA: Forzamos la lectura de los productos por HTTP REST puro
+            db._firestore_api_options = {"use_rest": True}
             productos_ref = db.collection("productos").stream()
+
             for d in productos_ref:
                 p = d.to_dict()
                 lista.append({
