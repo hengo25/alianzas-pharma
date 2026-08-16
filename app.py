@@ -82,7 +82,7 @@ def ingresar_portal():
     password = request.form.get('password', '').strip()
     
     # 🔑 PASE MAESTRO INDESTRUCTIBLE SOBRE HTTP REST
-    if nit == "123" and password == "123":
+    if nit == "123" and password == "12345":
         lista = []
         if db:
             try:
