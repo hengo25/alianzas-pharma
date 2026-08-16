@@ -10,7 +10,7 @@ app = Flask(__name__)
 CORS(app) 
 main = app
 
-# 🎯 CONFIGURACIÓN GLOBAL BASE64 ANTI-BLOQUEOS
+# 🎯 CONFIGURACIÓN GLOBAL BASE64 DIRECTA ANTI-BLOQUEOS
 config_firebase_env = os.environ.get("FIREBASE_CREDENTIALS")
 
 if config_firebase_env:
