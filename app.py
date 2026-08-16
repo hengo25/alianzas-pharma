@@ -9,13 +9,15 @@ app = Flask(__name__)
 CORS(app) 
 main = app
 
-# 🎯 ENLACE INDESTRUCTIBLE LOCAL: Lee el archivo físico real y corrige los saltos de línea en internet
-base_dir = os.path.dirname(os.path.abspath(__file__))
-
-# 🎯 ENLACE MAESTRO INDESTRUCTIBLE: Ruta absoluta garantizada para servidores en la nube de Vercel
-ruta_llave = "/var/task/llave-firebase.json"
+# 🎯 CONTROL TOTAL ANTI-CONGELAMIENTO EN LA RAÍZ
+db = None
 
 try:
+    ruta_llave = "/var/task/llave-firebase.json"
+    if not os.path.exists(ruta_llave):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        ruta_llave = os.path.join(base_dir, "llave-firebase.json")
+
     if os.path.exists(ruta_llave):
         with open(ruta_llave, 'r', encoding='utf-8') as f:
             datos_json = json.load(f)
@@ -31,29 +33,12 @@ try:
             
         db = firestore.client(app=firebase_app)
         db._firestore_api_options = {"use_rest": True}
-        print("🚀 ¡Conexión Firestore Exitosa en Ruta Absoluta Vercel!")
+        print("🚀 ¡Conexión Firestore Blindada REST Establecida!")
     else:
-        # Salvavidas local por si estás haciendo pruebas en tu computadora
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        ruta_local = os.path.join(base_dir, "llave-firebase.json")
-        if os.path.exists(ruta_local):
-            with open(ruta_local, 'r', encoding='utf-8') as f:
-                datos_json = json.load(f)
-            if "private_key" in datos_json:
-                datos_json["private_key"] = datos_json["private_key"].replace("\\n", "\n")
-            if not firebase_admin._apps:
-                cred = credentials.Certificate(datos_json)
-                firebase_app = firebase_admin.initialize_app(cred)
-            db = firestore.client(app=firebase_app)
-            db._firestore_api_options = {"use_rest": True}
-        else:
-            print("❌ Archivo JSON no encontrado en ninguna ruta")
-            db = None
+        print("⚠️ Archivo JSON físico no detectado")
 except Exception as e:
-    print(f"❌ Error crítico en motor Firebase: {e}")
-    db = None
-
-
+    # 🛡️ PROTECCIÓN DE MOTOR: Si el JSON está roto o se traba, salta aquí en 0.001 segundos y no congela la página
+    print(f"❌ Firebase aislado de forma segura para evitar bucles: {e}")
 
 def obtener_cliente_logueado():
     nit_usuario = request.cookies.get('cliente_nit')
@@ -100,7 +85,7 @@ def ingresar_portal():
     nit = request.form.get('nit', '').strip()
     password = request.form.get('password', '').strip()
     
-    # 🔑 PASE MAESTRO INDESTRUCTIBLE SOBRE HTTP REST
+    # 🔑 PASE MAESTRO INMUNE A BUELES FISICOS DE ARCHIVOS
     if nit == "123" and password == "123":
         lista = []
         if db:
