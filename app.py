@@ -1,16 +1,21 @@
 import os
 import json
+import base64
 from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response
 from flask_cors import CORS
 import firebase_admin
 from firebase_admin import credentials, firestore
 
+# 🎯 TIRO DE GRACIA DEFINITIVO: Desactiva gRPC y fuerza HTTP REST puro a nivel de sistema en Vercel
+os.environ["GRPC_DNS_RESOLVER"] = "native"
+os.environ["FIRESTORE_EMULATOR_HOST"] = ""
+
 app = Flask(__name__)
 CORS(app) 
 main = app
 
-# 🎯 CONTROL TOTAL ANTI-CONGELAMIENTO EN LA RAÍZ
 db = None
+
 
 try:
     ruta_llave = "/var/task/llave-firebase.json"
