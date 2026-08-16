@@ -1,5 +1,6 @@
 import os
 import json
+import base64
 from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response
 from flask_cors import CORS
 import firebase_admin
@@ -9,12 +10,15 @@ app = Flask(__name__)
 CORS(app) 
 main = app
 
-# 🎯 ENLACE INDESTRUCTIBLE TEXTO PLANO VERCEL: Conexión nativa directa sobre HTTP REST
-config_firebase_env = os.environ.get("FIREBASE_CREDENTIALS")
+# 🎯 ENLACE INDESTRUCTIBLE SOLDADO: Tu llave Base64 inyectada directamente en el corazón del código
+LLAVE_SECRETA_BASE64 = "PASE_AQUÍ_EL_BLOQUE_GIGANTE_DE_LETRAS_CORRIDAS_DE_BASE64"
 
-if config_firebase_env:
+if LLAVE_SECRETA_BASE64:
     try:
-        credenciales_directas = json.loads(config_firebase_env)
+        # Restauramos matemáticamente el JSON en la memoria del servidor libre de saltos de línea rotos
+        decoded_bytes = base64.b64decode(LLAVE_SECRETA_BASE64.strip())
+        credenciales_directas = json.loads(decoded_bytes.decode("utf-8"))
+            
         if not firebase_admin._apps:
             if "private_key" in credenciales_directas:
                 credenciales_directas["private_key"] = credenciales_directas["private_key"].replace("\\n", "\n")
@@ -77,7 +81,7 @@ def ingresar_portal():
     nit = request.form.get('nit', '').strip()
     password = request.form.get('password', '').strip()
     
-    # 🔑 PASE MAESTRO INDESTRUCTIBLE SOBRE HTTP REST DIRECTO
+    # 🔑 PASE MAESTRO INDESTRUCTIBLE SOBRE HTTP REST
     if nit == "123" and password == "123":
         lista = []
         if db:
