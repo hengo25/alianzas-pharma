@@ -1,6 +1,5 @@
 import os
 import json
-import base64
 from flask import Flask, render_template, request, redirect, url_for, jsonify, make_response
 from flask_cors import CORS
 import firebase_admin
@@ -10,17 +9,12 @@ app = Flask(__name__)
 CORS(app) 
 main = app
 
-# 🎯 CONFIGURACIÓN GLOBAL BASE64 DIRECTA ANTI-BLOQUEOS
+# 🎯 ENLACE INDESTRUCTIBLE TEXTO PLANO VERCEL: Conexión nativa directa sobre HTTP REST
 config_firebase_env = os.environ.get("FIREBASE_CREDENTIALS")
 
 if config_firebase_env:
     try:
-        try:
-            decoded_bytes = base64.b64decode(config_firebase_env.strip())
-            credenciales_directas = json.loads(decoded_bytes.decode("utf-8"))
-        except:
-            credenciales_directas = json.loads(config_firebase_env)
-            
+        credenciales_directas = json.loads(config_firebase_env)
         if not firebase_admin._apps:
             if "private_key" in credenciales_directas:
                 credenciales_directas["private_key"] = credenciales_directas["private_key"].replace("\\n", "\n")
@@ -31,7 +25,7 @@ if config_firebase_env:
             
         db = firestore.client(app=firebase_app)
         db._firestore_api_options = {"use_rest": True}
-        print("🚀 ¡Conexión Firestore Global en HTTP REST Establecida!")
+        print("🚀 ¡Conexión Firestore Global en HTTP REST Establecida con Éxito!")
     except Exception as e:
         print(f"❌ Error Firebase: {e}")
         db = None
@@ -83,7 +77,7 @@ def ingresar_portal():
     nit = request.form.get('nit', '').strip()
     password = request.form.get('password', '').strip()
     
-    # 🔑 PASE MAESTRO INDESTRUCTIBLE SOBRE HTTP REST
+    # 🔑 PASE MAESTRO INDESTRUCTIBLE SOBRE HTTP REST DIRECTO
     if nit == "123" and password == "123":
         lista = []
         if db:
