@@ -10,7 +10,8 @@ from flask import (
     request,
     redirect,
     url_for,
-    make_response
+    make_response,
+    send_from_directory
 )
 
 from flask_cors import CORS
@@ -26,8 +27,14 @@ from google.auth.transport.requests import Request
 app = Flask(__name__)
 CORS(app)
 
-# Vercel reconoce "app" directamente
 main = app
+
+
+@app.route('/imagenes/<path:nombre>')
+def servir_imagen(nombre):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    carpeta_public = os.path.join(base_dir, 'public')
+    return send_from_directory(carpeta_public, nombre)
 
 
 # =========================================================
@@ -768,9 +775,11 @@ def obtener_productos():
             "precio": precio,
 
             'imagen': (
-              producto.get("imagen", "/placeholder.jpg")
-             .replace("/static/", "/")
-             .replace("/public/", "/")
+                "/imagenes/" +
+                producto.get("imagen", "placeholder.jpg")
+                .replace("/static/", "")
+                .replace("/public/", "")
+                .lstrip("/")
             ),
             
 
