@@ -3,14 +3,14 @@
   "routes": [
     {
       "src": "/ingresar-portal",
-      "dest": "/app.py"
+      "dest": "app.py"
     },
     {
       "handle": "filesystem"
     },
     {
       "src": "/(.*)",
-      "dest": "/app.py"
+      "dest": "app.py"
     }
   ]
 }
