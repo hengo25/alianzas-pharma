@@ -94,34 +94,21 @@ def ingresar_portal():
     # 🔑 PASE MAESTRO INDESTRUCTIBLE SOBRE HTTP REST
     if nit == "123" and password == "123":
         lista = []
-    if db:
-        try:
-            # 🛡️ LIMPIEZA DE ENTRADA: Eliminamos cualquier espacio accidental
-            nit_limpio = nit.strip()
-            password_limpio = password.strip()
-            
-            # 1️⃣ Intento de búsqueda tradicional (ID como Texto)
-            doc = db.collection("clientes").document(nit_limpio).get()
-            
-            # 2️⃣ Intento de contingencia (Por si el ID se guardó como Número en Firebase)
-            if not doc.exists:
-                try:
-                    doc = db.collection("clientes").document(str(int(nit_limpio))).get()
-                except:
-                    pass
-            
-            if doc.exists:
-                datos_cliente = doc.to_dict()
-                # Traducimos los campos a texto para que la comparación sea matemática y exacta
-                pass_db = str(datos_cliente.get('password', '')).strip()
-                
-                if pass_db == password_limpio:
-                    resp = make_response(redirect(url_for('inicio')))
-                    resp.set_cookie('cliente_nit', nit_limpio, path='/', httponly=True, secure=True, samesite='None')
-                    return resp
-        except Exception as e:
-            print(f"Error login: {e}")
-
+        if db:
+            try:
+                productos_ref = db.collection("productos").stream()
+                for d in productos_ref:
+                    p = d.to_dict()
+                    lista.append({
+                        "id": d.id, 
+                        "nombre": p.get("nombre", "Medicamento sin nombre"), 
+                        "precio": int(p.get("precio", 0)), 
+                        "imagen": p.get("imagen", "/public/placeholder.jpg"), 
+                        "existencias": int(p.get("existencias", 0))
+                    })
+                lista.sort(key=lambda x: x["nombre"].lower())
+            except:
+                pass
         
         if not lista:
             lista = [{"id": "0", "nombre": "Kit Inicial de Prueba Pharma", "precio": 150000, "imagen": "/public/placeholder.jpg", "existencias": 10}]
@@ -130,6 +117,36 @@ def ingresar_portal():
         resp = make_response(render_template('index.html', productos=lista, cliente=cliente_data))
         resp.set_cookie('cliente_nit', nit, path='/', httponly=True, secure=True, samesite='None')
         return resp
+
+    # 🛡️ BÚSQUEDA BLINDADA PARA EL NIT REAL (BUSCA POR TEXTO O POR NÚMERO)
+    if db:
+        try:
+            nit_limpio = nit.strip()
+            password_limpio = password.strip()
+            
+            # Intentar buscar por ID de tipo texto (ej. "80230881")
+            doc = db.collection("clientes").document(nit_limpio).get()
+            
+            # Si no existe, intentar buscar por ID convirtiéndolo a número por si acaso
+            if not doc.exists:
+                try:
+                    doc = db.collection("clientes").document(str(int(nit_limpio))).get()
+                except:
+                    pass
+            
+            if doc.exists:
+                datos_cliente = doc.to_dict()
+                pass_db = str(datos_cliente.get('password', '')).strip()
+                
+                if pass_db == password_limpio:
+                    resp = make_response(redirect(url_for('inicio')))
+                    resp.set_cookie('cliente_nit', nit_limpio, path='/', httponly=True, secure=True, samesite='None')
+                    return resp
+        except Exception as e:
+            print(f"Error login Firebase: {e}")
+        
+        return """<html><head><title>Error</title><style>body{font-family:sans-serif;background:#f4f6f9;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;} .box{background:white;padding:40px;border-radius:16px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.05);}</style></head><body><div class="box"><h2>❌ Datos Incorrectos</h2><p>El NIT o la contraseña secreta no coinciden.</p><a href="/" style="background:#3498db;color:white;padding:10px 20px;border-radius:20px;text-decoration:none;font-weight:bold;display:inline-block;margin-top:15px;">Intentar de Nuevo</a></div></body></html>"""
+
 
     if db:
         try:
