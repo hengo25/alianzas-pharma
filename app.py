@@ -23,12 +23,12 @@ try:
         ruta_llave = os.path.join(base_dir, "llave-firebase.json")
 
     if os.path.exists(ruta_llave):
-        # 🛡️ APERTURA LIMPIA: Leemos el archivo de texto original
+        # 🛡️ APERTURA PROTEGIDA: Abrimos tu archivo JSON físico real en internet
         with open(ruta_llave, 'r', encoding='utf-8') as f:
             datos_json = json.load(f)
             
         if "private_key" in datos_json:
-            # 🔄 EL TRUCO DE ORO: Convierte el texto \n en saltos de línea reales de internet
+            # 🔄 EL TRUCO DE ORO: Traduce las marcas de texto \n por Enters reales en la nube
             datos_json["private_key"] = datos_json["private_key"].replace("\\n", "\n")
             
         if not firebase_admin._apps:
@@ -46,6 +46,7 @@ try:
 except Exception as e:
     print(f"❌ Error crítico en motor Firebase: {e}")
     db = None
+
 
 
 def obtener_cliente_logueado():
