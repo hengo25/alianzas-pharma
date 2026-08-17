@@ -775,9 +775,9 @@ def obtener_productos():
             "precio": precio,
 
             'imagen': (
-                "/imagenes/" +
-                producto.get("imagen", "placeholder.jpg")
-                .replace("/static/", "")
+                "/" +
+                 producto.get("imagen", "placeholder.jpg")
+                 .replace("/static/", "")
                 .replace("/public/", "")
                 .lstrip("/")
             ),
