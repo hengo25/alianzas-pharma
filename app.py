@@ -767,10 +767,11 @@ def obtener_productos():
 
             "precio": precio,
 
-            "imagen": producto.get(
-                "imagen",
-                "/public/placeholder.jpg"
+            'imagen': producto.get(
+                'imagen',
+                '/placeholder.jpg'
             ),
+            
 
             "existencias": existencias
 
