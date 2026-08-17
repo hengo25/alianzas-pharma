@@ -1,6 +1,7 @@
 import os
 import json
 from urllib.parse import quote
+from urllib.parse import quote
 
 import requests
 
@@ -773,14 +774,16 @@ def obtener_productos():
             ),
 
             "precio": precio,
-
             'imagen': (
-               "/" +
-               producto.get("imagen", "placeholder.jpg")
-               .replace("/static/", "")
-               .replace("/public/", "")
-               .lstrip("/")
+              "/"
+                 + quote(
+                     producto.get("imagen", "placeholder.jpg")
+                     .replace("/static/", "")
+                     .replace("/public/", "")
+                     .lstrip("/")
+                 )
             ),
+            
 
             "existencias": existencias
 
