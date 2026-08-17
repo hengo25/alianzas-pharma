@@ -1,5 +1,5 @@
-Flask==3.0.2
-firebase-admin==6.2.0
-reportlab==4.1.0
-gunicorn==21.2.0
-Flask-CORS==4.0.0
+Flask
+flask-cors
+firebase-admin==7.5.0
+google-cloud-firestore==2.28.0
+gunicorn
