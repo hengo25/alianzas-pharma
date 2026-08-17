@@ -775,13 +775,12 @@ def obtener_productos():
             "precio": precio,
 
             'imagen': (
-                "/" +
-                 producto.get("imagen", "placeholder.jpg")
-                 .replace("/static/", "")
-                .replace("/public/", "")
-                .lstrip("/")
+               "/" +
+               producto.get("imagen", "placeholder.jpg")
+               .replace("/static/", "")
+               .replace("/public/", "")
+               .lstrip("/")
             ),
-            
 
             "existencias": existencias
 
