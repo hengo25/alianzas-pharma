@@ -1,11 +1,22 @@
 import os
 import json
+from urllib.parse import quote
 
-from flask import Flask, render_template, request, redirect, url_for, make_response
+import requests
+
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    make_response
+)
+
 from flask_cors import CORS
 
-import firebase_admin
-from firebase_admin import credentials, firestore
+from google.oauth2 import service_account
+from google.auth.transport.requests import Request
 
 
 # =========================================================
@@ -15,119 +26,662 @@ from firebase_admin import credentials, firestore
 app = Flask(__name__)
 CORS(app)
 
+# Vercel reconoce "app" directamente
 main = app
 
 
 # =========================================================
-# FIREBASE
+# CONFIGURACIÓN FIREBASE REST
 # =========================================================
 
-db = None
+FIRESTORE_SCOPE = "https://www.googleapis.com/auth/datastore"
+
+firebase_credentials = None
+firebase_project_id = None
 
 
-def inicializar_firebase():
-    global db
+# =========================================================
+# CARGAR LLAVE FIREBASE
+# =========================================================
 
-    try:
-        print("========================================")
-        print("🔥 INICIANDO FIREBASE")
-        print("========================================")
+try:
 
-        # Si Firebase ya fue inicializado
-        if firebase_admin._apps:
-            firebase_app = firebase_admin.get_app()
-            db = firestore.client(app=firebase_app)
+    base_dir = os.path.dirname(
+        os.path.abspath(__file__)
+    )
 
-            print("✅ Firebase ya estaba inicializado")
-            print("✅ Firestore listo")
+    ruta_llave = os.path.join(
+        base_dir,
+        "llave-firebase.json"
+    )
 
-            return db
+    print("========================================")
+    print("🔎 BUSCANDO LLAVE FIREBASE")
+    print(ruta_llave)
+    print("========================================")
 
-        # -------------------------------------------------
-        # Buscar archivo de credenciales
-        # -------------------------------------------------
+    if not os.path.exists(ruta_llave):
 
-        base_dir = os.path.dirname(os.path.abspath(__file__))
+        ruta_alternativa = "/var/task/llave-firebase.json"
 
-        ruta_llave = os.path.join(
-            base_dir,
-            "llave-firebase.json"
-        )
-
-        print(f"🔎 Buscando llave Firebase en: {ruta_llave}")
-
-        if not os.path.exists(ruta_llave):
-
-            print("❌ NO SE ENCONTRÓ llave-firebase.json")
-
-            return None
-
-        # -------------------------------------------------
-        # Leer credenciales
-        # -------------------------------------------------
-
-        with open(
-            ruta_llave,
-            "r",
-            encoding="utf-8"
-        ) as archivo:
-
-            datos_json = json.load(archivo)
-
-        print("✅ Archivo Firebase encontrado")
-
-        # -------------------------------------------------
-        # Corregir private_key
-        # -------------------------------------------------
-
-        if "private_key" in datos_json:
-
-            datos_json["private_key"] = (
-                datos_json["private_key"]
-                .replace("\\n", "\n")
+        if os.path.exists(ruta_alternativa):
+            ruta_llave = ruta_alternativa
+        else:
+            raise FileNotFoundError(
+                f"No existe llave-firebase.json en: {ruta_llave}"
             )
 
-        # -------------------------------------------------
-        # Inicializar Firebase
-        # -------------------------------------------------
+    with open(
+        ruta_llave,
+        "r",
+        encoding="utf-8"
+    ) as archivo:
 
-        cred = credentials.Certificate(
-            datos_json
+        datos_firebase = json.load(archivo)
+
+
+    # -----------------------------------------------------
+    # CORREGIR PRIVATE KEY
+    # -----------------------------------------------------
+
+    if "private_key" in datos_firebase:
+
+        datos_firebase["private_key"] = (
+            datos_firebase["private_key"]
+            .replace("\\n", "\n")
         )
 
-        firebase_app = firebase_admin.initialize_app(
-            cred
+
+    firebase_project_id = datos_firebase.get(
+        "project_id"
+    )
+
+    if not firebase_project_id:
+
+        raise ValueError(
+            "La llave Firebase no contiene project_id"
         )
 
-        print("✅ Firebase Admin inicializado")
 
-        # -------------------------------------------------
-        # Firestore
-        # -------------------------------------------------
+    # -----------------------------------------------------
+    # CREAR CREDENCIALES
+    # -----------------------------------------------------
 
-        db = firestore.client(
-            app=firebase_app
+    firebase_credentials = (
+        service_account.Credentials.from_service_account_info(
+            datos_firebase,
+            scopes=[FIRESTORE_SCOPE]
+        )
+    )
+
+
+    print("========================================")
+    print("✅ LLAVE FIREBASE CARGADA")
+    print(f"📁 Proyecto: {firebase_project_id}")
+    print("========================================")
+
+
+except Exception as e:
+
+    firebase_credentials = None
+
+    print("========================================")
+    print("❌ ERROR CARGANDO FIREBASE")
+    print(str(e))
+    print("========================================")
+
+
+# =========================================================
+# OBTENER TOKEN GOOGLE
+# =========================================================
+
+def obtener_token_firebase():
+
+    if not firebase_credentials:
+
+        raise RuntimeError(
+            "Las credenciales de Firebase no están disponibles."
         )
 
-        print("✅ Firestore conectado")
-        print("========================================")
+    try:
 
-        return db
+        if not firebase_credentials.valid:
+
+            firebase_credentials.refresh(
+                Request()
+            )
+
+        return firebase_credentials.token
 
     except Exception as e:
 
-        print("========================================")
-        print("❌ ERROR INICIALIZANDO FIREBASE")
-        print(str(e))
-        print("========================================")
+        print(
+            f"❌ Error obteniendo token Firebase: {e}"
+        )
 
-        db = None
+        raise
+
+
+# =========================================================
+# URL BASE FIRESTORE REST
+# =========================================================
+
+def firestore_base_url():
+
+    if not firebase_project_id:
+
+        raise RuntimeError(
+            "No existe firebase_project_id."
+        )
+
+    return (
+        "https://firestore.googleapis.com/v1/"
+        f"projects/{quote(firebase_project_id, safe='')}"
+        "/databases/(default)/documents"
+    )
+
+
+# =========================================================
+# HEADERS FIRESTORE
+# =========================================================
+
+def firestore_headers():
+
+    token = obtener_token_firebase()
+
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+
+
+# =========================================================
+# CONVERTIR FIRESTORE VALUE -> PYTHON
+# =========================================================
+
+def firestore_value_to_python(value):
+
+    if not isinstance(value, dict):
+        return None
+
+    if "stringValue" in value:
+        return value["stringValue"]
+
+    if "integerValue" in value:
+
+        try:
+            return int(value["integerValue"])
+        except:
+            return 0
+
+    if "doubleValue" in value:
+
+        try:
+            return float(value["doubleValue"])
+        except:
+            return 0
+
+    if "booleanValue" in value:
+        return value["booleanValue"]
+
+    if "nullValue" in value:
+        return None
+
+    if "timestampValue" in value:
+        return value["timestampValue"]
+
+    if "referenceValue" in value:
+        return value["referenceValue"]
+
+    if "bytesValue" in value:
+        return value["bytesValue"]
+
+    if "geoPointValue" in value:
+        return value["geoPointValue"]
+
+    if "arrayValue" in value:
+
+        values = value["arrayValue"].get(
+            "values",
+            []
+        )
+
+        return [
+            firestore_value_to_python(v)
+            for v in values
+        ]
+
+    if "mapValue" in value:
+
+        fields = value["mapValue"].get(
+            "fields",
+            {}
+        )
+
+        return firestore_fields_to_python(
+            fields
+        )
+
+    return None
+
+
+# =========================================================
+# CONVERTIR FIRESTORE FIELDS -> PYTHON
+# =========================================================
+
+def firestore_fields_to_python(fields):
+
+    resultado = {}
+
+    if not fields:
+        return resultado
+
+    for nombre, valor in fields.items():
+
+        resultado[nombre] = (
+            firestore_value_to_python(valor)
+        )
+
+    return resultado
+
+
+# =========================================================
+# CONVERTIR PYTHON -> FIRESTORE VALUE
+# =========================================================
+
+def python_to_firestore_value(value):
+
+    if value is None:
+
+        return {
+            "nullValue": None
+        }
+
+    if isinstance(value, bool):
+
+        return {
+            "booleanValue": value
+        }
+
+    if isinstance(value, int):
+
+        return {
+            "integerValue": str(value)
+        }
+
+    if isinstance(value, float):
+
+        return {
+            "doubleValue": value
+        }
+
+    if isinstance(value, str):
+
+        return {
+            "stringValue": value
+        }
+
+    if isinstance(value, list):
+
+        return {
+            "arrayValue": {
+                "values": [
+                    python_to_firestore_value(v)
+                    for v in value
+                ]
+            }
+        }
+
+    if isinstance(value, dict):
+
+        return {
+            "mapValue": {
+                "fields": {
+                    k: python_to_firestore_value(v)
+                    for k, v in value.items()
+                }
+            }
+        }
+
+    return {
+        "stringValue": str(value)
+    }
+
+
+# =========================================================
+# CONVERTIR PYTHON DICT -> FIRESTORE FIELDS
+# =========================================================
+
+def python_to_firestore_fields(data):
+
+    return {
+        key: python_to_firestore_value(value)
+        for key, value in data.items()
+    }
+
+
+# =========================================================
+# OBTENER DOCUMENTO FIRESTORE
+# =========================================================
+
+def obtener_documento(
+    coleccion,
+    documento_id
+):
+
+    try:
+
+        url = (
+            firestore_base_url()
+            + "/"
+            + quote(
+                coleccion,
+                safe=""
+            )
+            + "/"
+            + quote(
+                documento_id,
+                safe=""
+            )
+        )
+
+        print(
+            f"🔎 FIRESTORE GET: {coleccion}/{documento_id}"
+        )
+
+        respuesta = requests.get(
+            url,
+            headers=firestore_headers(),
+            timeout=10
+        )
+
+
+        # -------------------------------------------------
+        # NO EXISTE
+        # -------------------------------------------------
+
+        if respuesta.status_code == 404:
+
+            print(
+                f"⚠️ Documento no existe: "
+                f"{coleccion}/{documento_id}"
+            )
+
+            return None
+
+
+        # -------------------------------------------------
+        # ERROR
+        # -------------------------------------------------
+
+        if not respuesta.ok:
+
+            print(
+                "❌ Firestore GET ERROR:"
+            )
+
+            print(
+                respuesta.status_code
+            )
+
+            print(
+                respuesta.text[:1000]
+            )
+
+            return None
+
+
+        documento = respuesta.json()
+
+        return firestore_fields_to_python(
+            documento.get(
+                "fields",
+                {}
+            )
+        )
+
+
+    except requests.Timeout:
+
+        print(
+            "❌ FIRESTORE TIMEOUT"
+        )
 
         return None
 
 
-# Inicializar Firebase
-inicializar_firebase()
+    except Exception as e:
+
+        print(
+            f"❌ ERROR obteniendo documento: {e}"
+        )
+
+        return None
+
+
+# =========================================================
+# LISTAR COLECCIÓN FIRESTORE
+# =========================================================
+
+def obtener_coleccion(
+    coleccion
+):
+
+    documentos = []
+
+    try:
+
+        url = (
+            firestore_base_url()
+            + "/"
+            + quote(
+                coleccion,
+                safe=""
+            )
+        )
+
+        page_token = None
+
+
+        while True:
+
+            params = {
+                "pageSize": 100
+            }
+
+            if page_token:
+
+                params["pageToken"] = page_token
+
+
+            print(
+                f"📦 FIRESTORE LIST: {coleccion}"
+            )
+
+
+            respuesta = requests.get(
+                url,
+                headers=firestore_headers(),
+                params=params,
+                timeout=15
+            )
+
+
+            if not respuesta.ok:
+
+                print(
+                    "❌ FIRESTORE LIST ERROR:"
+                )
+
+                print(
+                    respuesta.status_code
+                )
+
+                print(
+                    respuesta.text[:1000]
+                )
+
+                break
+
+
+            datos = respuesta.json()
+
+
+            for documento in datos.get(
+                "documents",
+                []
+            ):
+
+                nombre_documento = documento.get(
+                    "name",
+                    ""
+                )
+
+                documento_id = (
+                    nombre_documento.split("/")[-1]
+                )
+
+
+                campos = (
+                    firestore_fields_to_python(
+                        documento.get(
+                            "fields",
+                            {}
+                        )
+                    )
+                )
+
+
+                campos["_id"] = documento_id
+
+                documentos.append(
+                    campos
+                )
+
+
+            page_token = datos.get(
+                "nextPageToken"
+            )
+
+
+            if not page_token:
+                break
+
+
+        print(
+            f"✅ Firestore devolvió "
+            f"{len(documentos)} documentos de {coleccion}"
+        )
+
+        return documentos
+
+
+    except requests.Timeout:
+
+        print(
+            f"❌ TIMEOUT cargando {coleccion}"
+        )
+
+        return []
+
+
+    except Exception as e:
+
+        print(
+            f"❌ ERROR cargando {coleccion}: {e}"
+        )
+
+        return []
+
+
+# =========================================================
+# CREAR / ACTUALIZAR DOCUMENTO
+# =========================================================
+
+def guardar_documento(
+    coleccion,
+    documento_id,
+    datos
+):
+
+    try:
+
+        url = (
+            firestore_base_url()
+            + "/"
+            + quote(
+                coleccion,
+                safe=""
+            )
+            + "/"
+            + quote(
+                documento_id,
+                safe=""
+            )
+        )
+
+
+        cuerpo = {
+            "fields": python_to_firestore_fields(
+                datos
+            )
+        }
+
+
+        print(
+            f"💾 FIRESTORE SAVE: "
+            f"{coleccion}/{documento_id}"
+        )
+
+
+        respuesta = requests.patch(
+            url,
+            headers=firestore_headers(),
+            json=cuerpo,
+            timeout=10
+        )
+
+
+        if not respuesta.ok:
+
+            print(
+                "❌ FIRESTORE SAVE ERROR:"
+            )
+
+            print(
+                respuesta.status_code
+            )
+
+            print(
+                respuesta.text[:1000]
+            )
+
+            return False
+
+
+        print(
+            "✅ Documento guardado correctamente"
+        )
+
+        return True
+
+
+    except requests.Timeout:
+
+        print(
+            "❌ TIMEOUT guardando documento"
+        )
+
+        return False
+
+
+    except Exception as e:
+
+        print(
+            f"❌ ERROR guardando documento: {e}"
+        )
+
+        return False
 
 
 # =========================================================
@@ -140,115 +694,92 @@ def obtener_cliente_logueado():
         "cliente_nit"
     )
 
+
     if not nit_usuario:
-        return None
-
-    if not db:
-        print("⚠️ obtener_cliente_logueado: Firebase no disponible")
-        return None
-
-    try:
-
-        print(
-            f"🔎 Buscando cliente conectado: {nit_usuario}"
-        )
-
-        doc = (
-            db
-            .collection("clientes")
-            .document(nit_usuario)
-            .get(timeout=10)
-        )
-
-        if doc.exists:
-
-            print(
-                f"✅ Cliente encontrado: {nit_usuario}"
-            )
-
-            return doc.to_dict()
-
-        print(
-            f"⚠️ Cliente no encontrado: {nit_usuario}"
-        )
 
         return None
 
-    except Exception as e:
 
-        print(
-            f"❌ Error buscando cliente: {e}"
-        )
-
-        return None
+    return obtener_documento(
+        "clientes",
+        nit_usuario
+    )
 
 
 # =========================================================
-# CARGAR PRODUCTOS
+# PRODUCTOS
 # =========================================================
 
 def obtener_productos():
 
     lista = []
 
-    if not db:
 
-        print(
-            "⚠️ obtener_productos: Firebase no disponible"
-        )
+    documentos = obtener_coleccion(
+        "productos"
+    )
 
-        return lista
 
-    try:
+    for producto in documentos:
 
-        print("📦 Consultando colección productos...")
+        try:
 
-        productos_ref = (
-            db
-            .collection("productos")
-            .stream()
-        )
-
-        for doc in productos_ref:
-
-            p = doc.to_dict()
-
-            lista.append({
-
-                "id": doc.id,
-
-                "nombre": p.get(
-                    "nombre",
-                    "Medicamento sin nombre"
-                ),
-
-                "precio": int(
-                    p.get("precio", 0)
-                ),
-
-                "imagen": p.get(
-                    "imagen",
-                    "/public/placeholder.jpg"
-                ),
-
-                "existencias": int(
-                    p.get("existencias", 0)
+            precio = int(
+                producto.get(
+                    "precio",
+                    0
                 )
-            })
+            )
 
-        lista.sort(
-            key=lambda x: x["nombre"].lower()
-        )
+        except:
 
-        print(
-            f"✅ Productos cargados: {len(lista)}"
-        )
+            precio = 0
 
-    except Exception as e:
 
-        print(
-            f"❌ Error cargando productos: {e}"
-        )
+        try:
+
+            existencias = int(
+                producto.get(
+                    "existencias",
+                    0
+                )
+            )
+
+        except:
+
+            existencias = 0
+
+
+        lista.append({
+
+            "id": producto.get(
+                "_id",
+                ""
+            ),
+
+            "nombre": producto.get(
+                "nombre",
+                "Medicamento sin nombre"
+            ),
+
+            "precio": precio,
+
+            "imagen": producto.get(
+                "imagen",
+                "/public/placeholder.jpg"
+            ),
+
+            "existencias": existencias
+
+        })
+
+
+    lista.sort(
+        key=lambda x: str(
+            x["nombre"]
+        ).lower()
+    )
+
 
     return lista
 
@@ -261,6 +792,7 @@ def obtener_productos():
 def inicio():
 
     cliente = obtener_cliente_logueado()
+
 
     # -----------------------------------------------------
     # NO HAY SESIÓN
@@ -305,7 +837,8 @@ width:320px;
 }
 
 input{
-width:92%;
+box-sizing:border-box;
+width:100%;
 padding:12px;
 margin-bottom:12px;
 border:1px solid #cbd5e1;
@@ -330,6 +863,18 @@ box-shadow:0 4px 12px rgba(52,152,219,0.2);
 
 .btn:hover{
 background:#2980b9;
+}
+
+.links{
+display:flex;
+justify-content:space-between;
+margin-top:25px;
+}
+
+.links a{
+text-decoration:none;
+font-size:0.85rem;
+font-weight:600;
 }
 
 </style>
@@ -389,34 +934,18 @@ Iniciar Sesión
 
 </form>
 
-<div
-style="
-display:flex;
-justify-content:space-between;
-margin-top:25px;
-"
->
+<div class="links">
 
 <a
 href="/registro-cliente"
-style="
-color:#3498db;
-text-decoration:none;
-font-size:0.85rem;
-font-weight:600;
-"
+style="color:#3498db;"
 >
 Crear Cuenta
 </a>
 
 <a
 href="/recuperar-clave"
-style="
-color:#e67e22;
-text-decoration:none;
-font-size:0.85rem;
-font-weight:600;
-"
+style="color:#e67e22;"
 >
 Olvidé mi clave
 </a>
@@ -430,11 +959,13 @@ Olvidé mi clave
 </html>
 """
 
+
     # -----------------------------------------------------
     # USUARIO LOGUEADO
     # -----------------------------------------------------
 
     lista = obtener_productos()
+
 
     return render_template(
         "index.html",
@@ -463,10 +994,12 @@ def ingresar_portal():
         ""
     ).strip()
 
+
     print("========================================")
     print("🔐 INTENTO DE LOGIN")
     print(f"NIT recibido: {nit}")
     print("========================================")
+
 
     # -----------------------------------------------------
     # DATOS VACÍOS
@@ -478,10 +1011,10 @@ def ingresar_portal():
 <html>
 <head>
 <title>Datos incompletos</title>
+</head>
 
-<style>
-
-body{
+<body
+style="
 font-family:sans-serif;
 background:#f4f6f9;
 display:flex;
@@ -489,34 +1022,18 @@ align-items:center;
 justify-content:center;
 height:100vh;
 margin:0;
-}
+"
+>
 
-.box{
+<div
+style="
 background:white;
 padding:40px;
 border-radius:16px;
 text-align:center;
 box-shadow:0 10px 25px rgba(0,0,0,0.05);
-}
-
-a{
-background:#3498db;
-color:white;
-padding:10px 20px;
-border-radius:20px;
-text-decoration:none;
-font-weight:bold;
-display:inline-block;
-margin-top:15px;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="box">
+"
+>
 
 <h2>⚠️ Datos incompletos</h2>
 
@@ -524,52 +1041,9 @@ margin-top:15px;
 Debes ingresar el NIT y la contraseña.
 </p>
 
-<a href="/">
-Intentar de Nuevo
-</a>
-
-</div>
-
-</body>
-</html>
-"""
-
-    # -----------------------------------------------------
-    # FIREBASE NO CONECTADO
-    # -----------------------------------------------------
-
-    if not db:
-
-        print(
-            "❌ LOGIN: Firebase no está conectado."
-        )
-
-        return """
-<html>
-<head>
-<title>Error de conexión</title>
-
-<style>
-
-body{
-font-family:sans-serif;
-background:#f4f6f9;
-display:flex;
-align-items:center;
-justify-content:center;
-height:100vh;
-margin:0;
-}
-
-.box{
-background:white;
-padding:40px;
-border-radius:16px;
-text-align:center;
-box-shadow:0 10px 25px rgba(0,0,0,0.05);
-}
-
-a{
+<a
+href="/"
+style="
 background:#3498db;
 color:white;
 padding:10px 20px;
@@ -578,23 +1052,8 @@ text-decoration:none;
 font-weight:bold;
 display:inline-block;
 margin-top:15px;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="box">
-
-<h2>❌ Error de conexión</h2>
-
-<p>
-No fue posible conectar con la base de datos.
-</p>
-
-<a href="/">
+"
+>
 Intentar de Nuevo
 </a>
 
@@ -603,6 +1062,74 @@ Intentar de Nuevo
 </body>
 </html>
 """
+
+
+    # -----------------------------------------------------
+    # FIREBASE NO DISPONIBLE
+    # -----------------------------------------------------
+
+    if not firebase_credentials:
+
+        print(
+            "❌ LOGIN: Firebase no está disponible."
+        )
+
+        return """
+<html>
+<head>
+<title>Error de conexión</title>
+</head>
+
+<body
+style="
+font-family:sans-serif;
+background:#f4f6f9;
+display:flex;
+align-items:center;
+justify-content:center;
+height:100vh;
+margin:0;
+"
+>
+
+<div
+style="
+background:white;
+padding:40px;
+border-radius:16px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
+"
+>
+
+<h2>❌ Error de conexión</h2>
+
+<p>
+No fue posible conectar con Firebase.
+</p>
+
+<a
+href="/"
+style="
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+"
+>
+Intentar de Nuevo
+</a>
+
+</div>
+
+</body>
+</html>
+"""
+
 
     # -----------------------------------------------------
     # BUSCAR CLIENTE
@@ -614,18 +1141,18 @@ Intentar de Nuevo
             f"🔎 Buscando clientes/{nit}"
         )
 
-        doc = (
-            db
-            .collection("clientes")
-            .document(nit)
-            .get(timeout=10)
+
+        datos_cliente = obtener_documento(
+            "clientes",
+            nit
         )
+
 
         # -------------------------------------------------
         # NIT NO EXISTE
         # -------------------------------------------------
 
-        if not doc.exists:
+        if not datos_cliente:
 
             print(
                 f"❌ El NIT {nit} NO existe."
@@ -635,10 +1162,10 @@ Intentar de Nuevo
 <html>
 <head>
 <title>Datos incorrectos</title>
+</head>
 
-<style>
-
-body{
+<body
+style="
 font-family:sans-serif;
 background:#f4f6f9;
 display:flex;
@@ -646,17 +1173,28 @@ align-items:center;
 justify-content:center;
 height:100vh;
 margin:0;
-}
+"
+>
 
-.box{
+<div
+style="
 background:white;
 padding:40px;
 border-radius:16px;
 text-align:center;
 box-shadow:0 10px 25px rgba(0,0,0,0.05);
-}
+"
+>
 
-a{
+<h2>❌ NIT no registrado</h2>
+
+<p>
+El NIT no está registrado en Alianzas Pharma.
+</p>
+
+<a
+href="/"
+style="
 background:#3498db;
 color:white;
 padding:10px 20px;
@@ -665,23 +1203,8 @@ text-decoration:none;
 font-weight:bold;
 display:inline-block;
 margin-top:15px;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="box">
-
-<h2>❌ NIT no registrado</h2>
-
-<p>
-El NIT no está registrado en Alianzas Pharma.
-</p>
-
-<a href="/">
+"
+>
 Intentar de Nuevo
 </a>
 
@@ -691,11 +1214,10 @@ Intentar de Nuevo
 </html>
 """
 
-        # -------------------------------------------------
-        # DATOS DEL CLIENTE
-        # -------------------------------------------------
 
-        datos_cliente = doc.to_dict()
+        # -------------------------------------------------
+        # CONTRASEÑA
+        # -------------------------------------------------
 
         pass_db = str(
             datos_cliente.get(
@@ -704,13 +1226,11 @@ Intentar de Nuevo
             )
         ).strip()
 
+
         print(
             "✅ Cliente encontrado en Firebase"
         )
 
-        # -------------------------------------------------
-        # COMPROBAR CONTRASEÑA
-        # -------------------------------------------------
 
         if pass_db != password:
 
@@ -722,10 +1242,10 @@ Intentar de Nuevo
 <html>
 <head>
 <title>Datos incorrectos</title>
+</head>
 
-<style>
-
-body{
+<body
+style="
 font-family:sans-serif;
 background:#f4f6f9;
 display:flex;
@@ -733,17 +1253,28 @@ align-items:center;
 justify-content:center;
 height:100vh;
 margin:0;
-}
+"
+>
 
-.box{
+<div
+style="
 background:white;
 padding:40px;
 border-radius:16px;
 text-align:center;
 box-shadow:0 10px 25px rgba(0,0,0,0.05);
-}
+"
+>
 
-a{
+<h2>❌ Contraseña Incorrecta</h2>
+
+<p>
+La contraseña no coincide con la registrada en Firebase.
+</p>
+
+<a
+href="/"
+style="
 background:#3498db;
 color:white;
 padding:10px 20px;
@@ -752,23 +1283,8 @@ text-decoration:none;
 font-weight:bold;
 display:inline-block;
 margin-top:15px;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="box">
-
-<h2>❌ Contraseña Incorrecta</h2>
-
-<p>
-La contraseña no coincide con la registrada en Firebase.
-</p>
-
-<a href="/">
+"
+>
 Intentar de Nuevo
 </a>
 
@@ -778,6 +1294,7 @@ Intentar de Nuevo
 </html>
 """
 
+
         # -------------------------------------------------
         # LOGIN CORRECTO
         # -------------------------------------------------
@@ -786,7 +1303,9 @@ Intentar de Nuevo
             f"✅ LOGIN CORRECTO: {nit}"
         )
 
+
         lista_productos = obtener_productos()
+
 
         resp = make_response(
             render_template(
@@ -796,16 +1315,19 @@ Intentar de Nuevo
             )
         )
 
+
         resp.set_cookie(
             "cliente_nit",
             nit,
             path="/",
             httponly=True,
             secure=True,
-            samesite="None"
+            samesite="Lax"
         )
 
+
         return resp
+
 
     except Exception as e:
 
@@ -817,16 +1339,15 @@ Intentar de Nuevo
             str(e)
         )
 
+
         return """
 <html>
-
 <head>
-
 <title>Error de Firebase</title>
+</head>
 
-<style>
-
-body{
+<body
+style="
 font-family:sans-serif;
 background:#f4f6f9;
 display:flex;
@@ -834,17 +1355,28 @@ align-items:center;
 justify-content:center;
 height:100vh;
 margin:0;
-}
+"
+>
 
-.box{
+<div
+style="
 background:white;
 padding:40px;
 border-radius:16px;
 text-align:center;
 box-shadow:0 10px 25px rgba(0,0,0,0.05);
-}
+"
+>
 
-a{
+<h2>❌ Error de conexión con Firebase</h2>
+
+<p>
+No fue posible consultar la base de datos.
+</p>
+
+<a
+href="/"
+style="
 background:#3498db;
 color:white;
 padding:10px 20px;
@@ -853,30 +1385,14 @@ text-decoration:none;
 font-weight:bold;
 display:inline-block;
 margin-top:15px;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="box">
-
-<h2>❌ Error de conexión con Firebase</h2>
-
-<p>
-No fue posible consultar la base de datos.
-</p>
-
-<a href="/">
+"
+>
 Intentar de Nuevo
 </a>
 
 </div>
 
 </body>
-
 </html>
 """
 
@@ -908,37 +1424,49 @@ def registro_cliente():
             ""
         ).strip()
 
-        if db:
 
-            try:
+        if not nit or not nombre or not password:
 
-                db.collection(
-                    "clientes"
-                ).document(
-                    nit
-                ).set({
+            return """
+            <h2>Faltan datos</h2>
+            <a href="/registro-cliente">
+            Volver
+            </a>
+            """
 
-                    "nit": nit,
 
-                    "nombre": nombre,
+        datos = {
 
-                    "password": password
+            "nit": nit,
 
-                })
+            "nombre": nombre,
 
-                print(
-                    f"✅ Cliente registrado: {nit}"
-                )
+            "password": password
 
-                return redirect(
-                    url_for("inicio")
-                )
+        }
 
-            except Exception as e:
 
-                print(
-                    f"❌ Error registrando cliente: {e}"
-                )
+        guardado = guardar_documento(
+            "clientes",
+            nit,
+            datos
+        )
+
+
+        if guardado:
+
+            return redirect(
+                url_for("inicio")
+            )
+
+
+        return """
+        <h2>Error registrando cliente</h2>
+        <a href="/registro-cliente">
+        Intentar nuevamente
+        </a>
+        """
+
 
     return render_template(
         "registro_cliente.html"
@@ -958,6 +1486,7 @@ def salir():
         )
     )
 
+
     resp.set_cookie(
         "cliente_nit",
         "",
@@ -965,4 +1494,23 @@ def salir():
         path="/"
     )
 
+
     return resp
+
+
+# =========================================================
+# VERCEL / FLASK
+# =========================================================
+
+if __name__ == "__main__":
+
+    app.run(
+        host="0.0.0.0",
+        port=int(
+            os.environ.get(
+                "PORT",
+                5000
+            )
+        ),
+        debug=False
+    )
