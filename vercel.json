@@ -4,9 +4,17 @@
     {
       "src": "app.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "public/**/*",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
+    {
+      "src": "/(.*\\.(jpg|jpeg|png|webp|gif|svg|ico))",
+      "dest": "/public/$1"
+    },
     {
       "src": "/(.*)",
       "dest": "/app.py"
