@@ -1,140 +1,212 @@
 import os
 import json
 
-from flask import Flask, render_template, request, redirect, url_for, make_response
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    make_response
+)
+
 from flask_cors import CORS
 
 import firebase_admin
 from firebase_admin import credentials, firestore
 
 
-# ============================================================
-# FLASK
-# ============================================================
+# =========================================================
+# APLICACIÓN
+# =========================================================
 
 app = Flask(__name__)
 CORS(app)
 
-# Vercel necesita encontrar la aplicación Flask
+# Necesario para Vercel
 main = app
 
 
-# ============================================================
+# =========================================================
 # FIREBASE
-# ============================================================
+# =========================================================
 
 db = None
+firebase_inicializado = False
 
 
 def conectar_firebase():
+
     global db
+    global firebase_inicializado
+
+    # Si ya está conectado, reutilizamos la conexión
+    if firebase_inicializado and db is not None:
+        return db
 
     try:
-        # ----------------------------------------------------
-        # Buscar llave Firebase
-        # ----------------------------------------------------
+
+        print("🔥 FIREBASE: iniciando conexión...")
+
+        # -------------------------------------------------
+        # OPCIÓN 1:
+        # Buscar archivo llave-firebase.json
+        # -------------------------------------------------
 
         base_dir = os.path.dirname(os.path.abspath(__file__))
 
-        posibles_rutas = [
-            os.path.join(base_dir, "llave-firebase.json"),
-            "/var/task/llave-firebase.json",
-        ]
-
-        ruta_llave = None
-
-        for ruta in posibles_rutas:
-            if os.path.exists(ruta):
-                ruta_llave = ruta
-                break
-
-        if not ruta_llave:
-            print("❌ FIREBASE: No se encontró llave-firebase.json")
-            return None
-
-        print(f"🔑 FIREBASE: usando llave {ruta_llave}")
-
-        # ----------------------------------------------------
-        # Leer credenciales
-        # ----------------------------------------------------
-
-        with open(ruta_llave, "r", encoding="utf-8") as archivo:
-            datos_json = json.load(archivo)
-
-        # Corregir saltos de línea de private_key
-        if "private_key" in datos_json:
-            datos_json["private_key"] = datos_json["private_key"].replace(
-                "\\n",
-                "\n"
-            )
-
-        # ----------------------------------------------------
-        # Inicializar Firebase
-        # ----------------------------------------------------
-
-        if not firebase_admin._apps:
-            cred = credentials.Certificate(datos_json)
-
-            firebase_app = firebase_admin.initialize_app(
-                cred
-            )
-
-            print("🚀 FIREBASE: aplicación inicializada")
-
-        else:
-            firebase_app = firebase_admin.get_app()
-
-            print("♻️ FIREBASE: usando aplicación existente")
-
-        # ----------------------------------------------------
-        # Firestore
-        # ----------------------------------------------------
-
-        firestore_db = firestore.client(
-            app=firebase_app
+        ruta_llave = os.path.join(
+            base_dir,
+            "llave-firebase.json"
         )
 
-        # ----------------------------------------------------
-        # PRUEBA REAL DE CONEXIÓN
-        # ----------------------------------------------------
+        if not os.path.exists(ruta_llave):
+            ruta_llave = "/var/task/llave-firebase.json"
 
-        firestore_db.collection("clientes").limit(1).stream()
 
-        print("✅ FIREBASE: conexión con Firestore funcionando")
+        # -------------------------------------------------
+        # CARGAR CREDENCIALES
+        # -------------------------------------------------
 
-        return firestore_db
+        if os.path.exists(ruta_llave):
+
+            print(
+                f"🔥 FIREBASE: usando archivo {ruta_llave}"
+            )
+
+            with open(
+                ruta_llave,
+                "r",
+                encoding="utf-8"
+            ) as archivo:
+
+                datos_json = json.load(archivo)
+
+            # Corregir saltos de línea de private_key
+            if "private_key" in datos_json:
+
+                datos_json["private_key"] = (
+                    datos_json["private_key"]
+                    .replace("\\n", "\n")
+                )
+
+            # Crear aplicación Firebase solamente una vez
+            if not firebase_admin._apps:
+
+                cred = credentials.Certificate(
+                    datos_json
+                )
+
+                firebase_admin.initialize_app(cred)
+
+                print(
+                    "✅ FIREBASE: aplicación inicializada"
+                )
+
+            else:
+
+                print(
+                    "✅ FIREBASE: aplicación ya estaba inicializada"
+                )
+
+        else:
+
+            # -------------------------------------------------
+            # OPCIÓN 2:
+            # Credenciales mediante variable de entorno
+            # -------------------------------------------------
+
+            firebase_json = os.environ.get(
+                "FIREBASE_SERVICE_ACCOUNT"
+            )
+
+            if not firebase_json:
+
+                print(
+                    "❌ FIREBASE: no se encontró "
+                    "llave-firebase.json ni "
+                    "FIREBASE_SERVICE_ACCOUNT"
+                )
+
+                return None
+
+            print(
+                "🔥 FIREBASE: usando variable "
+                "FIREBASE_SERVICE_ACCOUNT"
+            )
+
+            datos_json = json.loads(firebase_json)
+
+            if "private_key" in datos_json:
+
+                datos_json["private_key"] = (
+                    datos_json["private_key"]
+                    .replace("\\n", "\n")
+                )
+
+            if not firebase_admin._apps:
+
+                cred = credentials.Certificate(
+                    datos_json
+                )
+
+                firebase_admin.initialize_app(cred)
+
+                print(
+                    "✅ FIREBASE: aplicación inicializada"
+                )
+
+
+        # -------------------------------------------------
+        # CREAR CLIENTE FIRESTORE
+        # -------------------------------------------------
+
+        db = firestore.client()
+
+        firebase_inicializado = True
+
+        print(
+            "🚀 FIREBASE: conexión preparada correctamente"
+        )
+
+        return db
 
     except Exception as e:
 
         print(
-            f"❌ FIREBASE ERROR: {type(e).__name__}: {e}"
+            "❌ FIREBASE ERROR:",
+            repr(e)
         )
+
+        db = None
+        firebase_inicializado = False
 
         return None
 
 
-# Conectar Firebase al iniciar la aplicación
-db = conectar_firebase()
-
-
-# ============================================================
-# FUNCIONES AUXILIARES
-# ============================================================
+# =========================================================
+# OBTENER CLIENTE LOGUEADO
+# =========================================================
 
 def obtener_cliente_logueado():
 
-    nit_usuario = request.cookies.get("cliente_nit")
+    nit_usuario = request.cookies.get(
+        "cliente_nit"
+    )
 
     if not nit_usuario:
         return None
 
-    if not db:
+    base_datos = conectar_firebase()
+
+    if base_datos is None:
         return None
 
     try:
 
         doc = (
-            db.collection("clientes")
+            base_datos
+            .collection("clientes")
             .document(nit_usuario)
             .get()
         )
@@ -147,24 +219,39 @@ def obtener_cliente_logueado():
     except Exception as e:
 
         print(
-            f"❌ ERROR obteniendo cliente: {e}"
+            "❌ ERROR obteniendo cliente:",
+            repr(e)
         )
 
         return None
 
 
-def cargar_productos():
+# =========================================================
+# CARGAR PRODUCTOS
+# =========================================================
 
-    lista_productos = []
+def obtener_productos():
 
-    if not db:
-        print("❌ PRODUCTOS: Firebase no está conectado")
-        return lista_productos
+    base_datos = conectar_firebase()
+
+    if base_datos is None:
+        print(
+            "⚠️ PRODUCTOS: Firebase no disponible"
+        )
+
+        return []
+
+    lista = []
 
     try:
 
+        print(
+            "📦 PRODUCTOS: consultando Firestore..."
+        )
+
         productos_ref = (
-            db.collection("productos")
+            base_datos
+            .collection("productos")
             .stream()
         )
 
@@ -173,7 +260,9 @@ def cargar_productos():
             p = doc.to_dict()
 
             try:
-                precio = int(p.get("precio", 0))
+                precio = int(
+                    p.get("precio", 0)
+                )
             except:
                 precio = 0
 
@@ -184,55 +273,56 @@ def cargar_productos():
             except:
                 existencias = 0
 
-            lista_productos.append(
-                {
-                    "id": doc.id,
+            lista.append({
 
-                    "nombre": p.get(
-                        "nombre",
-                        "Medicamento sin nombre"
-                    ),
+                "id": doc.id,
 
-                    "precio": precio,
+                "nombre": p.get(
+                    "nombre",
+                    "Medicamento sin nombre"
+                ),
 
-                    "imagen": p.get(
-                        "imagen",
-                        "/public/placeholder.jpg"
-                    ),
+                "precio": precio,
 
-                    "existencias": existencias,
-                }
-            )
+                "imagen": p.get(
+                    "imagen",
+                    "/public/placeholder.jpg"
+                ),
 
-        lista_productos.sort(
-            key=lambda x: x["nombre"].lower()
+                "existencias": existencias
+            })
+
+        lista.sort(
+            key=lambda x:
+            x["nombre"].lower()
         )
 
         print(
-            f"✅ PRODUCTOS: {len(lista_productos)} productos cargados"
+            f"✅ PRODUCTOS: {len(lista)} productos cargados"
         )
 
     except Exception as e:
 
         print(
-            f"❌ PRODUCTOS ERROR: {type(e).__name__}: {e}"
+            "❌ PRODUCTOS ERROR:",
+            repr(e)
         )
 
-    return lista_productos
+    return lista
 
 
-# ============================================================
+# =========================================================
 # INICIO
-# ============================================================
+# =========================================================
 
 @app.route("/")
 def inicio():
 
     cliente = obtener_cliente_logueado()
 
-    # --------------------------------------------------------
-    # Si no hay sesión, mostrar el MISMO formulario
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # SI NO ESTÁ LOGUEADO
+    # -----------------------------------------------------
 
     if not cliente:
 
@@ -308,7 +398,8 @@ input{
 
 <div class="box">
 
-<h2 style="
+<h2
+style="
 color:#2c3e50;
 margin:0 0 5px 0;
 font-size:1.4rem;
@@ -316,7 +407,8 @@ font-size:1.4rem;
 ALIANZAS PHARMA
 </h2>
 
-<p style="
+<p
+style="
 color:#64748b;
 font-size:0.85rem;
 margin-bottom:25px;
@@ -353,7 +445,8 @@ Iniciar Sesión
 
 </form>
 
-<div style="
+<div
+style="
 display:flex;
 justify-content:space-between;
 margin-top:25px;
@@ -366,8 +459,7 @@ color:#3498db;
 text-decoration:none;
 font-size:0.85rem;
 font-weight:600;
-"
->
+">
 Crear Cuenta
 </a>
 
@@ -378,8 +470,7 @@ color:#e67e22;
 text-decoration:none;
 font-size:0.85rem;
 font-weight:600;
-"
->
+">
 Olvidé mi clave
 </a>
 
@@ -392,22 +483,23 @@ Olvidé mi clave
 </html>
 """
 
-    # --------------------------------------------------------
-    # Usuario logueado
-    # --------------------------------------------------------
 
-    productos = cargar_productos()
+    # -----------------------------------------------------
+    # CLIENTE LOGUEADO
+    # -----------------------------------------------------
+
+    lista = obtener_productos()
 
     return render_template(
         "index.html",
-        productos=productos,
+        productos=lista,
         cliente=cliente
     )
 
 
-# ============================================================
+# =========================================================
 # LOGIN
-# ============================================================
+# =========================================================
 
 @app.route(
     "/ingresar-portal",
@@ -425,13 +517,10 @@ def ingresar_portal():
         ""
     ).strip()
 
-    print(
-        f"🔎 LOGIN: intentando NIT {nit}"
-    )
 
-    # --------------------------------------------------------
-    # Validación básica
-    # --------------------------------------------------------
+    # -----------------------------------------------------
+    # VALIDACIÓN
+    # -----------------------------------------------------
 
     if not nit or not password:
 
@@ -440,7 +529,6 @@ def ingresar_portal():
 <head>
 <title>Datos incompletos</title>
 <style>
-
 body{
 font-family:sans-serif;
 background:#f4f6f9;
@@ -450,7 +538,6 @@ justify-content:center;
 height:100vh;
 margin:0;
 }
-
 .box{
 background:white;
 padding:40px;
@@ -458,7 +545,6 @@ border-radius:16px;
 text-align:center;
 box-shadow:0 10px 25px rgba(0,0,0,0.05);
 }
-
 a{
 background:#3498db;
 color:white;
@@ -469,7 +555,6 @@ font-weight:bold;
 display:inline-block;
 margin-top:15px;
 }
-
 </style>
 </head>
 
@@ -493,19 +578,24 @@ Intentar de Nuevo
 </html>
 """
 
-    # --------------------------------------------------------
-    # Firebase desconectado
-    # --------------------------------------------------------
 
-    if not db:
+    # -----------------------------------------------------
+    # CONECTAR FIREBASE
+    # -----------------------------------------------------
+
+    base_datos = conectar_firebase()
+
+    if base_datos is None:
 
         print(
-            "❌ LOGIN: Firebase no está conectado"
+            "❌ LOGIN: Firebase no está conectado."
         )
 
         return """
 <html>
+
 <head>
+
 <title>Error de conexión</title>
 
 <style>
@@ -560,28 +650,28 @@ Intentar de Nuevo
 </div>
 
 </body>
+
 </html>
 """
 
-    # --------------------------------------------------------
-    # Buscar cliente en Firestore
-    # --------------------------------------------------------
+
+    # -----------------------------------------------------
+    # BUSCAR CLIENTE
+    # -----------------------------------------------------
 
     try:
 
         print(
-            f"🔎 FIREBASE: buscando clientes/{nit}"
+            f"🔎 LOGIN: buscando NIT {nit}"
         )
 
         doc = (
-            db.collection("clientes")
+            base_datos
+            .collection("clientes")
             .document(nit)
             .get()
         )
 
-        # ----------------------------------------------------
-        # NIT no existe
-        # ----------------------------------------------------
 
         if not doc.exists:
 
@@ -591,8 +681,10 @@ Intentar de Nuevo
 
             return """
 <html>
+
 <head>
-<title>Datos incorrectos</title>
+
+<title>NIT no registrado</title>
 
 <style>
 
@@ -646,36 +738,42 @@ Intentar de Nuevo
 </div>
 
 </body>
+
 </html>
 """
 
-        # ----------------------------------------------------
-        # Datos del cliente
-        # ----------------------------------------------------
+
+        # -------------------------------------------------
+        # DATOS DEL CLIENTE
+        # -------------------------------------------------
 
         datos_cliente = doc.to_dict()
 
-        password_db = str(
+        pass_db = str(
             datos_cliente.get(
                 "password",
                 ""
             )
         ).strip()
 
-        # ----------------------------------------------------
-        # Comparar contraseña
-        # ----------------------------------------------------
 
-        if password_db != password:
+        # -------------------------------------------------
+        # COMPROBAR CONTRASEÑA
+        # -------------------------------------------------
+
+        if pass_db != password:
 
             print(
-                f"❌ LOGIN: contraseña incorrecta para {nit}"
+                f"❌ LOGIN: contraseña incorrecta "
+                f"para NIT {nit}"
             )
 
             return """
 <html>
+
 <head>
-<title>Datos incorrectos</title>
+
+<title>Contraseña incorrecta</title>
 
 <style>
 
@@ -729,32 +827,35 @@ Intentar de Nuevo
 </div>
 
 </body>
+
 </html>
 """
 
-        # ----------------------------------------------------
+
+        # -------------------------------------------------
         # LOGIN CORRECTO
-        # ----------------------------------------------------
+        # -------------------------------------------------
 
         print(
-            f"✅ LOGIN CORRECTO: {nit}"
+            f"✅ LOGIN CORRECTO: NIT {nit}"
         )
 
-        productos = cargar_productos()
+        lista_productos = obtener_productos()
 
-        # ----------------------------------------------------
-        # Mostrar tienda
-        # ----------------------------------------------------
+
+        # -------------------------------------------------
+        # MOSTRAR TIENDA
+        # -------------------------------------------------
 
         resp = make_response(
             render_template(
                 "index.html",
-                productos=productos,
+                productos=lista_productos,
                 cliente=datos_cliente
             )
         )
 
-        # Cookie del cliente
+
         resp.set_cookie(
             "cliente_nit",
             nit,
@@ -764,22 +865,22 @@ Intentar de Nuevo
             samesite="None"
         )
 
+
         return resp
 
-    # --------------------------------------------------------
-    # Error Firebase
-    # --------------------------------------------------------
 
     except Exception as e:
 
         print(
-            f"❌ LOGIN FIREBASE ERROR: "
-            f"{type(e).__name__}: {e}"
+            "❌ LOGIN FIREBASE ERROR:",
+            repr(e)
         )
 
         return """
 <html>
+
 <head>
+
 <title>Error de Firebase</title>
 
 <style>
@@ -834,13 +935,14 @@ Intentar de Nuevo
 </div>
 
 </body>
+
 </html>
 """
 
 
-# ============================================================
-# REGISTRO DE CLIENTE
-# ============================================================
+# =========================================================
+# REGISTRO
+# =========================================================
 
 @app.route(
     "/registro-cliente",
@@ -865,25 +967,24 @@ def registro_cliente():
             ""
         ).strip()
 
-        if db:
+
+        base_datos = conectar_firebase()
+
+        if base_datos is not None:
 
             try:
 
-                db.collection(
+                base_datos.collection(
                     "clientes"
-                ).document(
-                    nit
-                ).set(
-                    {
-                        "nit": nit,
-                        "nombre": nombre,
-                        "password": password
-                    }
-                )
+                ).document(nit).set({
 
-                print(
-                    f"✅ CLIENTE REGISTRADO: {nit}"
-                )
+                    "nit": nit,
+
+                    "nombre": nombre,
+
+                    "password": password
+
+                })
 
                 return redirect(
                     url_for("inicio")
@@ -892,17 +993,19 @@ def registro_cliente():
             except Exception as e:
 
                 print(
-                    f"❌ ERROR registrando cliente: {e}"
+                    "❌ ERROR registrando cliente:",
+                    repr(e)
                 )
+
 
     return render_template(
         "registro_cliente.html"
     )
 
 
-# ============================================================
+# =========================================================
 # SALIR
-# ============================================================
+# =========================================================
 
 @app.route("/salir")
 def salir():
