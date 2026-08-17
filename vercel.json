@@ -1,11 +1,6 @@
-
 {
   "version": 2,
   "routes": [
-    {
-      "src": "/public/(.*)",
-      "dest": "/public/$1"
-    },
     {
       "src": "/ingresar-portal",
       "dest": "app.py"
