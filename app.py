@@ -6,7 +6,7 @@ from flask_cors import CORS
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-# 🎯 TIRO DE GRACIA DEFINITIVO: Desactiva gRPC y fuerza HTTP REST puro a nivel de sistema en Vercel
+# 🎯 CONFIGURACIÓN GLOBAL ANTI-CONGELAMIENTO: Desactiva gRPC y fuerza HTTP REST puro a nivel de sistema
 os.environ["GRPC_DNS_RESOLVER"] = "native"
 os.environ["FIRESTORE_EMULATOR_HOST"] = ""
 
@@ -23,7 +23,6 @@ try:
         ruta_llave = os.path.join(base_dir, "llave-firebase.json")
 
     if os.path.exists(ruta_llave):
-        # 🛡️ APERTURA PROTEGIDA: Abrimos tu archivo JSON físico real en internet
         with open(ruta_llave, 'r', encoding='utf-8') as f:
             datos_json = json.load(f)
             
@@ -46,8 +45,6 @@ try:
 except Exception as e:
     print(f"❌ Error crítico en motor Firebase: {e}")
     db = None
-
-
 
 def obtener_cliente_logueado():
     nit_usuario = request.cookies.get('cliente_nit')
@@ -94,7 +91,7 @@ def ingresar_portal():
     nit = request.form.get('nit', '').strip()
     password = request.form.get('password', '').strip()
     
-    # 🔑 PASE MAESTRO INMUNE A BUELES FISICOS DE ARCHIVOS
+    # 🔑 PASE MAESTRO INDESTRUCTIBLE SOBRE HTTP REST
     if nit == "123" and password == "123":
         lista = []
         if db:
