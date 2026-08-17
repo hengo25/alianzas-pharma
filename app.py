@@ -38,9 +38,11 @@ try:
         else:
             firebase_app = firebase_admin._apps
             
-        db = firestore.client(app=firebase_app)
+        # 🔗 EL TIRO DE GRACIA: Forzamos al cliente a leer tu base de datos de producción real
+        db = firestore.client(app=firebase_app, database="(default)")
         db._firestore_api_options = {"use_rest": True}
-        print("🚀 ¡Conexión Real con Firebase Cloud con Éxito!")
+        print("🚀 ¡Conexión unificada con la base de datos activa de Firebase!")
+
     else:
         print("❌ Alerta: Archivo llave-firebase.json no detectado en el servidor")
 except Exception as e:
