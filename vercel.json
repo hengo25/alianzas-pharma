@@ -2,12 +2,11 @@
   "version": 2,
   "routes": [
     {
-      "src": "/imagenes/(.*)",
-      "dest": "/public/$1"
-    },
-    {
       "src": "/ingresar-portal",
       "dest": "app.py"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
