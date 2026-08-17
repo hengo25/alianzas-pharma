@@ -94,21 +94,34 @@ def ingresar_portal():
     # 🔑 PASE MAESTRO INDESTRUCTIBLE SOBRE HTTP REST
     if nit == "123" and password == "123":
         lista = []
-        if db:
-            try:
-                productos_ref = db.collection("productos").stream()
-                for d in productos_ref:
-                    p = d.to_dict()
-                    lista.append({
-                        "id": d.id, 
-                        "nombre": p.get("nombre", "Medicamento sin nombre"), 
-                        "precio": int(p.get("precio", 0)), 
-                        "imagen": p.get("imagen", "/public/placeholder.jpg"), 
-                        "existencias": int(p.get("existencias", 0))
-                    })
-                lista.sort(key=lambda x: x["nombre"].lower())
-            except:
-                pass
+    if db:
+        try:
+            # 🛡️ LIMPIEZA DE ENTRADA: Eliminamos cualquier espacio accidental
+            nit_limpio = nit.strip()
+            password_limpio = password.strip()
+            
+            # 1️⃣ Intento de búsqueda tradicional (ID como Texto)
+            doc = db.collection("clientes").document(nit_limpio).get()
+            
+            # 2️⃣ Intento de contingencia (Por si el ID se guardó como Número en Firebase)
+            if not doc.exists:
+                try:
+                    doc = db.collection("clientes").document(str(int(nit_limpio))).get()
+                except:
+                    pass
+            
+            if doc.exists:
+                datos_cliente = doc.to_dict()
+                # Traducimos los campos a texto para que la comparación sea matemática y exacta
+                pass_db = str(datos_cliente.get('password', '')).strip()
+                
+                if pass_db == password_limpio:
+                    resp = make_response(redirect(url_for('inicio')))
+                    resp.set_cookie('cliente_nit', nit_limpio, path='/', httponly=True, secure=True, samesite='None')
+                    return resp
+        except Exception as e:
+            print(f"Error login: {e}")
+
         
         if not lista:
             lista = [{"id": "0", "nombre": "Kit Inicial de Prueba Pharma", "precio": 150000, "imagen": "/public/placeholder.jpg", "existencias": 10}]
