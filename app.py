@@ -395,6 +395,15 @@ def obtener_documento(
             timeout=10
         )
 
+        print("========================================")
+        print("🔥 FIRESTORE DEBUG")
+        print(f"Proyecto: {firebase_project_id}")
+        print(f"Colección: {coleccion}")
+        print(f"Documento: {documento_id}")
+        print(f"URL: {url}")
+        print(f"HTTP: {respuesta.status_code}")
+        print(f"Respuesta: {respuesta.text[:2000]}")
+        print("========================================")
 
         # -------------------------------------------------
         # NO EXISTE
