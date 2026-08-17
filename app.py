@@ -1,136 +1,140 @@
 import os
 import json
 
-from flask import (
-    Flask,
-    render_template,
-    request,
-    redirect,
-    url_for,
-    jsonify,
-    make_response
-)
-
+from flask import Flask, render_template, request, redirect, url_for, make_response
 from flask_cors import CORS
 
 import firebase_admin
 from firebase_admin import credentials, firestore
 
 
-# =========================================================
-# CONFIGURACIÓN
-# =========================================================
-
-# No usamos Firebase Emulator
-os.environ.pop("FIRESTORE_EMULATOR_HOST", None)
+# ============================================================
+# FLASK
+# ============================================================
 
 app = Flask(__name__)
 CORS(app)
 
+# Vercel necesita encontrar la aplicación Flask
 main = app
+
+
+# ============================================================
+# FIREBASE
+# ============================================================
 
 db = None
 
 
-# =========================================================
-# CONEXIÓN CON FIREBASE / FIRESTORE
-# =========================================================
+def conectar_firebase():
+    global db
 
-try:
+    try:
+        # ----------------------------------------------------
+        # Buscar llave Firebase
+        # ----------------------------------------------------
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+        base_dir = os.path.dirname(os.path.abspath(__file__))
 
-    ruta_llave = os.path.join(
-        base_dir,
-        "llave-firebase.json"
-    )
+        posibles_rutas = [
+            os.path.join(base_dir, "llave-firebase.json"),
+            "/var/task/llave-firebase.json",
+        ]
 
-    # Ruta alternativa utilizada por Vercel
-    if not os.path.exists(ruta_llave):
-        ruta_llave = "/var/task/llave-firebase.json"
+        ruta_llave = None
 
-    print(f"🔎 Buscando llave Firebase en: {ruta_llave}")
+        for ruta in posibles_rutas:
+            if os.path.exists(ruta):
+                ruta_llave = ruta
+                break
 
-    if not os.path.exists(ruta_llave):
+        if not ruta_llave:
+            print("❌ FIREBASE: No se encontró llave-firebase.json")
+            return None
 
-        print(
-            "❌ ALERTA: No se encontró "
-            "llave-firebase.json"
-        )
+        print(f"🔑 FIREBASE: usando llave {ruta_llave}")
 
-    else:
+        # ----------------------------------------------------
+        # Leer credenciales
+        # ----------------------------------------------------
 
-        print("✅ Archivo llave-firebase.json encontrado.")
-
-        with open(
-            ruta_llave,
-            "r",
-            encoding="utf-8"
-        ) as f:
-
-            datos_json = json.load(f)
+        with open(ruta_llave, "r", encoding="utf-8") as archivo:
+            datos_json = json.load(archivo)
 
         # Corregir saltos de línea de private_key
         if "private_key" in datos_json:
-
-            datos_json["private_key"] = (
-                datos_json["private_key"]
-                .replace("\\n", "\n")
+            datos_json["private_key"] = datos_json["private_key"].replace(
+                "\\n",
+                "\n"
             )
 
-        # Inicializar Firebase solamente una vez
+        # ----------------------------------------------------
+        # Inicializar Firebase
+        # ----------------------------------------------------
+
         if not firebase_admin._apps:
+            cred = credentials.Certificate(datos_json)
 
-            cred = credentials.Certificate(
-                datos_json
+            firebase_app = firebase_admin.initialize_app(
+                cred
             )
 
-            firebase_app = (
-                firebase_admin.initialize_app(cred)
-            )
+            print("🚀 FIREBASE: aplicación inicializada")
 
         else:
-
             firebase_app = firebase_admin.get_app()
 
-        # Conectar con Firestore
-        db = firestore.client(
+            print("♻️ FIREBASE: usando aplicación existente")
+
+        # ----------------------------------------------------
+        # Firestore
+        # ----------------------------------------------------
+
+        firestore_db = firestore.client(
             app=firebase_app
         )
 
+        # ----------------------------------------------------
+        # PRUEBA REAL DE CONEXIÓN
+        # ----------------------------------------------------
+
+        firestore_db.collection("clientes").limit(1).stream()
+
+        print("✅ FIREBASE: conexión con Firestore funcionando")
+
+        return firestore_db
+
+    except Exception as e:
+
         print(
-            "🚀 ¡Conexión con la base de datos "
-            "Firebase activa!"
+            f"❌ FIREBASE ERROR: {type(e).__name__}: {e}"
         )
 
-
-except Exception as e:
-
-    print(
-        f"❌ Error crítico en motor Firebase: {e}"
-    )
-
-    db = None
+        return None
 
 
-# =========================================================
-# OBTENER CLIENTE LOGUEADO
-# =========================================================
+# Conectar Firebase al iniciar la aplicación
+db = conectar_firebase()
+
+
+# ============================================================
+# FUNCIONES AUXILIARES
+# ============================================================
 
 def obtener_cliente_logueado():
 
-    nit_usuario = request.cookies.get(
-        "cliente_nit"
-    )
+    nit_usuario = request.cookies.get("cliente_nit")
 
-    if not nit_usuario or not db:
+    if not nit_usuario:
+        return None
+
+    if not db:
         return None
 
     try:
 
         doc = (
-            db
-            .collection("clientes")
+            db.collection("clientes")
             .document(nit_usuario)
             .get()
         )
@@ -143,34 +147,24 @@ def obtener_cliente_logueado():
     except Exception as e:
 
         print(
-            f"⚠️ Error obteniendo cliente: {e}"
+            f"❌ ERROR obteniendo cliente: {e}"
         )
 
         return None
 
 
-# =========================================================
-# CARGAR PRODUCTOS
-# =========================================================
-
 def cargar_productos():
 
-    lista = []
+    lista_productos = []
 
     if not db:
-
-        print(
-            "⚠️ No se pueden cargar productos: "
-            "Firebase no está conectado."
-        )
-
-        return lista
+        print("❌ PRODUCTOS: Firebase no está conectado")
+        return lista_productos
 
     try:
 
         productos_ref = (
-            db
-            .collection("productos")
+            db.collection("productos")
             .stream()
         )
 
@@ -179,9 +173,7 @@ def cargar_productos():
             p = doc.to_dict()
 
             try:
-                precio = int(
-                    p.get("precio", 0)
-                )
+                precio = int(p.get("precio", 0))
             except:
                 precio = 0
 
@@ -192,242 +184,230 @@ def cargar_productos():
             except:
                 existencias = 0
 
-            lista.append({
+            lista_productos.append(
+                {
+                    "id": doc.id,
 
-                "id": doc.id,
+                    "nombre": p.get(
+                        "nombre",
+                        "Medicamento sin nombre"
+                    ),
 
-                "nombre": p.get(
-                    "nombre",
-                    "Medicamento sin nombre"
-                ),
+                    "precio": precio,
 
-                "precio": precio,
+                    "imagen": p.get(
+                        "imagen",
+                        "/public/placeholder.jpg"
+                    ),
 
-                "imagen": p.get(
-                    "imagen",
-                    "/public/placeholder.jpg"
-                ),
+                    "existencias": existencias,
+                }
+            )
 
-                "existencias": existencias
-
-            })
-
-        lista.sort(
+        lista_productos.sort(
             key=lambda x: x["nombre"].lower()
         )
 
         print(
-            f"✅ PRODUCTOS: "
-            f"{len(lista)} productos cargados."
+            f"✅ PRODUCTOS: {len(lista_productos)} productos cargados"
         )
 
     except Exception as e:
 
         print(
-            f"⚠️ Alerta de inventario: {e}"
+            f"❌ PRODUCTOS ERROR: {type(e).__name__}: {e}"
         )
 
-    return lista
+    return lista_productos
 
 
-# =========================================================
-# PÁGINA PRINCIPAL
-# =========================================================
+# ============================================================
+# INICIO
+# ============================================================
 
 @app.route("/")
 def inicio():
 
     cliente = obtener_cliente_logueado()
 
-    # -----------------------------------------------------
-    # SI NO HAY CLIENTE LOGUEADO
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # Si no hay sesión, mostrar el MISMO formulario
+    # --------------------------------------------------------
 
     if not cliente:
 
         return """
-        <!DOCTYPE html>
-        <html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 
-        <head>
+<head>
 
-            <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-            <meta
-                name="viewport"
-                content="width=device-width, initial-scale=1.0"
-            >
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-            <title>Ingreso - Alianzas Pharma</title>
+<title>Ingreso - Alianzas Pharma</title>
 
-            <style>
+<style>
 
-                body{
-                    font-family:'Segoe UI',sans-serif;
-                    background:#f4f6f9;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    height:100vh;
-                    margin:0;
-                }
+body{
+    font-family:'Segoe UI',sans-serif;
+    background:#f4f6f9;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+    margin:0;
+}
 
-                .box{
-                    background:white;
-                    padding:40px 30px;
-                    border-radius:16px;
-                    box-shadow:
-                        0 10px 25px rgba(0,0,0,0.05);
-                    text-align:center;
-                    width:320px;
-                }
+.box{
+    background:white;
+    padding:40px 30px;
+    border-radius:16px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.05);
+    text-align:center;
+    width:320px;
+}
 
-                input{
-                    width:92%;
-                    padding:12px;
-                    margin-bottom:12px;
-                    border:
-                        1px solid #cbd5e1;
-                    border-radius:8px;
-                    outline:none;
-                    font-size:1rem;
-                }
+input{
+    width:92%;
+    padding:12px;
+    margin-bottom:12px;
+    border:1px solid #cbd5e1;
+    border-radius:8px;
+    outline:none;
+    font-size:1rem;
+}
 
-                .btn{
-                    background:#3498db;
-                    color:white;
-                    border:none;
-                    padding:12px;
-                    border-radius:25px;
-                    font-weight:bold;
-                    cursor:pointer;
-                    width:100%;
-                    font-size:1rem;
-                    margin-top:10px;
-                    box-shadow:
-                        0 4px 12px
-                        rgba(52,152,219,0.2);
-                }
+.btn{
+    background:#3498db;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:25px;
+    font-weight:bold;
+    cursor:pointer;
+    width:100%;
+    font-size:1rem;
+    margin-top:10px;
+    box-shadow:0 4px 12px rgba(52,152,219,0.2);
+}
 
-                .btn:hover{
-                    background:#2980b9;
-                }
+.btn:hover{
+    background:#2980b9;
+}
 
-            </style>
+</style>
 
-        </head>
+</head>
 
-        <body>
+<body>
 
-            <div class="box">
+<div class="box">
 
-                <h2
-                    style="
-                    color:#2c3e50;
-                    margin:0 0 5px 0;
-                    font-size:1.4rem;
-                    "
-                >
-                    ALIANZAS PHARMA
-                </h2>
+<h2 style="
+color:#2c3e50;
+margin:0 0 5px 0;
+font-size:1.4rem;
+">
+ALIANZAS PHARMA
+</h2>
 
-                <p
-                    style="
-                    color:#64748b;
-                    font-size:0.85rem;
-                    margin-bottom:25px;
-                    font-weight:bold;
-                    "
-                >
-                    Portal de Pedidos para
-                    Droguerías Afiliadas
-                </p>
+<p style="
+color:#64748b;
+font-size:0.85rem;
+margin-bottom:25px;
+font-weight:bold;
+">
+Portal de Pedidos para Droguerías Afiliadas
+</p>
 
-                <form
-                    method="POST"
-                    action="/ingresar-portal"
-                >
+<form
+method="POST"
+action="/ingresar-portal"
+>
 
-                    <input
-                        type="text"
-                        name="nit"
-                        placeholder="Escribe el NIT de la Droguería"
-                        required
-                    >
+<input
+type="text"
+name="nit"
+placeholder="Escribe el NIT de la Droguería"
+required
+>
 
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Contraseña secreta"
-                        required
-                    >
+<input
+type="password"
+name="password"
+placeholder="Contraseña secreta"
+required
+>
 
-                    <button
-                        type="submit"
-                        class="btn"
-                    >
-                        Iniciar Sesión
-                    </button>
+<button
+type="submit"
+class="btn"
+>
+Iniciar Sesión
+</button>
 
-                </form>
+</form>
 
-                <div
-                    style="
-                    display:flex;
-                    justify-content:space-between;
-                    margin-top:25px;
-                    "
-                >
+<div style="
+display:flex;
+justify-content:space-between;
+margin-top:25px;
+">
 
-                    <a
-                        href="/registro-cliente"
-                        style="
-                        color:#3498db;
-                        text-decoration:none;
-                        font-size:0.85rem;
-                        font-weight:600;
-                        "
-                    >
-                        Crear Cuenta
-                    </a>
+<a
+href="/registro-cliente"
+style="
+color:#3498db;
+text-decoration:none;
+font-size:0.85rem;
+font-weight:600;
+"
+>
+Crear Cuenta
+</a>
 
-                    <a
-                        href="/recuperar-clave"
-                        style="
-                        color:#e67e22;
-                        text-decoration:none;
-                        font-size:0.85rem;
-                        font-weight:600;
-                        "
-                    >
-                        Olvidé mi clave
-                    </a>
+<a
+href="/recuperar-clave"
+style="
+color:#e67e22;
+text-decoration:none;
+font-size:0.85rem;
+font-weight:600;
+"
+>
+Olvidé mi clave
+</a>
 
-                </div>
+</div>
 
-            </div>
+</div>
 
-        </body>
+</body>
 
-        </html>
-        """
+</html>
+"""
 
-    # -----------------------------------------------------
-    # CLIENTE LOGUEADO
-    # -----------------------------------------------------
+    # --------------------------------------------------------
+    # Usuario logueado
+    # --------------------------------------------------------
 
-    lista = cargar_productos()
+    productos = cargar_productos()
 
     return render_template(
         "index.html",
-        productos=lista,
+        productos=productos,
         cliente=cliente
     )
 
 
-# =========================================================
+# ============================================================
 # LOGIN
-# =========================================================
+# ============================================================
 
 @app.route(
     "/ingresar-portal",
@@ -445,396 +425,336 @@ def ingresar_portal():
         ""
     ).strip()
 
+    print(
+        f"🔎 LOGIN: intentando NIT {nit}"
+    )
 
-    # =====================================================
-    # VALIDACIÓN BÁSICA
-    # =====================================================
+    # --------------------------------------------------------
+    # Validación básica
+    # --------------------------------------------------------
 
     if not nit or not password:
 
         return """
-        <html>
+<html>
+<head>
+<title>Datos incompletos</title>
+<style>
 
-        <head>
+body{
+font-family:sans-serif;
+background:#f4f6f9;
+display:flex;
+align-items:center;
+justify-content:center;
+height:100vh;
+margin:0;
+}
 
-            <title>Datos incompletos</title>
+.box{
+background:white;
+padding:40px;
+border-radius:16px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
+}
 
-            <style>
+a{
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+}
 
-                body{
-                    font-family:sans-serif;
-                    background:#f4f6f9;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    height:100vh;
-                    margin:0;
-                }
+</style>
+</head>
 
-                .box{
-                    background:white;
-                    padding:40px;
-                    border-radius:16px;
-                    text-align:center;
-                    box-shadow:
-                        0 10px 25px
-                        rgba(0,0,0,0.05);
-                }
+<body>
 
-                a{
-                    background:#3498db;
-                    color:white;
-                    padding:10px 20px;
-                    border-radius:20px;
-                    text-decoration:none;
-                    font-weight:bold;
-                    display:inline-block;
-                    margin-top:15px;
-                }
+<div class="box">
 
-            </style>
+<h2>⚠️ Datos incompletos</h2>
 
-        </head>
+<p>
+Debes ingresar el NIT y la contraseña.
+</p>
 
-        <body>
+<a href="/">
+Intentar de Nuevo
+</a>
 
-            <div class="box">
+</div>
 
-                <h2>
-                    ⚠️ Datos incompletos
-                </h2>
+</body>
+</html>
+"""
 
-                <p>
-                    Debes ingresar el NIT
-                    y la contraseña.
-                </p>
-
-                <a href="/">
-                    Intentar de Nuevo
-                </a>
-
-            </div>
-
-        </body>
-
-        </html>
-        """
-
-
-    # =====================================================
-    # COMPROBAR FIREBASE
-    # =====================================================
+    # --------------------------------------------------------
+    # Firebase desconectado
+    # --------------------------------------------------------
 
     if not db:
 
         print(
-            "❌ LOGIN: Firebase no está conectado."
+            "❌ LOGIN: Firebase no está conectado"
         )
 
         return """
-        <html>
+<html>
+<head>
+<title>Error de conexión</title>
 
-        <head>
+<style>
 
-            <title>Error de conexión</title>
+body{
+font-family:sans-serif;
+background:#f4f6f9;
+display:flex;
+align-items:center;
+justify-content:center;
+height:100vh;
+margin:0;
+}
 
-            <style>
+.box{
+background:white;
+padding:40px;
+border-radius:16px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
+}
 
-                body{
-                    font-family:sans-serif;
-                    background:#f4f6f9;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    height:100vh;
-                    margin:0;
-                }
+a{
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+}
 
-                .box{
-                    background:white;
-                    padding:40px;
-                    border-radius:16px;
-                    text-align:center;
-                    box-shadow:
-                        0 10px 25px
-                        rgba(0,0,0,0.05);
-                }
+</style>
 
-                a{
-                    background:#3498db;
-                    color:white;
-                    padding:10px 20px;
-                    border-radius:20px;
-                    text-decoration:none;
-                    font-weight:bold;
-                    display:inline-block;
-                    margin-top:15px;
-                }
+</head>
 
-            </style>
+<body>
 
-        </head>
+<div class="box">
 
-        <body>
+<h2>❌ Error de conexión</h2>
 
-            <div class="box">
+<p>
+No fue posible conectar con la base de datos.
+</p>
 
-                <h2>
-                    ❌ Error de conexión
-                </h2>
+<a href="/">
+Intentar de Nuevo
+</a>
 
-                <p>
-                    No fue posible conectar
-                    con la base de datos.
-                </p>
+</div>
 
-                <a href="/">
-                    Intentar de Nuevo
-                </a>
+</body>
+</html>
+"""
 
-            </div>
-
-        </body>
-
-        </html>
-        """
-
-
-    # =====================================================
-    # BUSCAR CLIENTE EN FIREBASE
-    # =====================================================
+    # --------------------------------------------------------
+    # Buscar cliente en Firestore
+    # --------------------------------------------------------
 
     try:
 
         print(
-            f"🔎 LOGIN: buscando NIT {nit} en Firebase..."
+            f"🔎 FIREBASE: buscando clientes/{nit}"
         )
 
         doc = (
-            db
-            .collection("clientes")
+            db.collection("clientes")
             .document(nit)
             .get()
         )
 
-
-        # =================================================
-        # NIT NO EXISTE
-        # =================================================
+        # ----------------------------------------------------
+        # NIT no existe
+        # ----------------------------------------------------
 
         if not doc.exists:
 
             print(
-                f"❌ LOGIN: el NIT {nit} "
-                f"no existe en Firebase."
+                f"❌ LOGIN: NIT {nit} no existe"
             )
 
             return """
-            <html>
+<html>
+<head>
+<title>Datos incorrectos</title>
 
-            <head>
+<style>
 
-                <title>Datos incorrectos</title>
+body{
+font-family:sans-serif;
+background:#f4f6f9;
+display:flex;
+align-items:center;
+justify-content:center;
+height:100vh;
+margin:0;
+}
 
-                <style>
+.box{
+background:white;
+padding:40px;
+border-radius:16px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
+}
 
-                    body{
-                        font-family:sans-serif;
-                        background:#f4f6f9;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        height:100vh;
-                        margin:0;
-                    }
+a{
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+}
 
-                    .box{
-                        background:white;
-                        padding:40px;
-                        border-radius:16px;
-                        text-align:center;
-                        box-shadow:
-                            0 10px 25px
-                            rgba(0,0,0,0.05);
-                    }
+</style>
 
-                    a{
-                        background:#3498db;
-                        color:white;
-                        padding:10px 20px;
-                        border-radius:20px;
-                        text-decoration:none;
-                        font-weight:bold;
-                        display:inline-block;
-                        margin-top:15px;
-                    }
+</head>
 
-                </style>
+<body>
 
-            </head>
+<div class="box">
 
-            <body>
+<h2>❌ NIT no registrado</h2>
 
-                <div class="box">
+<p>
+El NIT no está registrado en Alianzas Pharma.
+</p>
 
-                    <h2>
-                        ❌ NIT no registrado
-                    </h2>
+<a href="/">
+Intentar de Nuevo
+</a>
 
-                    <p>
-                        El NIT no está registrado
-                        en Alianzas Pharma.
-                    </p>
+</div>
 
-                    <a href="/">
-                        Intentar de Nuevo
-                    </a>
+</body>
+</html>
+"""
 
-                </div>
-
-            </body>
-
-            </html>
-            """
-
-
-        # =================================================
-        # OBTENER CLIENTE
-        # =================================================
+        # ----------------------------------------------------
+        # Datos del cliente
+        # ----------------------------------------------------
 
         datos_cliente = doc.to_dict()
 
-        print(
-            f"✅ LOGIN: cliente encontrado: "
-            f"{datos_cliente.get('nombre', 'Sin nombre')}"
-        )
-
-
-        # =================================================
-        # CONTRASEÑA DE FIREBASE
-        # =================================================
-
-        pass_db = str(
+        password_db = str(
             datos_cliente.get(
                 "password",
                 ""
             )
         ).strip()
 
+        # ----------------------------------------------------
+        # Comparar contraseña
+        # ----------------------------------------------------
 
-        # =================================================
-        # COMPARAR CONTRASEÑA
-        # =================================================
-
-        if pass_db != password:
+        if password_db != password:
 
             print(
-                f"❌ LOGIN: contraseña incorrecta "
-                f"para NIT {nit}."
+                f"❌ LOGIN: contraseña incorrecta para {nit}"
             )
 
             return """
-            <html>
+<html>
+<head>
+<title>Datos incorrectos</title>
 
-            <head>
+<style>
 
-                <title>Datos incorrectos</title>
+body{
+font-family:sans-serif;
+background:#f4f6f9;
+display:flex;
+align-items:center;
+justify-content:center;
+height:100vh;
+margin:0;
+}
 
-                <style>
+.box{
+background:white;
+padding:40px;
+border-radius:16px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
+}
 
-                    body{
-                        font-family:sans-serif;
-                        background:#f4f6f9;
-                        display:flex;
-                        align-items:center;
-                        justify-content:center;
-                        height:100vh;
-                        margin:0;
-                    }
+a{
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+}
 
-                    .box{
-                        background:white;
-                        padding:40px;
-                        border-radius:16px;
-                        text-align:center;
-                        box-shadow:
-                            0 10px 25px
-                            rgba(0,0,0,0.05);
-                    }
+</style>
 
-                    a{
-                        background:#3498db;
-                        color:white;
-                        padding:10px 20px;
-                        border-radius:20px;
-                        text-decoration:none;
-                        font-weight:bold;
-                        display:inline-block;
-                        margin-top:15px;
-                    }
+</head>
 
-                </style>
+<body>
 
-            </head>
+<div class="box">
 
-            <body>
+<h2>❌ Contraseña Incorrecta</h2>
 
-                <div class="box">
+<p>
+La contraseña no coincide con la registrada en Firebase.
+</p>
 
-                    <h2>
-                        ❌ Contraseña Incorrecta
-                    </h2>
+<a href="/">
+Intentar de Nuevo
+</a>
 
-                    <p>
-                        La contraseña no coincide
-                        con la registrada en Firebase.
-                    </p>
+</div>
 
-                    <a href="/">
-                        Intentar de Nuevo
-                    </a>
+</body>
+</html>
+"""
 
-                </div>
-
-            </body>
-
-            </html>
-            """
-
-
-        # =================================================
+        # ----------------------------------------------------
         # LOGIN CORRECTO
-        # =================================================
+        # ----------------------------------------------------
 
         print(
-            f"✅ LOGIN CORRECTO: NIT {nit}"
+            f"✅ LOGIN CORRECTO: {nit}"
         )
 
+        productos = cargar_productos()
 
-        # =================================================
-        # CARGAR PRODUCTOS
-        # =================================================
-
-        lista_productos = cargar_productos()
-
-
-        # =================================================
-        # MOSTRAR TIENDA
-        # =================================================
+        # ----------------------------------------------------
+        # Mostrar tienda
+        # ----------------------------------------------------
 
         resp = make_response(
             render_template(
                 "index.html",
-                productos=lista_productos,
+                productos=productos,
                 cliente=datos_cliente
             )
         )
 
-
-        # =================================================
-        # GUARDAR SESIÓN
-        # =================================================
-
+        # Cookie del cliente
         resp.set_cookie(
             "cliente_nit",
             nit,
@@ -846,89 +766,81 @@ def ingresar_portal():
 
         return resp
 
-
-    # =====================================================
-    # ERROR GENERAL FIREBASE
-    # =====================================================
+    # --------------------------------------------------------
+    # Error Firebase
+    # --------------------------------------------------------
 
     except Exception as e:
 
         print(
-            f"❌ LOGIN FIREBASE ERROR: {e}"
+            f"❌ LOGIN FIREBASE ERROR: "
+            f"{type(e).__name__}: {e}"
         )
 
         return """
-        <html>
+<html>
+<head>
+<title>Error de Firebase</title>
 
-        <head>
+<style>
 
-            <title>Error de Firebase</title>
+body{
+font-family:sans-serif;
+background:#f4f6f9;
+display:flex;
+align-items:center;
+justify-content:center;
+height:100vh;
+margin:0;
+}
 
-            <style>
+.box{
+background:white;
+padding:40px;
+border-radius:16px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
+}
 
-                body{
-                    font-family:sans-serif;
-                    background:#f4f6f9;
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    height:100vh;
-                    margin:0;
-                }
+a{
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+}
 
-                .box{
-                    background:white;
-                    padding:40px;
-                    border-radius:16px;
-                    text-align:center;
-                    box-shadow:
-                        0 10px 25px
-                        rgba(0,0,0,0.05);
-                }
+</style>
 
-                a{
-                    background:#3498db;
-                    color:white;
-                    padding:10px 20px;
-                    border-radius:20px;
-                    text-decoration:none;
-                    font-weight:bold;
-                    display:inline-block;
-                    margin-top:15px;
-                }
+</head>
 
-            </style>
+<body>
 
-        </head>
+<div class="box">
 
-        <body>
+<h2>❌ Error de conexión con Firebase</h2>
 
-            <div class="box">
+<p>
+No fue posible consultar la base de datos.
+</p>
 
-                <h2>
-                    ❌ Error de conexión con Firebase
-                </h2>
+<a href="/">
+Intentar de Nuevo
+</a>
 
-                <p>
-                    No fue posible consultar
-                    la base de datos.
-                </p>
+</div>
 
-                <a href="/">
-                    Intentar de Nuevo
-                </a>
-
-            </div>
-
-        </body>
-
-        </html>
-        """
+</body>
+</html>
+"""
 
 
-# =========================================================
+# ============================================================
 # REGISTRO DE CLIENTE
-# =========================================================
+# ============================================================
 
 @app.route(
     "/registro-cliente",
@@ -953,22 +865,21 @@ def registro_cliente():
             ""
         ).strip()
 
-
         if db:
 
             try:
 
                 db.collection(
                     "clientes"
-                ).document(nit).set({
-
-                    "nit": nit,
-
-                    "nombre": nombre,
-
-                    "password": password
-
-                })
+                ).document(
+                    nit
+                ).set(
+                    {
+                        "nit": nit,
+                        "nombre": nombre,
+                        "password": password
+                    }
+                )
 
                 print(
                     f"✅ CLIENTE REGISTRADO: {nit}"
@@ -981,18 +892,17 @@ def registro_cliente():
             except Exception as e:
 
                 print(
-                    f"❌ ERROR REGISTRANDO CLIENTE: {e}"
+                    f"❌ ERROR registrando cliente: {e}"
                 )
-
 
     return render_template(
         "registro_cliente.html"
     )
 
 
-# =========================================================
-# CERRAR SESIÓN
-# =========================================================
+# ============================================================
+# SALIR
+# ============================================================
 
 @app.route("/salir")
 def salir():
