@@ -91,34 +91,367 @@ def inicio():
 def ingresar_portal():
     nit = request.form.get('nit', '').strip()
     password = request.form.get('password', '').strip()
-    
-    # 🔑 PASE MAESTRO LOCAL: Garantiza el acceso de desarrollo instantáneo
-    if nit == "123" and password == "123":
-        lista = []
-        if db:
-            try:
-                db._firestore_api_options = {"use_rest": True}
-                productos_ref = db.collection("productos").stream()
-                for d in productos_ref:
-                    p = d.to_dict()
-                    lista.append({
-                        "id": d.id, 
-                        "nombre": p.get("nombre", "Medicamento sin nombre"), 
-                        "precio": int(p.get("precio", 0)), 
-                        "imagen": p.get("imagen", "/public/placeholder.jpg"), 
-                        "existencias": int(p.get("existencias", 0))
-                    })
-                lista.sort(key=lambda x: x["nombre"].lower())
-            except:
-                pass
-        
-        if not lista:
-            lista = [{"id": "0", "nombre": "Kit Inicial de Prueba Pharma", "precio": 150000, "imagen": "/public/placeholder.jpg", "existencias": 10}]
-            
-        cliente_data = {"nit": "123", "nombre": "DROGUERIA PHARMA PREMIUM", "password": "123"}
-        resp = make_response(render_template('index.html', productos=lista, cliente=cliente_data))
-        resp.set_cookie('cliente_nit', nit, path='/', httponly=True, secure=True, samesite='None')
+
+    # =========================================================
+    # VALIDACIÓN BÁSICA
+    # =========================================================
+
+    if not nit or not password:
+        return """
+        <html>
+        <head>
+            <title>Datos incompletos</title>
+            <style>
+                body {
+                    font-family: sans-serif;
+                    background: #f4f6f9;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                }
+
+                .box {
+                    background: white;
+                    padding: 40px;
+                    border-radius: 16px;
+                    text-align: center;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+                }
+
+                a {
+                    background: #3498db;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 20px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    display: inline-block;
+                    margin-top: 15px;
+                }
+            </style>
+        </head>
+
+        <body>
+            <div class="box">
+                <h2>⚠️ Datos incompletos</h2>
+                <p>Debes ingresar el NIT y la contraseña.</p>
+                <a href="/">Intentar de Nuevo</a>
+            </div>
+        </body>
+        </html>
+        """
+
+    # =========================================================
+    # COMPROBAR QUE FIREBASE ESTÉ CONECTADO
+    # =========================================================
+
+    if not db:
+        print("❌ LOGIN: Firebase no está conectado.")
+
+        return """
+        <html>
+        <head>
+            <title>Error de conexión</title>
+            <style>
+                body {
+                    font-family: sans-serif;
+                    background: #f4f6f9;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                }
+
+                .box {
+                    background: white;
+                    padding: 40px;
+                    border-radius: 16px;
+                    text-align: center;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+                }
+
+                a {
+                    background: #3498db;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 20px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    display: inline-block;
+                    margin-top: 15px;
+                }
+            </style>
+        </head>
+
+        <body>
+            <div class="box">
+                <h2>❌ Error de conexión</h2>
+                <p>No fue posible conectar con la base de datos.</p>
+                <a href="/">Intentar de Nuevo</a>
+            </div>
+        </body>
+        </html>
+        """
+
+    # =========================================================
+    # BUSCAR CLIENTE REAL EN FIREBASE
+    # =========================================================
+
+    try:
+        print(f"🔎 LOGIN: buscando NIT {nit} en Firebase...")
+
+        doc = db.collection("clientes").document(nit).get()
+
+        # -----------------------------------------------------
+        # EL NIT NO EXISTE
+        # -----------------------------------------------------
+
+        if not doc.exists:
+            print(f"❌ LOGIN: el NIT {nit} no existe en Firebase.")
+
+            return """
+            <html>
+            <head>
+                <title>Datos incorrectos</title>
+                <style>
+                    body {
+                        font-family: sans-serif;
+                        background: #f4f6f9;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        margin: 0;
+                    }
+
+                    .box {
+                        background: white;
+                        padding: 40px;
+                        border-radius: 16px;
+                        text-align: center;
+                        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+                    }
+
+                    a {
+                        background: #3498db;
+                        color: white;
+                        padding: 10px 20px;
+                        border-radius: 20px;
+                        text-decoration: none;
+                        font-weight: bold;
+                        display: inline-block;
+                        margin-top: 15px;
+                    }
+                </style>
+            </head>
+
+            <body>
+                <div class="box">
+                    <h2>❌ NIT no registrado</h2>
+                    <p>El NIT no está registrado en Alianzas Pharma.</p>
+                    <a href="/">Intentar de Nuevo</a>
+                </div>
+            </body>
+            </html>
+            """
+
+        # -----------------------------------------------------
+        # OBTENER DATOS DEL CLIENTE
+        # -----------------------------------------------------
+
+        datos_cliente = doc.to_dict()
+
+        pass_db = str(
+            datos_cliente.get('password', '')
+        ).strip()
+
+        # -----------------------------------------------------
+        # COMPARAR CONTRASEÑA REAL DE FIREBASE
+        # -----------------------------------------------------
+
+        if pass_db != password:
+
+            print(
+                f"❌ LOGIN: contraseña incorrecta para NIT {nit}."
+            )
+
+            return """
+            <html>
+            <head>
+                <title>Datos incorrectos</title>
+                <style>
+                    body {
+                        font-family: sans-serif;
+                        background: #f4f6f9;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        height: 100vh;
+                        margin: 0;
+                    }
+
+                    .box {
+                        background: white;
+                        padding: 40px;
+                        border-radius: 16px;
+                        text-align: center;
+                        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+                    }
+
+                    a {
+                        background: #3498db;
+                        color: white;
+                        padding: 10px 20px;
+                        border-radius: 20px;
+                        text-decoration: none;
+                        font-weight: bold;
+                        display: inline-block;
+                        margin-top: 15px;
+                    }
+                </style>
+            </head>
+
+            <body>
+                <div class="box">
+                    <h2>❌ Contraseña Incorrecta</h2>
+                    <p>La contraseña no coincide con la registrada en Firebase.</p>
+                    <a href="/">Intentar de Nuevo</a>
+                </div>
+            </body>
+            </html>
+            """
+
+        # =====================================================
+        # LOGIN CORRECTO
+        # =====================================================
+
+        print(f"✅ LOGIN CORRECTO: NIT {nit}")
+
+        lista_productos = []
+
+        # -----------------------------------------------------
+        # CARGAR PRODUCTOS REALES DE FIREBASE
+        # -----------------------------------------------------
+
+        try:
+            productos_ref = db.collection("productos").stream()
+
+            for d in productos_ref:
+                p = d.to_dict()
+
+                lista_productos.append({
+                    "id": d.id,
+                    "nombre": p.get(
+                        "nombre",
+                        "Medicamento sin nombre"
+                    ),
+                    "precio": int(
+                        p.get("precio", 0)
+                    ),
+                    "imagen": p.get(
+                        "imagen",
+                        "/public/placeholder.jpg"
+                    ),
+                    "existencias": int(
+                        p.get("existencias", 0)
+                    )
+                })
+
+            lista_productos.sort(
+                key=lambda x: x["nombre"].lower()
+            )
+
+            print(
+                f"✅ PRODUCTOS: {len(lista_productos)} productos cargados."
+            )
+
+        except Exception as e:
+            print(
+                f"⚠️ PRODUCTOS: no se pudieron cargar: {e}"
+            )
+
+        # =====================================================
+        # MOSTRAR LA TIENDA
+        # =====================================================
+
+        resp = make_response(
+            render_template(
+                'index.html',
+                productos=lista_productos,
+                cliente=datos_cliente
+            )
+        )
+
+        # Guardamos el NIT REAL del cliente
+        resp.set_cookie(
+            'cliente_nit',
+            nit,
+            path='/',
+            httponly=True,
+            secure=True,
+            samesite='None'
+        )
+
         return resp
+
+    # =========================================================
+    # ERROR GENERAL DE FIREBASE
+    # =========================================================
+
+    except Exception as e:
+
+        print(
+            f"❌ LOGIN FIREBASE ERROR: {e}"
+        )
+
+        return """
+        <html>
+        <head>
+            <title>Error de Firebase</title>
+            <style>
+                body {
+                    font-family: sans-serif;
+                    background: #f4f6f9;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                }
+
+                .box {
+                    background: white;
+                    padding: 40px;
+                    border-radius: 16px;
+                    text-align: center;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+                }
+
+                a {
+                    background: #3498db;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 20px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    display: inline-block;
+                    margin-top: 15px;
+                }
+            </style>
+        </head>
+
+        <body>
+            <div class="box">
+                <h2>❌ Error de conexión con Firebase</h2>
+                <p>No fue posible consultar la base de datos.</p>
+                <a href="/">Intentar de Nuevo</a>
+            </div>
+        </body>
+        </html>
+        """
 
     # 🛡️ CARRILES FLEXIBLES DE VALIDACIÓN REAL PARA FIRESTORE
     if db:
