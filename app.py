@@ -43,70 +43,63 @@ firebase_project_id = None
 # =========================================================
 # CARGAR LLAVE FIREBASE
 # =========================================================
+# CARGAR LLAVE FIREBASE
+# ============================================================
+
+base_dir = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+print("==============================================")
+print("🔐 CARGANDO CREDENCIALES FIREBASE")
+print("==============================================")
+
+firebase_credentials_env = os.getenv("FIREBASE_CREDENTIALS")
+
+if not firebase_credentials_env:
+    raise ValueError(
+        "La variable FIREBASE_CREDENTIALS no está configurada"
+    )
 
 try:
-
-    base_dir = os.path.dirname(
-        os.path.abspath(__file__)
+    datos_firebase = json.loads(firebase_credentials_env)
+except json.JSONDecodeError as e:
+    raise ValueError(
+        f"FIREBASE_CREDENTIALS no contiene un JSON válido: {e}"
     )
 
-    ruta_llave = os.path.join(
-        base_dir,
-        "llave-firebase.json"
+print("✅ FIREBASE_CREDENTIALS encontrada")
+print(f"📁 Proyecto: {datos_firebase.get('project_id')}")
+
+# ============================================================
+# CORREGIR PRIVATE KEY
+# ============================================================
+
+if "private_key" in datos_firebase:
+    datos_firebase["private_key"] = (
+        datos_firebase["private_key"]
+        .replace("\\n", "\n")
     )
 
-    print("========================================")
-    print("🔎 BUSCANDO LLAVE FIREBASE")
-    print(ruta_llave)
-    print("========================================")
+firebase_project_id = datos_firebase.get(
+    "project_id"
+)
 
-    if not os.path.exists(ruta_llave):
-
-        ruta_alternativa = "/var/task/llave-firebase.json"
-
-        if os.path.exists(ruta_alternativa):
-            ruta_llave = ruta_alternativa
-        else:
-            raise FileNotFoundError(
-                f"No existe llave-firebase.json en: {ruta_llave}"
-            )
-
-    with open(
-        ruta_llave,
-        "r",
-        encoding="utf-8"
-    ) as archivo:
-
-        datos_firebase = json.load(archivo)
-
-
-    # -----------------------------------------------------
-    # CORREGIR PRIVATE KEY
-    # -----------------------------------------------------
-
-    if "private_key" in datos_firebase:
-
-        datos_firebase["private_key"] = (
-            datos_firebase["private_key"]
-            .replace("\\n", "\n")
-        )
-
-
-    firebase_project_id = datos_firebase.get(
-        "project_id"
+if not firebase_project_id:
+    raise ValueError(
+        "La llave Firebase no contiene project_id"
     )
-
-    if not firebase_project_id:
-
-        raise ValueError(
-            "La llave Firebase no contiene project_id"
-        )
 
 
     # -----------------------------------------------------
     # CREAR CREDENCIALES
     # -----------------------------------------------------
 
+   # ============================================================
+# CREAR CREDENCIALES
+# ============================================================
+
+try:
     firebase_credentials = (
         service_account.Credentials.from_service_account_info(
             datos_firebase,
@@ -114,22 +107,23 @@ try:
         )
     )
 
-
-    print("========================================")
+    print("==============================================")
     print("✅ LLAVE FIREBASE CARGADA")
     print(f"📁 Proyecto: {firebase_project_id}")
-    print("========================================")
-
+    print("==============================================")
 
 except Exception as e:
-
     firebase_credentials = None
 
-    print("========================================")
+    print("==============================================")
     print("❌ ERROR CARGANDO FIREBASE")
     print(str(e))
-    print("========================================")
+    print("==============================================")
 
+
+# ============================================================
+# OBTENER TOKEN GOOGLE
+# ============================================================
 
 # =========================================================
 # OBTENER TOKEN GOOGLE
