@@ -1508,6 +1508,9 @@ def salir():
 # =========================================================
 # MIS PEDIDOS
 # =========================================================
+
+
+
 @app.route("/mis_pedidos")
 @app.route("/mis-pedidos")
 def mis_pedidos():
@@ -1517,67 +1520,586 @@ def mis_pedidos():
     if not cliente:
         return redirect(url_for("inicio"))
 
-    return """
-    <html>
-    <head>
-        <title>Mis Pedidos - Alianzas Pharma</title>
-        <meta charset="UTF-8">
-        <style>
-            body {
-                font-family: Arial, sans-serif;
-                background: #f4f6f9;
-                margin: 0;
-                padding: 40px;
-            }
+    # -----------------------------------------------------
+    # NIT DEL CLIENTE LOGUEADO
+    # -----------------------------------------------------
 
-            .box {
-                max-width: 900px;
-                margin: auto;
-                background: white;
-                padding: 30px;
-                border-radius: 16px;
-                box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            }
+    nit_cliente = str(
+        cliente.get(
+            "nit",
+            request.cookies.get(
+                "cliente_nit",
+                ""
+            )
+        )
+    ).strip()
 
-            h1 {
-                color: #2c3e50;
-            }
 
-            .volver {
-                display: inline-block;
-                margin-top: 20px;
-                background: #3498db;
-                color: white;
-                padding: 12px 20px;
-                border-radius: 20px;
-                text-decoration: none;
-                font-weight: bold;
-            }
-        </style>
-    </head>
+    # -----------------------------------------------------
+    # OBTENER PEDIDOS
+    # -----------------------------------------------------
 
-    <body>
+    todos_los_pedidos = obtener_coleccion(
+        "pedidos"
+    )
 
-        <div class="box">
 
-            <h1>📜 Mis Pedidos</h1>
+    pedidos_cliente = []
 
-            <p>
-                Aquí aparecerán los pedidos realizados por
-                <strong>""" + str(cliente.get("nombre", "")) + """</strong>.
-            </p>
 
-            <a href="/" class="volver">
-                ← Volver al catálogo
-            </a>
+    # -----------------------------------------------------
+    # FILTRAR PEDIDOS DEL CLIENTE
+    # -----------------------------------------------------
+
+    for pedido in todos_los_pedidos:
+
+        datos_pedido_cliente = pedido.get(
+            "cliente",
+            {}
+        )
+
+        nit_pedido = str(
+            datos_pedido_cliente.get(
+                "nit",
+                ""
+            )
+        ).strip()
+
+
+        if nit_pedido == nit_cliente:
+
+            pedidos_cliente.append(
+                pedido
+            )
+
+
+    # -----------------------------------------------------
+    # ORDENAR DEL MÁS RECIENTE AL MÁS ANTIGUO
+    # -----------------------------------------------------
+
+    pedidos_cliente.sort(
+        key=lambda x: str(
+            x.get(
+                "fecha",
+                ""
+            )
+        ),
+        reverse=True
+    )
+
+
+    # -----------------------------------------------------
+    # CONSTRUIR HTML DE PEDIDOS
+    # -----------------------------------------------------
+
+    tarjetas = ""
+
+
+    for pedido in pedidos_cliente:
+
+        pedido_id = pedido.get(
+            "_id",
+            "Sin número"
+        )
+
+        estado = pedido.get(
+            "estado",
+            "Pendiente"
+        )
+
+        fecha = pedido.get(
+            "fecha",
+            ""
+        )
+
+        total = pedido.get(
+            "total",
+            0
+        )
+
+        articulos = pedido.get(
+            "articulos",
+            []
+        )
+
+
+        productos_html = ""
+
+
+        for articulo in articulos:
+
+            nombre = articulo.get(
+                "nombre",
+                articulo.get(
+                    "producto",
+                    "Producto"
+                )
+            )
+
+            cantidad = articulo.get(
+                "cantidad",
+                0
+            )
+
+            precio = articulo.get(
+                "precio",
+                0
+            )
+
+            subtotal = (
+                int(precio)
+                * int(cantidad)
+            )
+
+
+            productos_html += f"""
+                <div class="producto-pedido">
+
+                    <div>
+                        <strong>
+                            {nombre}
+                        </strong>
+
+                        <br>
+
+                        <span>
+                            Cantidad: {cantidad}
+                        </span>
+                    </div>
+
+                    <strong>
+                        ${subtotal:,.0f}
+                    </strong>
+
+                </div>
+            """
+
+
+        tarjetas += f"""
+        <div class="pedido">
+
+            <div class="pedido-header">
+
+                <div>
+
+                    <h2>
+                        🧾 {pedido_id}
+                    </h2>
+
+                    <p>
+                        Fecha:
+                        {fecha}
+                    </p>
+
+                </div>
+
+                <span class="estado">
+                    {estado}
+                </span>
+
+            </div>
+
+
+            <div class="productos">
+
+                {productos_html}
+
+            </div>
+
+
+            <div class="pedido-total">
+
+                <span>
+                    Total del pedido
+                </span>
+
+                <strong>
+                    ${int(total):,.0f}
+                </strong>
+
+            </div>
 
         </div>
-
-    </body>
-    </html>
-    """
+        """
 
 
+    # -----------------------------------------------------
+    # SI NO HAY PEDIDOS
+    # -----------------------------------------------------
+
+    if not tarjetas:
+
+        tarjetas = """
+        <div class="sin-pedidos">
+
+            <div class="icono">
+                📦
+            </div>
+
+            <h2>
+                Todavía no tienes pedidos
+            </h2>
+
+            <p>
+                Cuando realices tu primer pedido,
+                aparecerá aquí.
+            </p>
+
+        </div>
+        """
+
+
+    # -----------------------------------------------------
+    # MOSTRAR PÁGINA
+    # -----------------------------------------------------
+
+    return f"""
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+>
+
+<title>
+Mis Pedidos - Alianzas Pharma
+</title>
+
+
+<style>
+
+* {{
+    box-sizing: border-box;
+}}
+
+
+body {{
+
+    font-family:
+        'Segoe UI',
+        Arial,
+        sans-serif;
+
+    background:
+        #f4f6f9;
+
+    margin: 0;
+
+    padding: 30px;
+
+    color: #2c3e50;
+
+}}
+
+
+.contenedor {{
+
+    max-width: 1000px;
+
+    margin: auto;
+
+}}
+
+
+.encabezado {{
+
+    background: white;
+
+    padding: 25px 30px;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 10px 25px
+        rgba(0,0,0,0.05);
+
+    margin-bottom: 25px;
+
+}}
+
+
+.encabezado h1 {{
+
+    margin: 0 0 8px 0;
+
+    font-size: 28px;
+
+}}
+
+
+.encabezado p {{
+
+    margin: 0;
+
+    color: #64748b;
+
+}}
+
+
+.pedido {{
+
+    background: white;
+
+    border-radius: 16px;
+
+    padding: 25px;
+
+    margin-bottom: 20px;
+
+    box-shadow:
+        0 10px 25px
+        rgba(0,0,0,0.05);
+
+}}
+
+
+.pedido-header {{
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    gap: 20px;
+
+    border-bottom:
+        1px solid #e5e7eb;
+
+    padding-bottom: 15px;
+
+    margin-bottom: 15px;
+
+}}
+
+
+.pedido-header h2 {{
+
+    margin: 0 0 5px 0;
+
+    font-size: 20px;
+
+}}
+
+
+.pedido-header p {{
+
+    margin: 0;
+
+    color: #64748b;
+
+    font-size: 14px;
+
+}}
+
+
+.estado {{
+
+    background: #fff3cd;
+
+    color: #856404;
+
+    padding: 8px 14px;
+
+    border-radius: 20px;
+
+    font-weight: bold;
+
+    font-size: 14px;
+
+}}
+
+
+.producto-pedido {{
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    padding: 12px 0;
+
+    border-bottom:
+        1px solid #f1f5f9;
+
+}}
+
+
+.producto-pedido strong {{
+
+    color: #2c3e50;
+
+}}
+
+
+.producto-pedido span {{
+
+    color: #64748b;
+
+    font-size: 14px;
+
+}}
+
+
+.pedido-total {{
+
+    display: flex;
+
+    justify-content:
+        space-between;
+
+    align-items:
+        center;
+
+    margin-top: 18px;
+
+    padding-top: 15px;
+
+    border-top:
+        2px solid #e5e7eb;
+
+    font-size: 18px;
+
+}}
+
+
+.pedido-total strong {{
+
+    color: #16a34a;
+
+    font-size: 22px;
+
+}}
+
+
+.sin-pedidos {{
+
+    background: white;
+
+    text-align: center;
+
+    padding: 60px 30px;
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 10px 25px
+        rgba(0,0,0,0.05);
+
+}}
+
+
+.icono {{
+
+    font-size: 50px;
+
+    margin-bottom: 15px;
+
+}}
+
+
+.sin-pedidos h2 {{
+
+    margin-bottom: 8px;
+
+}}
+
+
+.sin-pedidos p {{
+
+    color: #64748b;
+
+}}
+
+
+.volver {{
+
+    display: inline-block;
+
+    margin-top: 20px;
+
+    background: #3498db;
+
+    color: white;
+
+    padding: 12px 22px;
+
+    border-radius: 25px;
+
+    text-decoration: none;
+
+    font-weight: bold;
+
+}}
+
+
+.volver:hover {{
+
+    background: #2980b9;
+
+}}
+
+
+</style>
+
+</head>
+
+
+<body>
+
+
+<div class="contenedor">
+
+
+    <div class="encabezado">
+
+        <h1>
+            📜 Mis Pedidos
+        </h1>
+
+        <p>
+            Pedidos realizados por
+            <strong>
+                {cliente.get("nombre", "")}
+            </strong>
+            — NIT:
+            <strong>
+                {nit_cliente}
+            </strong>
+        </p>
+
+    </div>
+
+
+    {tarjetas}
+
+
+    <a
+        href="/"
+        class="volver"
+    >
+        ← Volver al catálogo
+    </a>
+
+
+</div>
+
+
+</body>
+
+</html>
+"""
 
 
 # =========================================================
