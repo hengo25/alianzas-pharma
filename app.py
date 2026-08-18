@@ -1513,7 +1513,77 @@ def salir():
 
     return resp
 
+# =========================================================
+# MIS PEDIDOS
+# =========================================================
 
+@app.route("/mis_pedidos")
+def mis_pedidos():
+
+    cliente = obtener_cliente_logueado()
+
+    if not cliente:
+        return redirect(url_for("inicio"))
+
+    return """
+    <html>
+    <head>
+        <title>Mis Pedidos - Alianzas Pharma</title>
+        <meta charset="UTF-8">
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f4f6f9;
+                margin: 0;
+                padding: 40px;
+            }
+
+            .box {
+                max-width: 900px;
+                margin: auto;
+                background: white;
+                padding: 30px;
+                border-radius: 16px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            }
+
+            h1 {
+                color: #2c3e50;
+            }
+
+            .volver {
+                display: inline-block;
+                margin-top: 20px;
+                background: #3498db;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 20px;
+                text-decoration: none;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <div class="box">
+
+            <h1>📜 Mis Pedidos</h1>
+
+            <p>
+                Aquí aparecerán los pedidos realizados por
+                <strong>""" + str(cliente.get("nombre", "")) + """</strong>.
+            </p>
+
+            <a href="/" class="volver">
+                ← Volver al catálogo
+            </a>
+
+        </div>
+
+    </body>
+    </html>
+    """
 # =========================================================
 # VERCEL / FLASK
 # =========================================================
