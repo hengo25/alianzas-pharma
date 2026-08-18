@@ -874,6 +874,12 @@ def obtener_productos():
     .replace("/public/", "")
     .lstrip("/")
 )
+        print("========================================")
+        print("🖼️ IMAGEN PRODUCTO")
+        print("Original:", producto.get("imagen", ""))
+        print("Procesada:", imagen)
+        print("Ruta web:", "/imagenes/" + imagen)
+        print("========================================")
 
     lista.append({
 
@@ -890,12 +896,12 @@ def obtener_productos():
     "precio": precio,
 
     "imagen": (
-        "/imagenes/"
-        + quote(
-            imagen,
-            safe="/"
-        )
-    ),
+    "/imagenes/"
+    + quote(
+        imagen,
+        safe="/"
+    )
+),
 
     "existencias": existencias
 
