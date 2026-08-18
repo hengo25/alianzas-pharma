@@ -41,20 +41,105 @@ main = app
 @app.route('/imagenes/<path:nombre>')
 def servir_imagen(nombre):
 
-    base_dir = os.path.dirname(
-        os.path.abspath(__file__)
-    )
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    carpeta_public = os.path.join(base_dir, 'public')
 
-    carpeta_public = os.path.join(
-        base_dir,
-        'public'
-    )
-
-    return send_from_directory(
+    # Ruta directa
+    ruta_directa = os.path.join(
         carpeta_public,
         nombre
     )
 
+    if os.path.isfile(ruta_directa):
+
+        return send_from_directory(
+            carpeta_public,
+            nombre
+        )
+
+    # -------------------------------------------------
+    # BUSCAR LA IMAGEN DENTRO DE TODAS LAS SUBCARPETAS
+    # -------------------------------------------------
+
+    nombre_archivo = os.path.basename(nombre)
+
+    for raiz, carpetas, archivos in os.walk(carpeta_public):
+
+        if nombre_archivo in archivos:
+
+            ruta_archivo = os.path.join(
+                raiz,
+                nombre_archivo
+            )
+
+            carpeta_relativa = os.path.relpath(
+                raiz,
+                carpeta_public
+            )
+
+            if carpeta_relativa == ".":
+
+                ruta_relativa = nombre_archivo
+
+            else:
+
+                ruta_relativa = os.path.join(
+                    carpeta_relativa,
+                    nombre_archivo
+                )
+
+            return send_from_directory(
+                carpeta_public,
+                ruta_relativa
+            )
+
+    print(
+        "❌ IMAGEN NO ENCONTRADA:",
+        nombre
+    )
+
+    return "", 404
+
+
+@app.route('/static/<path:nombre>')
+def servir_static(nombre):
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    carpeta_public = os.path.join(base_dir, 'public')
+
+    nombre_archivo = os.path.basename(nombre)
+
+    for raiz, carpetas, archivos in os.walk(carpeta_public):
+
+        if nombre_archivo in archivos:
+
+            carpeta_relativa = os.path.relpath(
+                raiz,
+                carpeta_public
+            )
+
+            if carpeta_relativa == ".":
+
+                ruta_relativa = nombre_archivo
+
+            else:
+
+                ruta_relativa = os.path.join(
+                    carpeta_relativa,
+                    nombre_archivo
+                )
+
+            return send_from_directory(
+                carpeta_public,
+                ruta_relativa
+            )
+
+    print(
+        "❌ STATIC NO ENCONTRADO:",
+        nombre
+    )
+
+    return "", 404
 
 # =========================================================
 # CONFIGURACIÓN FIREBASE REST
@@ -861,25 +946,25 @@ def obtener_productos():
 
             existencias = 0
 
+    imagen = producto.get(
+    "imagen",
+    "placeholder.jpg"
+)
 
-        imagen = producto.get(
-            "imagen",
-            "placeholder.jpg"
-        )
+    imagen = str(imagen).strip()
 
-
-        imagen = (
+    imagen = (
     imagen
+    .replace("\\", "/")
     .replace("/static/", "")
     .replace("/public/", "")
     .lstrip("/")
 )
-        print("========================================")
-        print("🖼️ IMAGEN PRODUCTO")
-        print("Original:", producto.get("imagen", ""))
-        print("Procesada:", imagen)
-        print("Ruta web:", "/imagenes/" + imagen)
-        print("========================================")
+
+    imagen = os.path.basename(
+    imagen
+)
+    
 
     lista.append({
 
