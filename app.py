@@ -1,6 +1,3 @@
-# app.py — Alianzas Pharma
-
-
 import os
 import json
 import uuid
@@ -31,92 +28,61 @@ from google.auth.transport.requests import Request
 # =========================================================
 
 app = Flask(__name__)
+
 CORS(app)
 
 main = app
 
 
 # =========================================================
-# RUTAS DE ARCHIVOS / IMÁGENES
+# DIRECTORIO BASE
 # =========================================================
 
-BASE_DIR = os.path.dirname(
+base_dir = os.path.dirname(
     os.path.abspath(__file__)
 )
 
-PUBLIC_DIR = os.path.join(
-    BASE_DIR,
-    "public"
-)
 
+# =========================================================
+# SERVIR IMÁGENES DESDE PUBLIC
+# =========================================================
 
 @app.route("/imagenes/<path:nombre>")
 def servir_imagen(nombre):
 
-    """
-    Sirve imágenes almacenadas dentro de /public.
+    carpeta_public = os.path.join(
+        base_dir,
+        "public"
+    )
 
-    Ejemplo:
+    print(
+        "========================================"
+    )
 
-    public/acetaminofen.jpg
+    print(
+        "🖼️ SOLICITUD DE IMAGEN"
+    )
 
-    se puede solicitar como:
+    print(
+        f"Archivo: {nombre}"
+    )
 
-    /imagenes/acetaminofen.jpg
-    """
+    print(
+        f"Carpeta: {carpeta_public}"
+    )
 
-    try:
+    print(
+        "========================================"
+    )
 
-        return send_from_directory(
-            PUBLIC_DIR,
-            nombre
-        )
-
-    except Exception as e:
-
-        print(
-            "❌ ERROR SIRVIENDO IMAGEN:",
-            nombre
-        )
-
-        print(
-            str(e)
-        )
-
-        return "", 404
-
-
-@app.route("/static/<path:nombre>")
-def servir_static(nombre):
-
-    """
-    También permite servir archivos desde public
-    utilizando rutas antiguas tipo /static/...
-    """
-
-    try:
-
-        return send_from_directory(
-            PUBLIC_DIR,
-            nombre
-        )
-
-    except Exception as e:
-
-        print(
-            "❌ ERROR SIRVIENDO STATIC:",
-            nombre
-        )
-
-        print(
-            str(e)
-        )
-
-        return "", 404
+    return send_from_directory(
+        carpeta_public,
+        nombre
+    )
 
 
 # =========================================================
-# FIREBASE REST
+# CONFIGURACIÓN FIREBASE REST
 # =========================================================
 
 FIRESTORE_SCOPE = (
@@ -124,12 +90,25 @@ FIRESTORE_SCOPE = (
 )
 
 firebase_credentials = None
+
 firebase_project_id = None
 
 
-print("==============================================")
-print("🔐 CARGANDO CREDENCIALES FIREBASE")
-print("==============================================")
+# =========================================================
+# CARGAR LLAVE FIREBASE
+# =========================================================
+
+print(
+    "=============================================="
+)
+
+print(
+    "🔐 CARGANDO CREDENCIALES FIREBASE"
+)
+
+print(
+    "=============================================="
+)
 
 
 firebase_credentials_env = os.getenv(
@@ -208,27 +187,45 @@ try:
         )
     )
 
-    print("==============================================")
-    print("✅ LLAVE FIREBASE CARGADA")
     print(
-        f"📁 Proyecto: "
-        f"{firebase_project_id}"
+        "=============================================="
     )
-    print("==============================================")
 
+    print(
+        "✅ LLAVE FIREBASE CARGADA"
+    )
+
+    print(
+        f"📁 Proyecto: {firebase_project_id}"
+    )
+
+    print(
+        "=============================================="
+    )
 
 except Exception as e:
 
     firebase_credentials = None
 
-    print("==============================================")
-    print("❌ ERROR CARGANDO FIREBASE")
-    print(str(e))
-    print("==============================================")
+    print(
+        "=============================================="
+    )
+
+    print(
+        "❌ ERROR CARGANDO FIREBASE"
+    )
+
+    print(
+        str(e)
+    )
+
+    print(
+        "=============================================="
+    )
 
 
 # =========================================================
-# OBTENER TOKEN FIREBASE
+# OBTENER TOKEN GOOGLE
 # =========================================================
 
 def obtener_token_firebase():
@@ -240,6 +237,7 @@ def obtener_token_firebase():
             "no están disponibles."
         )
 
+
     try:
 
         if not firebase_credentials.valid:
@@ -248,7 +246,9 @@ def obtener_token_firebase():
                 Request()
             )
 
+
         return firebase_credentials.token
+
 
     except Exception as e:
 
@@ -260,7 +260,7 @@ def obtener_token_firebase():
 
 
 # =========================================================
-# URL BASE FIRESTORE
+# URL BASE FIRESTORE REST
 # =========================================================
 
 def firestore_base_url():
@@ -270,6 +270,7 @@ def firestore_base_url():
         raise RuntimeError(
             "No existe firebase_project_id."
         )
+
 
     return (
         "https://firestore.googleapis.com/v1/"
@@ -286,19 +287,15 @@ def firestore_headers():
 
     token = obtener_token_firebase()
 
+
     return {
-
-        "Authorization":
-            f"Bearer {token}",
-
-        "Content-Type":
-            "application/json"
-
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
     }
 
 
 # =========================================================
-# FIRESTORE VALUE -> PYTHON
+# CONVERTIR FIRESTORE VALUE -> PYTHON
 # =========================================================
 
 def firestore_value_to_python(value):
@@ -371,26 +368,29 @@ def firestore_value_to_python(value):
 
     if "arrayValue" in value:
 
-        values = (
-            value["arrayValue"]
-            .get("values", [])
+        values = value[
+            "arrayValue"
+        ].get(
+            "values",
+            []
         )
 
+
         return [
-
             firestore_value_to_python(v)
-
             for v in values
-
         ]
 
 
     if "mapValue" in value:
 
-        fields = (
-            value["mapValue"]
-            .get("fields", {})
+        fields = value[
+            "mapValue"
+        ].get(
+            "fields",
+            {}
         )
+
 
         return firestore_fields_to_python(
             fields
@@ -401,12 +401,13 @@ def firestore_value_to_python(value):
 
 
 # =========================================================
-# FIRESTORE FIELDS -> PYTHON
+# CONVERTIR FIRESTORE FIELDS -> PYTHON
 # =========================================================
 
 def firestore_fields_to_python(fields):
 
     resultado = {}
+
 
     if not fields:
 
@@ -426,7 +427,7 @@ def firestore_fields_to_python(fields):
 
 
 # =========================================================
-# PYTHON -> FIRESTORE VALUE
+# CONVERTIR PYTHON -> FIRESTORE VALUE
 # =========================================================
 
 def python_to_firestore_value(value):
@@ -469,39 +470,24 @@ def python_to_firestore_value(value):
     if isinstance(value, list):
 
         return {
-
             "arrayValue": {
-
                 "values": [
-
                     python_to_firestore_value(v)
-
                     for v in value
-
                 ]
-
             }
-
         }
 
 
     if isinstance(value, dict):
 
         return {
-
             "mapValue": {
-
                 "fields": {
-
-                    k:
-                    python_to_firestore_value(v)
-
+                    k: python_to_firestore_value(v)
                     for k, v in value.items()
-
                 }
-
             }
-
         }
 
 
@@ -511,23 +497,19 @@ def python_to_firestore_value(value):
 
 
 # =========================================================
-# PYTHON DICT -> FIRESTORE FIELDS
+# CONVERTIR PYTHON DICT -> FIRESTORE FIELDS
 # =========================================================
 
 def python_to_firestore_fields(data):
 
     return {
-
-        key:
-        python_to_firestore_value(value)
-
+        key: python_to_firestore_value(value)
         for key, value in data.items()
-
     }
 
 
 # =========================================================
-# OBTENER DOCUMENTO
+# OBTENER DOCUMENTO FIRESTORE
 # =========================================================
 
 def obtener_documento(
@@ -552,6 +534,12 @@ def obtener_documento(
         )
 
 
+        print(
+            f"🔎 FIRESTORE GET: "
+            f"{coleccion}/{documento_id}"
+        )
+
+
         respuesta = requests.get(
             url,
             headers=firestore_headers(),
@@ -559,7 +547,46 @@ def obtener_documento(
         )
 
 
+        print(
+            "========================================"
+        )
+
+        print(
+            "🔥 FIRESTORE DEBUG"
+        )
+
+        print(
+            f"Proyecto: {firebase_project_id}"
+        )
+
+        print(
+            f"Colección: {coleccion}"
+        )
+
+        print(
+            f"Documento: {documento_id}"
+        )
+
+        print(
+            f"HTTP: {respuesta.status_code}"
+        )
+
+        print(
+            f"Respuesta: "
+            f"{respuesta.text[:2000]}"
+        )
+
+        print(
+            "========================================"
+        )
+
+
         if respuesta.status_code == 404:
+
+            print(
+                f"⚠️ Documento no existe: "
+                f"{coleccion}/{documento_id}"
+            )
 
             return None
 
@@ -611,7 +638,7 @@ def obtener_documento(
 
 
 # =========================================================
-# LISTAR COLECCIÓN
+# LISTAR COLECCIÓN FIRESTORE
 # =========================================================
 
 def obtener_coleccion(
@@ -645,7 +672,15 @@ def obtener_coleccion(
 
             if page_token:
 
-                params["pageToken"] = page_token
+                params[
+                    "pageToken"
+                ] = page_token
+
+
+            print(
+                f"📦 FIRESTORE LIST: "
+                f"{coleccion}"
+            )
 
 
             respuesta = requests.get(
@@ -705,9 +740,7 @@ def obtener_coleccion(
                 )
 
 
-                campos["_id"] = (
-                    documento_id
-                )
+                campos["_id"] = documento_id
 
 
                 documentos.append(
@@ -715,16 +748,21 @@ def obtener_coleccion(
                 )
 
 
-            page_token = (
-                datos.get(
-                    "nextPageToken"
-                )
+            page_token = datos.get(
+                "nextPageToken"
             )
 
 
             if not page_token:
 
                 break
+
+
+        print(
+            f"✅ Firestore devolvió "
+            f"{len(documentos)} documentos "
+            f"de {coleccion}"
+        )
 
 
         return documentos
@@ -742,14 +780,15 @@ def obtener_coleccion(
     except Exception as e:
 
         print(
-            f"❌ ERROR cargando {coleccion}: {e}"
+            f"❌ ERROR cargando "
+            f"{coleccion}: {e}"
         )
 
         return []
 
 
 # =========================================================
-# GUARDAR DOCUMENTO
+# CREAR / ACTUALIZAR DOCUMENTO
 # =========================================================
 
 def guardar_documento(
@@ -776,13 +815,17 @@ def guardar_documento(
 
 
         cuerpo = {
-
             "fields":
-            python_to_firestore_fields(
-                datos
-            )
-
+                python_to_firestore_fields(
+                    datos
+                )
         }
+
+
+        print(
+            f"💾 FIRESTORE SAVE: "
+            f"{coleccion}/{documento_id}"
+        )
 
 
         respuesta = requests.patch(
@@ -810,6 +853,12 @@ def guardar_documento(
             return False
 
 
+        print(
+            "✅ Documento guardado "
+            "correctamente"
+        )
+
+
         return True
 
 
@@ -825,74 +874,8 @@ def guardar_documento(
     except Exception as e:
 
         print(
-            f"❌ ERROR guardando documento: {e}"
-        )
-
-        return False
-
-
-# =========================================================
-# ELIMINAR DOCUMENTO FIRESTORE
-# =========================================================
-
-def eliminar_documento(
-    coleccion,
-    documento_id
-):
-
-    try:
-
-        url = (
-            firestore_base_url()
-            + "/"
-            + quote(
-                coleccion,
-                safe=""
-            )
-            + "/"
-            + quote(
-                documento_id,
-                safe=""
-            )
-        )
-
-
-        respuesta = requests.delete(
-            url,
-            headers=firestore_headers(),
-            timeout=10
-        )
-
-
-        if respuesta.status_code == 404:
-
-            return False
-
-
-        if not respuesta.ok:
-
-            print(
-                "❌ FIRESTORE DELETE ERROR:"
-            )
-
-            print(
-                respuesta.status_code
-            )
-
-            print(
-                respuesta.text[:1000]
-            )
-
-            return False
-
-
-        return True
-
-
-    except Exception as e:
-
-        print(
-            f"❌ ERROR eliminando documento: {e}"
+            f"❌ ERROR guardando "
+            f"documento: {e}"
         )
 
         return False
@@ -917,66 +900,6 @@ def obtener_cliente_logueado():
     return obtener_documento(
         "clientes",
         nit_usuario
-    )
-
-
-# =========================================================
-# NORMALIZAR IMAGEN
-# =========================================================
-
-def normalizar_imagen(
-    imagen
-):
-
-    if not imagen:
-
-        imagen = "placeholder.jpg"
-
-
-    imagen = str(
-        imagen
-    ).strip()
-
-
-    # Si Firebase ya tiene una URL completa,
-    # se conserva.
-
-    if (
-        imagen.startswith("http://")
-        or
-        imagen.startswith("https://")
-    ):
-
-        return imagen
-
-
-    imagen = (
-        imagen
-        .replace("\\", "/")
-    )
-
-
-    # Quitar rutas antiguas.
-
-    imagen = (
-        imagen
-        .replace("/static/", "")
-        .replace("/public/", "")
-        .replace("/imagenes/", "")
-    )
-
-
-    imagen = imagen.lstrip("/")
-
-
-    # Mantener subcarpetas si existen.
-
-    return (
-        "/imagenes/"
-        + quote(
-            imagen,
-            safe="/"
-        )
     )
 
 
@@ -1036,51 +959,109 @@ def obtener_productos():
         # IMAGEN
         # -------------------------------------------------
 
-        imagen = normalizar_imagen(
+        imagen_original = str(
             producto.get(
                 "imagen",
                 "placeholder.jpg"
             )
+        ).strip()
+
+
+        # Normalizar barras
+        imagen_original = (
+            imagen_original
+            .replace("\\", "/")
+        )
+
+
+        # Quitar rutas antiguas
+        imagen_original = (
+            imagen_original
+            .replace(
+                "/static/",
+                ""
+            )
+            .replace(
+                "static/",
+                ""
+            )
+            .replace(
+                "/public/",
+                ""
+            )
+            .replace(
+                "public/",
+                ""
+            )
+            .lstrip("/")
         )
 
 
         # -------------------------------------------------
-        # PRODUCTO
+        # RUTA CORRECTA
+        # -------------------------------------------------
+
+        imagen = (
+            "/imagenes/"
+            + quote(
+                imagen_original,
+                safe="/"
+            )
+        )
+
+
+        print(
+            "🖼️ IMAGEN PRODUCTO:"
+        )
+
+        print(
+            f"   Producto: "
+            f"{producto.get('nombre', '')}"
+        )
+
+        print(
+            f"   Firebase: "
+            f"{producto.get('imagen', '')}"
+        )
+
+        print(
+            f"   Navegador: {imagen}"
+        )
+
+
+        # -------------------------------------------------
+        # AGREGAR PRODUCTO
         # -------------------------------------------------
 
         lista.append({
 
-            "id":
-                producto.get(
-                    "_id",
-                    ""
-                ),
+            "id": producto.get(
+                "_id",
+                ""
+            ),
 
-            "nombre":
-                producto.get(
-                    "nombre",
-                    "Medicamento sin nombre"
-                ),
+            "nombre": producto.get(
+                "nombre",
+                "Medicamento sin nombre"
+            ),
 
-            "precio":
-                precio,
+            "precio": precio,
 
-            "imagen":
-                imagen,
+            "imagen": imagen,
 
-            "existencias":
-                existencias
+            "existencias": existencias
 
         })
 
 
-    lista.sort(
+    # -----------------------------------------------------
+    # ORDENAR
+    # -----------------------------------------------------
 
-        key=lambda x:
-        str(
+    lista.sort(
+        key=lambda x: str(
             x["nombre"]
         ).lower()
-
     )
 
 
@@ -1097,10 +1078,15 @@ def inicio():
     cliente = obtener_cliente_logueado()
 
 
+    # -----------------------------------------------------
+    # NO HAY SESIÓN
+    # -----------------------------------------------------
+
     if not cliente:
 
         return """
 <!DOCTYPE html>
+
 <html lang="es">
 
 <head>
@@ -1112,63 +1098,158 @@ name="viewport"
 content="width=device-width, initial-scale=1.0"
 >
 
-<title>Ingreso - Alianzas Pharma</title>
+<title>
+Ingreso - Alianzas Pharma
+</title>
 
 <style>
 
 body{
-font-family:'Segoe UI',sans-serif;
-background:#f4f6f9;
-display:flex;
-align-items:center;
-justify-content:center;
-height:100vh;
-margin:0;
+
+font-family:
+'Segoe UI',
+sans-serif;
+
+background:
+#f4f6f9;
+
+display:
+flex;
+
+align-items:
+center;
+
+justify-content:
+center;
+
+height:
+100vh;
+
+margin:
+0;
+
 }
 
 .box{
-background:white;
-padding:40px 30px;
-border-radius:16px;
-box-shadow:0 10px 25px rgba(0,0,0,0.05);
-text-align:center;
-width:320px;
+
+background:
+white;
+
+padding:
+40px 30px;
+
+border-radius:
+16px;
+
+box-shadow:
+0 10px 25px
+rgba(0,0,0,0.05);
+
+text-align:
+center;
+
+width:
+320px;
+
 }
 
 input{
-box-sizing:border-box;
-width:100%;
-padding:12px;
-margin-bottom:12px;
-border:1px solid #cbd5e1;
-border-radius:8px;
-outline:none;
-font-size:1rem;
+
+box-sizing:
+border-box;
+
+width:
+100%;
+
+padding:
+12px;
+
+margin-bottom:
+12px;
+
+border:
+1px solid #cbd5e1;
+
+border-radius:
+8px;
+
+outline:
+none;
+
+font-size:
+1rem;
+
 }
 
 .btn{
-background:#3498db;
-color:white;
-border:none;
-padding:12px;
-border-radius:25px;
-font-weight:bold;
-cursor:pointer;
-width:100%;
-font-size:1rem;
-margin-top:10px;
+
+background:
+#3498db;
+
+color:
+white;
+
+border:
+none;
+
+padding:
+12px;
+
+border-radius:
+25px;
+
+font-weight:
+bold;
+
+cursor:
+pointer;
+
+width:
+100%;
+
+font-size:
+1rem;
+
+margin-top:
+10px;
+
+box-shadow:
+0 4px 12px
+rgba(52,152,219,0.2);
+
+}
+
+.btn:hover{
+
+background:
+#2980b9;
+
 }
 
 .links{
-display:flex;
-justify-content:space-between;
-margin-top:25px;
+
+display:
+flex;
+
+justify-content:
+space-between;
+
+margin-top:
+25px;
+
 }
 
 .links a{
-text-decoration:none;
-font-size:0.85rem;
-font-weight:600;
+
+text-decoration:
+none;
+
+font-size:
+0.85rem;
+
+font-weight:
+600;
+
 }
 
 </style>
@@ -1254,6 +1335,10 @@ Olvidé mi clave
 """
 
 
+    # -----------------------------------------------------
+    # USUARIO LOGUEADO
+    # -----------------------------------------------------
+
     lista = obtener_productos()
 
 
@@ -1286,10 +1371,31 @@ def ingresar_portal():
     ).strip()
 
 
+    print(
+        "========================================"
+    )
+
+    print(
+        "🔐 INTENTO DE LOGIN"
+    )
+
+    print(
+        f"NIT recibido: {nit}"
+    )
+
+    print(
+        "========================================"
+    )
+
+
     if not nit or not password:
 
         return """
 <html>
+<head>
+<title>Datos incompletos</title>
+</head>
+
 <body
 style="
 font-family:sans-serif;
@@ -1298,6 +1404,7 @@ display:flex;
 align-items:center;
 justify-content:center;
 height:100vh;
+margin:0;
 "
 >
 
@@ -1307,6 +1414,7 @@ background:white;
 padding:40px;
 border-radius:16px;
 text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
 "
 >
 
@@ -1316,7 +1424,19 @@ text-align:center;
 Debes ingresar el NIT y la contraseña.
 </p>
 
-<a href="/">
+<a
+href="/"
+style="
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+"
+>
 Intentar de Nuevo
 </a>
 
@@ -1329,8 +1449,16 @@ Intentar de Nuevo
 
     if not firebase_credentials:
 
+        print(
+            "❌ LOGIN: Firebase no está disponible."
+        )
+
         return """
 <html>
+<head>
+<title>Error de conexión</title>
+</head>
+
 <body
 style="
 font-family:sans-serif;
@@ -1339,6 +1467,7 @@ display:flex;
 align-items:center;
 justify-content:center;
 height:100vh;
+margin:0;
 "
 >
 
@@ -1348,6 +1477,7 @@ background:white;
 padding:40px;
 border-radius:16px;
 text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
 "
 >
 
@@ -1357,7 +1487,19 @@ text-align:center;
 No fue posible conectar con Firebase.
 </p>
 
-<a href="/">
+<a
+href="/"
+style="
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+"
+>
 Intentar de Nuevo
 </a>
 
@@ -1370,6 +1512,11 @@ Intentar de Nuevo
 
     try:
 
+        print(
+            f"🔎 Buscando clientes/{nit}"
+        )
+
+
         datos_cliente = obtener_documento(
             "clientes",
             nit
@@ -1378,8 +1525,16 @@ Intentar de Nuevo
 
         if not datos_cliente:
 
+            print(
+                f"❌ El NIT {nit} NO existe."
+            )
+
             return """
 <html>
+<head>
+<title>Datos incorrectos</title>
+</head>
+
 <body
 style="
 font-family:sans-serif;
@@ -1388,6 +1543,7 @@ display:flex;
 align-items:center;
 justify-content:center;
 height:100vh;
+margin:0;
 "
 >
 
@@ -1397,6 +1553,7 @@ background:white;
 padding:40px;
 border-radius:16px;
 text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
 "
 >
 
@@ -1406,7 +1563,19 @@ text-align:center;
 El NIT no está registrado en Alianzas Pharma.
 </p>
 
-<a href="/">
+<a
+href="/"
+style="
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+"
+>
 Intentar de Nuevo
 </a>
 
@@ -1425,10 +1594,23 @@ Intentar de Nuevo
         ).strip()
 
 
+        print(
+            "✅ Cliente encontrado en Firebase"
+        )
+
+
         if pass_db != password:
+
+            print(
+                f"❌ Contraseña incorrecta para {nit}"
+            )
 
             return """
 <html>
+<head>
+<title>Datos incorrectos</title>
+</head>
+
 <body
 style="
 font-family:sans-serif;
@@ -1437,6 +1619,7 @@ display:flex;
 align-items:center;
 justify-content:center;
 height:100vh;
+margin:0;
 "
 >
 
@@ -1446,16 +1629,29 @@ background:white;
 padding:40px;
 border-radius:16px;
 text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
 "
 >
 
 <h2>❌ Contraseña Incorrecta</h2>
 
 <p>
-La contraseña no coincide.
+La contraseña no coincide con la registrada en Firebase.
 </p>
 
-<a href="/">
+<a
+href="/"
+style="
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+"
+>
 Intentar de Nuevo
 </a>
 
@@ -1464,6 +1660,11 @@ Intentar de Nuevo
 </body>
 </html>
 """
+
+
+        print(
+            f"✅ LOGIN CORRECTO: {nit}"
+        )
 
 
         lista_productos = obtener_productos()
@@ -1494,20 +1695,65 @@ Intentar de Nuevo
     except Exception as e:
 
         print(
-            "❌ ERROR FIREBASE LOGIN:",
+            "❌ ERROR FIREBASE LOGIN:"
+        )
+
+        print(
             str(e)
         )
 
 
         return """
 <html>
-<body>
+<head>
+<title>Error de Firebase</title>
+</head>
+
+<body
+style="
+font-family:sans-serif;
+background:#f4f6f9;
+display:flex;
+align-items:center;
+justify-content:center;
+height:100vh;
+margin:0;
+"
+>
+
+<div
+style="
+background:white;
+padding:40px;
+border-radius:16px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
+"
+>
 
 <h2>❌ Error de conexión con Firebase</h2>
 
-<a href="/">
+<p>
+No fue posible consultar la base de datos.
+</p>
+
+<a
+href="/"
+style="
+background:#3498db;
+color:white;
+padding:10px 20px;
+border-radius:20px;
+text-decoration:none;
+font-weight:bold;
+display:inline-block;
+margin-top:15px;
+"
+>
 Intentar de Nuevo
 </a>
+
+</div>
 
 </body>
 </html>
@@ -1548,6 +1794,7 @@ def registro_cliente():
 
             return """
             <h2>Faltan datos</h2>
+
             <a href="/registro-cliente">
             Volver
             </a>
@@ -1556,14 +1803,11 @@ def registro_cliente():
 
         datos = {
 
-            "nit":
-                nit,
+            "nit": nit,
 
-            "nombre":
-                nombre,
+            "nombre": nombre,
 
-            "password":
-                password
+            "password": password
 
         }
 
@@ -1584,6 +1828,7 @@ def registro_cliente():
 
         return """
         <h2>Error registrando cliente</h2>
+
         <a href="/registro-cliente">
         Intentar nuevamente
         </a>
@@ -1639,6 +1884,10 @@ def mis_pedidos():
         )
 
 
+    # -----------------------------------------------------
+    # NIT DEL CLIENTE
+    # -----------------------------------------------------
+
     nit_cliente = str(
         cliente.get(
             "nit",
@@ -1650,23 +1899,27 @@ def mis_pedidos():
     ).strip()
 
 
-    todos_los_pedidos = (
-        obtener_coleccion(
-            "pedidos"
-        )
+    # -----------------------------------------------------
+    # OBTENER PEDIDOS
+    # -----------------------------------------------------
+
+    todos_los_pedidos = obtener_coleccion(
+        "pedidos"
     )
 
 
     pedidos_cliente = []
 
 
+    # -----------------------------------------------------
+    # FILTRAR
+    # -----------------------------------------------------
+
     for pedido in todos_los_pedidos:
 
-        datos_pedido_cliente = (
-            pedido.get(
-                "cliente",
-                {}
-            )
+        datos_pedido_cliente = pedido.get(
+            "cliente",
+            {}
         )
 
 
@@ -1685,20 +1938,24 @@ def mis_pedidos():
             )
 
 
-    pedidos_cliente.sort(
+    # -----------------------------------------------------
+    # ORDENAR
+    # -----------------------------------------------------
 
-        key=lambda x:
-        str(
+    pedidos_cliente.sort(
+        key=lambda x: str(
             x.get(
                 "fecha",
                 ""
             )
         ),
-
         reverse=True
-
     )
 
+
+    # -----------------------------------------------------
+    # TARJETAS
+    # -----------------------------------------------------
 
     tarjetas = ""
 
@@ -1711,11 +1968,9 @@ def mis_pedidos():
         )
 
 
-        estado = str(
-            pedido.get(
-                "estado",
-                "Pendiente"
-            )
+        estado = pedido.get(
+            "estado",
+            "Pendiente"
         )
 
 
@@ -1767,8 +2022,7 @@ def mis_pedidos():
 
                 subtotal = (
                     int(precio)
-                    *
-                    int(cantidad)
+                    * int(cantidad)
                 )
 
             except:
@@ -1802,56 +2056,51 @@ def mis_pedidos():
 
 
         # -------------------------------------------------
-        # ESTADO VISUAL
+        # ESTADO
         # -------------------------------------------------
 
-        if estado == "Cancelado":
+        estado_normalizado = str(
+            estado
+        ).strip().lower()
+
+
+        if estado_normalizado == "cancelado":
 
             estado_html = """
-            <span class="estado cancelado">
-                Cancelado
-            </span>
+                <span
+                    class="estado cancelado"
+                >
+                    Cancelado
+                </span>
             """
 
-            accion_html = f"""
-            <div class="pedido-cancelado">
+            cancelado_html = """
+                <div class="pedido-cancelado">
 
-                <div class="cancelado-titulo">
-                    🚫 Este pedido fue cancelado.
+                    <strong>
+                        🚫 Este pedido fue cancelado.
+                    </strong>
+
+                    <p>
+                        El pedido ya no será despachado
+                        y los productos fueron devueltos
+                        al inventario.
+                    </p>
+
                 </div>
-
-                <div class="cancelado-texto">
-                    El pedido ya no será despachado
-                    y los productos fueron devueltos
-                    al inventario.
-                </div>
-
-            </div>
-
-            <button
-                class="btn-eliminar"
-                onclick="eliminarPedido('{pedido_id}')"
-            >
-                🗑️ Eliminar pedido
-            </button>
             """
+
 
         else:
 
-            estado_html = """
-            <span class="estado pendiente">
-                Pendiente
-            </span>
+            estado_html = f"""
+                <span class="estado">
+                    {estado}
+                </span>
             """
 
-            accion_html = f"""
-            <button
-                class="btn-cancelar"
-                onclick="cancelarPedido('{pedido_id}')"
-            >
-                🚫 Cancelar pedido
-            </button>
-            """
+
+            cancelado_html = ""
 
 
         tarjetas += f"""
@@ -1866,7 +2115,8 @@ def mis_pedidos():
                     </h2>
 
                     <p>
-                        Fecha: {fecha}
+                        Fecha:
+                        {fecha}
                     </p>
 
                 </div>
@@ -1896,11 +2146,15 @@ def mis_pedidos():
             </div>
 
 
-            {accion_html}
+            {cancelado_html}
 
         </div>
         """
 
+
+    # -----------------------------------------------------
+    # NO HAY PEDIDOS
+    # -----------------------------------------------------
 
     if not tarjetas:
 
@@ -1924,6 +2178,10 @@ def mis_pedidos():
         """
 
 
+    # -----------------------------------------------------
+    # PÁGINA
+    # -----------------------------------------------------
+
     return f"""
 <!DOCTYPE html>
 
@@ -1941,7 +2199,6 @@ content="width=device-width, initial-scale=1.0"
 <title>
 Mis Pedidos - Alianzas Pharma
 </title>
-
 
 <style>
 
@@ -1997,9 +2254,11 @@ body {{
 
 .encabezado h1 {{
 
-    margin: 0 0 8px 0;
+    margin:
+        0 0 8px 0;
 
-    font-size: 28px;
+    font-size:
+        28px;
 
 }}
 
@@ -2008,20 +2267,25 @@ body {{
 
     margin: 0;
 
-    color: #64748b;
+    color:
+        #64748b;
 
 }}
 
 
 .pedido {{
 
-    background: white;
+    background:
+        white;
 
-    border-radius: 16px;
+    border-radius:
+        16px;
 
-    padding: 25px;
+    padding:
+        25px;
 
-    margin-bottom: 20px;
+    margin-bottom:
+        20px;
 
     box-shadow:
         0 10px 25px
@@ -2032,7 +2296,8 @@ body {{
 
 .pedido-header {{
 
-    display: flex;
+    display:
+        flex;
 
     justify-content:
         space-between;
@@ -2040,52 +2305,47 @@ body {{
     align-items:
         center;
 
-    gap: 20px;
+    gap:
+        20px;
 
     border-bottom:
         1px solid #e5e7eb;
 
-    padding-bottom: 15px;
+    padding-bottom:
+        15px;
 
-    margin-bottom: 15px;
+    margin-bottom:
+        15px;
 
 }}
 
 
 .pedido-header h2 {{
 
-    margin: 0 0 5px 0;
+    margin:
+        0 0 5px 0;
 
-    font-size: 20px;
+    font-size:
+        20px;
 
 }}
 
 
 .pedido-header p {{
 
-    margin: 0;
+    margin:
+        0;
 
-    color: #64748b;
+    color:
+        #64748b;
 
-    font-size: 14px;
+    font-size:
+        14px;
 
 }}
 
 
 .estado {{
-
-    padding: 8px 14px;
-
-    border-radius: 20px;
-
-    font-weight: bold;
-
-    font-size: 14px;
-
-}}
-
-
-.estado.pendiente {{
 
     background:
         #fff3cd;
@@ -2093,13 +2353,25 @@ body {{
     color:
         #856404;
 
+    padding:
+        8px 14px;
+
+    border-radius:
+        20px;
+
+    font-weight:
+        bold;
+
+    font-size:
+        14px;
+
 }}
 
 
 .estado.cancelado {{
 
     background:
-        #fee2e2;
+        #ffe0e0;
 
     color:
         #b91c1c;
@@ -2109,7 +2381,8 @@ body {{
 
 .producto-pedido {{
 
-    display: flex;
+    display:
+        flex;
 
     justify-content:
         space-between;
@@ -2117,7 +2390,8 @@ body {{
     align-items:
         center;
 
-    padding: 12px 0;
+    padding:
+        12px 0;
 
     border-bottom:
         1px solid #f1f5f9;
@@ -2127,86 +2401,16 @@ body {{
 
 .producto-pedido strong {{
 
-    color: #2c3e50;
+    color:
+        #2c3e50;
 
 }}
 
 
 .producto-pedido span {{
 
-    color: #64748b;
-
-    font-size: 14px;
-
-}}
-
-
-.pedido-total {{
-
-    display: flex;
-
-    justify-content:
-        space-between;
-
-    align-items:
-        center;
-
-    margin-top: 18px;
-
-    padding-top: 15px;
-
-    border-top:
-        2px solid #e5e7eb;
-
-    font-size: 18px;
-
-}}
-
-
-.pedido-total strong {{
-
-    color: #16a34a;
-
-    font-size: 22px;
-
-}}
-
-
-.pedido-cancelado {{
-
-    margin-top: 20px;
-
-    padding: 18px;
-
-    border-radius: 10px;
-
-    background:
-        #fff1f2;
-
-    border:
-        1px solid #fecdd3;
-
-}}
-
-
-.cancelado-titulo {{
-
     color:
-        #b91c1c;
-
-    font-weight:
-        bold;
-
-    margin-bottom:
-        8px;
-
-}}
-
-
-.cancelado-texto {{
-
-    color:
-        #dc2626;
+        #64748b;
 
     font-size:
         14px;
@@ -2214,73 +2418,98 @@ body {{
 }}
 
 
-.btn-cancelar,
-.btn-eliminar {{
+.pedido-total {{
 
-    border: none;
+    display:
+        flex;
 
-    border-radius: 9px;
+    justify-content:
+        space-between;
 
-    padding: 12px 18px;
+    align-items:
+        center;
 
-    margin-top: 18px;
+    margin-top:
+        18px;
 
-    font-weight: bold;
+    padding-top:
+        15px;
 
-    cursor: pointer;
+    border-top:
+        2px solid #e5e7eb;
 
-    font-size: 14px;
+    font-size:
+        18px;
 
 }}
 
 
-.btn-cancelar {{
+.pedido-total strong {{
+
+    color:
+        #16a34a;
+
+    font-size:
+        22px;
+
+}}
+
+
+.pedido-cancelado {{
 
     background:
-        #fee2e2;
+        #fff1f1;
 
     color:
         #b91c1c;
 
-}}
+    padding:
+        18px;
 
+    border-radius:
+        10px;
 
-.btn-cancelar:hover {{
-
-    background:
-        #fecaca;
-
-}}
-
-
-.btn-eliminar {{
-
-    background:
-        #64748b;
-
-    color:
-        white;
+    margin-top:
+        20px;
 
 }}
 
 
-.btn-eliminar:hover {{
+.pedido-cancelado strong {{
 
-    background:
-        #475569;
+    display:
+        block;
+
+    margin-bottom:
+        8px;
+
+}}
+
+
+.pedido-cancelado p {{
+
+    margin:
+        0;
+
+    font-size:
+        14px;
 
 }}
 
 
 .sin-pedidos {{
 
-    background: white;
+    background:
+        white;
 
-    text-align: center;
+    text-align:
+        center;
 
-    padding: 60px 30px;
+    padding:
+        60px 30px;
 
-    border-radius: 16px;
+    border-radius:
+        16px;
 
     box-shadow:
         0 10px 25px
@@ -2291,45 +2520,56 @@ body {{
 
 .icono {{
 
-    font-size: 50px;
+    font-size:
+        50px;
 
-    margin-bottom: 15px;
+    margin-bottom:
+        15px;
 
 }}
 
 
 .sin-pedidos h2 {{
 
-    margin-bottom: 8px;
+    margin-bottom:
+        8px;
 
 }}
 
 
 .sin-pedidos p {{
 
-    color: #64748b;
+    color:
+        #64748b;
 
 }}
 
 
 .volver {{
 
-    display: inline-block;
+    display:
+        inline-block;
 
-    margin-top: 20px;
+    margin-top:
+        20px;
 
     background:
         #3498db;
 
-    color: white;
+    color:
+        white;
 
-    padding: 12px 22px;
+    padding:
+        12px 22px;
 
-    border-radius: 25px;
+    border-radius:
+        25px;
 
-    text-decoration: none;
+    text-decoration:
+        none;
 
-    font-weight: bold;
+    font-weight:
+        bold;
 
 }}
 
@@ -2345,12 +2585,9 @@ body {{
 
 </head>
 
-
 <body>
 
-
 <div class="contenedor">
-
 
     <div class="encabezado">
 
@@ -2390,164 +2627,6 @@ body {{
 
 </div>
 
-
-<script>
-
-async function cancelarPedido(pedidoId) {{
-
-    const confirmar = confirm(
-        "¿Estás seguro de cancelar este pedido?\\n\\n"
-        + "El pedido ya no será despachado y "
-        + "los productos serán devueltos al inventario."
-    );
-
-
-    if (!confirmar) {{
-
-        return;
-
-    }}
-
-
-    try {{
-
-        const respuesta = await fetch(
-            "/cancelar-pedido",
-            {{
-
-                method: "POST",
-
-                headers: {{
-
-                    "Content-Type":
-                        "application/json"
-
-                }},
-
-                body: JSON.stringify({{
-
-                    pedido_id:
-                        pedidoId
-
-                }})
-
-            }}
-        );
-
-
-        const datos =
-            await respuesta.json();
-
-
-        if (datos.status === "ok") {{
-
-            alert(
-                datos.message
-            );
-
-            location.reload();
-
-        }} else {{
-
-            alert(
-                datos.message
-                ||
-                "No fue posible cancelar el pedido."
-            );
-
-        }}
-
-    }} catch (error) {{
-
-        console.error(error);
-
-        alert(
-            "Ocurrió un error al cancelar el pedido."
-        );
-
-    }}
-
-}}
-
-
-async function eliminarPedido(pedidoId) {{
-
-    const confirmar = confirm(
-        "¿Quieres eliminar definitivamente este pedido de tu historial?\\n\\n"
-        + "Esta acción no se puede deshacer."
-    );
-
-
-    if (!confirmar) {{
-
-        return;
-
-    }}
-
-
-    try {{
-
-        const respuesta = await fetch(
-            "/eliminar-pedido",
-            {{
-
-                method: "POST",
-
-                headers: {{
-
-                    "Content-Type":
-                        "application/json"
-
-                }},
-
-                body: JSON.stringify({{
-
-                    pedido_id:
-                        pedidoId
-
-                }})
-
-            }}
-        );
-
-
-        const datos =
-            await respuesta.json();
-
-
-        if (datos.status === "ok") {{
-
-            alert(
-                datos.message
-            );
-
-            location.reload();
-
-        }} else {{
-
-            alert(
-                datos.message
-                ||
-                "No fue posible eliminar el pedido."
-            );
-
-        }}
-
-    }} catch (error) {{
-
-        console.error(error);
-
-        alert(
-            "Ocurrió un error al eliminar el pedido."
-        );
-
-    }}
-
-}}
-
-</script>
-
-
 </body>
 
 </html>
@@ -2566,20 +2645,22 @@ def cancelar_pedido():
 
     try:
 
-        cliente = (
-            obtener_cliente_logueado()
-        )
+        # -------------------------------------------------
+        # CLIENTE
+        # -------------------------------------------------
+
+        cliente = obtener_cliente_logueado()
 
 
         if not cliente:
 
             return jsonify({
 
-                "status":
-                    "error",
+                "status": "error",
 
                 "message":
-                    "La sesión del cliente no es válida."
+                    "La sesión del cliente "
+                    "no es válida."
 
             }), 401
 
@@ -2601,14 +2682,18 @@ def cancelar_pedido():
 
             return jsonify({
 
-                "status":
-                    "error",
+                "status": "error",
 
                 "message":
-                    "No se recibió el número del pedido."
+                    "No se recibió el número "
+                    "del pedido."
 
             }), 400
 
+
+        # -------------------------------------------------
+        # BUSCAR PEDIDO
+        # -------------------------------------------------
 
         pedido = obtener_documento(
             "pedidos",
@@ -2620,8 +2705,7 @@ def cancelar_pedido():
 
             return jsonify({
 
-                "status":
-                    "error",
+                "status": "error",
 
                 "message":
                     "El pedido no existe."
@@ -2633,11 +2717,9 @@ def cancelar_pedido():
         # VERIFICAR CLIENTE
         # -------------------------------------------------
 
-        datos_pedido_cliente = (
-            pedido.get(
-                "cliente",
-                {}
-            )
+        datos_pedido_cliente = pedido.get(
+            "cliente",
+            {}
         )
 
 
@@ -2664,17 +2746,17 @@ def cancelar_pedido():
 
             return jsonify({
 
-                "status":
-                    "error",
+                "status": "error",
 
                 "message":
-                    "No tienes permiso para cancelar este pedido."
+                    "No tienes permiso "
+                    "para cancelar este pedido."
 
             }), 403
 
 
         # -------------------------------------------------
-        # SOLO PENDIENTE
+        # VERIFICAR ESTADO
         # -------------------------------------------------
 
         estado_actual = str(
@@ -2689,15 +2771,19 @@ def cancelar_pedido():
 
             return jsonify({
 
-                "status":
-                    "error",
+                "status": "error",
 
                 "message":
-                    "Este pedido ya no puede ser cancelado "
-                    f"porque su estado es: {estado_actual}"
+                    "Este pedido ya no puede "
+                    "ser cancelado porque su "
+                    f"estado es: {estado_actual}"
 
             }), 400
 
+
+        # -------------------------------------------------
+        # ARTÍCULOS
+        # -------------------------------------------------
 
         articulos = pedido.get(
             "articulos",
@@ -2709,8 +2795,7 @@ def cancelar_pedido():
 
             return jsonify({
 
-                "status":
-                    "error",
+                "status": "error",
 
                 "message":
                     "El pedido no contiene productos."
@@ -2753,12 +2838,12 @@ def cancelar_pedido():
 
                 return jsonify({
 
-                    "status":
-                        "error",
+                    "status": "error",
 
                     "message":
-                        "El pedido contiene un producto "
-                        "con datos inválidos."
+                        "El pedido contiene "
+                        "un producto con "
+                        "datos inválidos."
 
                 }), 400
 
@@ -2773,8 +2858,7 @@ def cancelar_pedido():
 
                 return jsonify({
 
-                    "status":
-                        "error",
+                    "status": "error",
 
                     "message":
                         "No se encontró el producto "
@@ -2829,16 +2913,25 @@ def cancelar_pedido():
             ]
 
 
+            cantidad = item[
+                "cantidad"
+            ]
+
+
+            existencias_antes = item[
+                "existencias_antes"
+            ]
+
+
             nuevas_existencias = (
-                item["existencias_antes"]
-                +
-                item["cantidad"]
+                existencias_antes
+                + cantidad
             )
 
 
-            producto["existencias"] = (
-                nuevas_existencias
-            )
+            producto[
+                "existencias"
+            ] = nuevas_existencias
 
 
             guardado = guardar_documento(
@@ -2850,9 +2943,13 @@ def cancelar_pedido():
 
             if not guardado:
 
-                # Revertir productos anteriores
+                # -----------------------------------------
+                # REVERTIR
+                # -----------------------------------------
 
-                for anterior in productos_actualizados:
+                for anterior in (
+                    productos_actualizados
+                ):
 
                     producto_anterior = (
                         anterior["producto"]
@@ -2895,7 +2992,7 @@ def cancelar_pedido():
                     producto,
 
                 "existencias_antes":
-                    item["existencias_antes"]
+                    existencias_antes
 
             })
 
@@ -2916,7 +3013,9 @@ def cancelar_pedido():
 
         if not guardado_pedido:
 
-            # Revertir inventario
+            # ---------------------------------------------
+            # REVERTIR INVENTARIO
+            # ---------------------------------------------
 
             for anterior in productos_actualizados:
 
@@ -2951,6 +3050,10 @@ def cancelar_pedido():
 
             }), 500
 
+
+        # -------------------------------------------------
+        # ÉXITO
+        # -------------------------------------------------
 
         print(
             "========================================"
@@ -2996,8 +3099,19 @@ def cancelar_pedido():
     except Exception as e:
 
         print(
-            "❌ ERROR CANCELANDO PEDIDO:",
+            "========================================"
+        )
+
+        print(
+            "❌ ERROR CANCELANDO PEDIDO"
+        )
+
+        print(
             str(e)
+        )
+
+        print(
+            "========================================"
         )
 
 
@@ -3008,228 +3122,6 @@ def cancelar_pedido():
 
             "message":
                 "Error cancelando el pedido: "
-                + str(e)
-
-        }), 500
-
-
-# =========================================================
-# ELIMINAR PEDIDO CANCELADO
-# =========================================================
-
-@app.route(
-    "/eliminar-pedido",
-    methods=["POST"]
-)
-def eliminar_pedido():
-
-    try:
-
-        cliente = (
-            obtener_cliente_logueado()
-        )
-
-
-        if not cliente:
-
-            return jsonify({
-
-                "status":
-                    "error",
-
-                "message":
-                    "La sesión del cliente no es válida."
-
-            }), 401
-
-
-        datos = request.get_json(
-            silent=True
-        ) or {}
-
-
-        pedido_id = str(
-            datos.get(
-                "pedido_id",
-                ""
-            )
-        ).strip()
-
-
-        if not pedido_id:
-
-            return jsonify({
-
-                "status":
-                    "error",
-
-                "message":
-                    "No se recibió el número del pedido."
-
-            }), 400
-
-
-        pedido = obtener_documento(
-            "pedidos",
-            pedido_id
-        )
-
-
-        if not pedido:
-
-            return jsonify({
-
-                "status":
-                    "error",
-
-                "message":
-                    "El pedido no existe."
-
-            }), 404
-
-
-        # -------------------------------------------------
-        # VERIFICAR CLIENTE
-        # -------------------------------------------------
-
-        datos_cliente_pedido = (
-            pedido.get(
-                "cliente",
-                {}
-            )
-        )
-
-
-        nit_cliente = str(
-            cliente.get(
-                "nit",
-                request.cookies.get(
-                    "cliente_nit",
-                    ""
-                )
-            )
-        ).strip()
-
-
-        nit_pedido = str(
-            datos_cliente_pedido.get(
-                "nit",
-                ""
-            )
-        ).strip()
-
-
-        if nit_pedido != nit_cliente:
-
-            return jsonify({
-
-                "status":
-                    "error",
-
-                "message":
-                    "No tienes permiso para eliminar este pedido."
-
-            }), 403
-
-
-        # -------------------------------------------------
-        # SOLO PERMITIR ELIMINAR CANCELADOS
-        # -------------------------------------------------
-
-        estado = str(
-            pedido.get(
-                "estado",
-                ""
-            )
-        ).strip()
-
-
-        if estado != "Cancelado":
-
-            return jsonify({
-
-                "status":
-                    "error",
-
-                "message":
-                    "Solo puedes eliminar pedidos que estén cancelados."
-
-            }), 400
-
-
-        # -------------------------------------------------
-        # ELIMINAR
-        # -------------------------------------------------
-
-        eliminado = eliminar_documento(
-            "pedidos",
-            pedido_id
-        )
-
-
-        if not eliminado:
-
-            return jsonify({
-
-                "status":
-                    "error",
-
-                "message":
-                    "No fue posible eliminar el pedido."
-
-            }), 500
-
-
-        print(
-            "========================================"
-        )
-
-        print(
-            "🗑️ PEDIDO ELIMINADO"
-        )
-
-        print(
-            f"🧾 Pedido: {pedido_id}"
-        )
-
-        print(
-            f"👤 Cliente: {nit_cliente}"
-        )
-
-        print(
-            "========================================"
-        )
-
-
-        return jsonify({
-
-            "status":
-                "ok",
-
-            "message":
-                "El pedido fue eliminado de tu historial.",
-
-            "pedido_id":
-                pedido_id
-
-        })
-
-
-    except Exception as e:
-
-        print(
-            "❌ ERROR ELIMINANDO PEDIDO:",
-            str(e)
-        )
-
-
-        return jsonify({
-
-            "status":
-                "error",
-
-            "message":
-                "Error eliminando el pedido: "
                 + str(e)
 
         }), 500
@@ -3248,12 +3140,10 @@ def hacer_pedido():
     try:
 
         # -------------------------------------------------
-        # CLIENTE
+        # VERIFICAR CLIENTE
         # -------------------------------------------------
 
-        cliente = (
-            obtener_cliente_logueado()
-        )
+        cliente = obtener_cliente_logueado()
 
 
         if not cliente:
@@ -3264,7 +3154,8 @@ def hacer_pedido():
                     "error",
 
                 "message":
-                    "La sesión del cliente no es válida."
+                    "La sesión del cliente "
+                    "no es válida."
 
             }), 401
 
@@ -3302,8 +3193,6 @@ def hacer_pedido():
         # -------------------------------------------------
 
         productos_validos = []
-
-        articulos_guardar = []
 
         total = 0
 
@@ -3394,7 +3283,7 @@ def hacer_pedido():
                     "message":
                         "Inventario insuficiente para: "
                         + str(
-                            producto.get(
+                            articulo.get(
                                 "nombre",
                                 "Producto"
                             )
@@ -3403,16 +3292,15 @@ def hacer_pedido():
                 }), 400
 
 
-            # -------------------------------------------------
-            # USAR PRECIO DE FIREBASE
-            # -------------------------------------------------
-
             try:
 
                 precio = int(
-                    producto.get(
+                    articulo.get(
                         "precio",
-                        0
+                        producto.get(
+                            "precio",
+                            0
+                        )
                     )
                 )
 
@@ -3422,9 +3310,7 @@ def hacer_pedido():
 
 
             subtotal = (
-                precio
-                *
-                cantidad
+                precio * cantidad
             )
 
 
@@ -3441,30 +3327,6 @@ def hacer_pedido():
 
                 "cantidad":
                     cantidad
-
-            })
-
-
-            # Guardamos un artículo limpio.
-            # Esto garantiza que el ID quede dentro
-            # del pedido para poder restaurar inventario.
-
-            articulos_guardar.append({
-
-                "id":
-                    producto_id,
-
-                "nombre":
-                    producto.get(
-                        "nombre",
-                        "Producto"
-                    ),
-
-                "cantidad":
-                    cantidad,
-
-                "precio":
-                    precio
 
             })
 
@@ -3493,7 +3355,7 @@ def hacer_pedido():
             ]
 
 
-            existencias_antes = int(
+            existencias_actuales = int(
                 producto.get(
                     "existencias",
                     0
@@ -3504,9 +3366,8 @@ def hacer_pedido():
             producto[
                 "existencias"
             ] = (
-                existencias_antes
-                -
-                cantidad
+                existencias_actuales
+                - cantidad
             )
 
 
@@ -3519,7 +3380,9 @@ def hacer_pedido():
 
             if not guardado:
 
-                # Revertir los productos ya descontados.
+                # -----------------------------------------
+                # REVERTIR LO DESCONTADO
+                # -----------------------------------------
 
                 for anterior in productos_descontados:
 
@@ -3549,7 +3412,7 @@ def hacer_pedido():
 
                     "message":
                         "No fue posible actualizar "
-                        "el inventario."
+                        "todo el inventario."
 
                 }), 500
 
@@ -3563,7 +3426,7 @@ def hacer_pedido():
                     producto,
 
                 "existencias_antes":
-                    existencias_antes
+                    existencias_actuales
 
             })
 
@@ -3610,15 +3473,14 @@ def hacer_pedido():
 
         pedido_id = (
             "PED-"
-            +
-            uuid.uuid4()
+            + uuid.uuid4()
             .hex[:12]
             .upper()
         )
 
 
         # -------------------------------------------------
-        # PEDIDO
+        # GUARDAR PEDIDO
         # -------------------------------------------------
 
         pedido = {
@@ -3627,7 +3489,7 @@ def hacer_pedido():
                 datos_cliente,
 
             "articulos":
-                articulos_guardar,
+                articulos,
 
             "total":
                 total,
@@ -3643,10 +3505,6 @@ def hacer_pedido():
         }
 
 
-        # -------------------------------------------------
-        # GUARDAR PEDIDO
-        # -------------------------------------------------
-
         guardado = guardar_documento(
             "pedidos",
             pedido_id,
@@ -3656,8 +3514,9 @@ def hacer_pedido():
 
         if not guardado:
 
-            # Si el pedido NO se pudo guardar,
-            # devolvemos el inventario.
+            # ---------------------------------------------
+            # REVERTIR INVENTARIO
+            # ---------------------------------------------
 
             for anterior in productos_descontados:
 
@@ -3693,6 +3552,10 @@ def hacer_pedido():
             }), 500
 
 
+        # -------------------------------------------------
+        # LOG
+        # -------------------------------------------------
+
         print(
             "========================================"
         )
@@ -3712,10 +3575,6 @@ def hacer_pedido():
 
         print(
             f"💰 Total: ${total}"
-        )
-
-        print(
-            "📦 Inventario actualizado"
         )
 
         print(
@@ -3791,4 +3650,3 @@ if __name__ == "__main__":
         debug=False
 
     )
-
