@@ -1492,16 +1492,17 @@ def registro_cliente():
 # =========================================================
 # SALIR
 # =========================================================
+# =========================================================
+# SALIR
+# =========================================================
 
 @app.route("/salir")
+@app.route("/logout-cliente")
 def salir():
 
     resp = make_response(
-        redirect(
-            url_for("inicio")
-        )
+        redirect(url_for("inicio"))
     )
-
 
     resp.set_cookie(
         "cliente_nit",
@@ -1510,8 +1511,8 @@ def salir():
         path="/"
     )
 
-
     return resp
+
 
 # =========================================================
 # MIS PEDIDOS
