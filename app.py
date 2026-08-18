@@ -46,9 +46,17 @@ base_dir = os.path.dirname(
 # =========================================================
 # SERVIR IMÁGENES DESDE PUBLIC
 # =========================================================
-
 @app.route("/imagenes/<path:nombre>")
 def servir_imagen(nombre):
+
+    """
+    Esta ruta se mantiene solamente como compatibilidad
+    con imágenes antiguas que todavía puedan estar
+    usando /imagenes/...
+
+    Las nuevas URLs de productos usarán directamente
+    los archivos de public/.
+    """
 
     carpeta_public = os.path.join(
         base_dir,
@@ -60,7 +68,7 @@ def servir_imagen(nombre):
     )
 
     print(
-        "🖼️ SOLICITUD DE IMAGEN"
+        "🖼️ SOLICITUD DE IMAGEN COMPATIBILIDAD"
     )
 
     print(
@@ -75,11 +83,27 @@ def servir_imagen(nombre):
         "========================================"
     )
 
-    return send_from_directory(
-        carpeta_public,
-        nombre
-    )
+    try:
 
+        return send_from_directory(
+            carpeta_public,
+            nombre
+        )
+
+    except Exception as e:
+
+        print(
+            "❌ ERROR SIRVIENDO IMAGEN:"
+        )
+
+        print(
+            str(e)
+        )
+
+        return (
+            "Imagen no encontrada",
+            404
+        )
 
 # =========================================================
 # CONFIGURACIÓN FIREBASE REST
@@ -955,7 +979,8 @@ def obtener_productos():
             existencias = 0
 
 
-        # -------------------------------------------------
+       
+                # -------------------------------------------------
         # IMAGEN
         # -------------------------------------------------
 
@@ -966,36 +991,21 @@ def obtener_productos():
             )
         ).strip()
 
-
         # Normalizar barras
         imagen_original = (
             imagen_original
             .replace("\\", "/")
         )
 
-
         # Quitar rutas antiguas
         imagen_original = (
             imagen_original
-            .replace(
-                "/static/",
-                ""
-            )
-            .replace(
-                "static/",
-                ""
-            )
-            .replace(
-                "/public/",
-                ""
-            )
-            .replace(
-                "public/",
-                ""
-            )
+            .replace("/static/", "")
+            .replace("static/", "")
+            .replace("/public/", "")
+            .replace("public/", "")
             .lstrip("/")
         )
-
 
         # -------------------------------------------------
         # RUTA CORRECTA
@@ -1008,7 +1018,6 @@ def obtener_productos():
                 safe="/"
             )
         )
-
 
         print(
             "🖼️ IMAGEN PRODUCTO:"
@@ -1028,13 +1037,11 @@ def obtener_productos():
             f"   Navegador: {imagen}"
         )
 
-
         # -------------------------------------------------
         # AGREGAR PRODUCTO
         # -------------------------------------------------
 
         lista.append({
-
             "id": producto.get(
                 "_id",
                 ""
@@ -1050,9 +1057,7 @@ def obtener_productos():
             "imagen": imagen,
 
             "existencias": existencias
-
         })
-
 
     # -----------------------------------------------------
     # ORDENAR
@@ -1064,9 +1069,7 @@ def obtener_productos():
         ).lower()
     )
 
-
     return lista
-
 
 # =========================================================
 # INICIO
