@@ -1,7 +1,7 @@
 import os
 import json
 from urllib.parse import quote
-from urllib.parse import quote
+
 
 import requests
 
@@ -12,7 +12,8 @@ from flask import (
     redirect,
     url_for,
     make_response,
-    send_from_directory
+    send_from_directory,
+    jsonify
 )
 
 from flask_cors import CORS
@@ -51,8 +52,7 @@ firebase_project_id = None
 # =========================================================
 # CARGAR LLAVE FIREBASE
 # =========================================================
-# CARGAR LLAVE FIREBASE
-# ============================================================
+
 
 base_dir = os.path.dirname(
     os.path.abspath(__file__)
@@ -99,11 +99,7 @@ if not firebase_project_id:
     )
 
 
-    # -----------------------------------------------------
-    # CREAR CREDENCIALES
-    # -----------------------------------------------------
-
-   # ============================================================
+# ============================================================
 # CREAR CREDENCIALES
 # ============================================================
 
@@ -129,9 +125,6 @@ except Exception as e:
     print("==============================================")
 
 
-# ============================================================
-# OBTENER TOKEN GOOGLE
-# ============================================================
 
 # =========================================================
 # OBTENER TOKEN GOOGLE
@@ -1492,9 +1485,7 @@ def registro_cliente():
 # =========================================================
 # SALIR
 # =========================================================
-# =========================================================
-# SALIR
-# =========================================================
+
 
 @app.route("/salir")
 @app.route("/logout-cliente")
@@ -1585,6 +1576,359 @@ def mis_pedidos():
     </body>
     </html>
     """
+
+
+
+
+# =========================================================
+# HACER PEDIDO
+# =========================================================
+
+@app.route("/hacer-pedido", methods=["POST"])
+def hacer_pedido():
+
+    try:
+
+        import uuid
+        from datetime import datetime, timezone
+
+        # -------------------------------------------------
+        # VERIFICAR CLIENTE LOGUEADO
+        # -------------------------------------------------
+
+        cliente = obtener_cliente_logueado()
+
+        if not cliente:
+
+            return jsonify({
+                "status": "error",
+                "message": "La sesión del cliente no es válida."
+            }), 401
+
+
+        # -------------------------------------------------
+        # RECIBIR DATOS DEL CARRITO
+        # -------------------------------------------------
+
+        datos = request.get_json(
+            silent=True
+        ) or {}
+
+        articulos = datos.get(
+            "articulos",
+            []
+        )
+
+
+        if not articulos:
+
+            return jsonify({
+                "status": "error",
+                "message": "El carrito está vacío."
+            }), 400
+
+
+        # -------------------------------------------------
+        # VALIDAR TODOS LOS PRODUCTOS
+        # ANTES DE DESCONTAR INVENTARIO
+        # -------------------------------------------------
+
+        productos_validos = []
+
+        total = 0
+
+
+        for articulo in articulos:
+
+            producto_id = str(
+                articulo.get(
+                    "id",
+                    ""
+                )
+            )
+
+            cantidad = int(
+                articulo.get(
+                    "cantidad",
+                    0
+                )
+            )
+
+
+            if not producto_id or cantidad <= 0:
+
+                return jsonify({
+                    "status": "error",
+                    "message": "Producto o cantidad inválida."
+                }), 400
+
+
+            producto = obtener_documento(
+                "productos",
+                producto_id
+            )
+
+
+            if not producto:
+
+                return jsonify({
+                    "status": "error",
+                    "message": (
+                        "El producto no existe: "
+                        + str(
+                            articulo.get(
+                                "nombre",
+                                producto_id
+                            )
+                        )
+                    )
+                }), 400
+
+
+            existencias = int(
+                producto.get(
+                    "existencias",
+                    0
+                )
+            )
+
+
+            if existencias < cantidad:
+
+                return jsonify({
+                    "status": "error",
+                    "message": (
+                        "Inventario insuficiente para: "
+                        + str(
+                            articulo.get(
+                                "nombre",
+                                "Producto"
+                            )
+                        )
+                    )
+                }), 400
+
+
+            precio = int(
+                articulo.get(
+                    "precio",
+                    producto.get(
+                        "precio",
+                        0
+                    )
+                )
+            )
+
+
+            subtotal = precio * cantidad
+
+            total += subtotal
+
+
+            productos_validos.append({
+                "id": producto_id,
+                "producto": producto,
+                "cantidad": cantidad
+            })
+
+
+        # -------------------------------------------------
+        # DESCONTAR INVENTARIO
+        # -------------------------------------------------
+
+        for item in productos_validos:
+
+            producto_id = item["id"]
+
+            producto = item["producto"]
+
+            cantidad = item["cantidad"]
+
+
+            existencias_actuales = int(
+                producto.get(
+                    "existencias",
+                    0
+                )
+            )
+
+
+            producto["existencias"] = (
+                existencias_actuales - cantidad
+            )
+
+
+            guardado = guardar_documento(
+                "productos",
+                producto_id,
+                producto
+            )
+
+
+            if not guardado:
+
+                return jsonify({
+                    "status": "error",
+                    "message": (
+                        "No fue posible actualizar "
+                        "el inventario."
+                    )
+                }), 500
+
+
+        # -------------------------------------------------
+        # DATOS DEL CLIENTE
+        # -------------------------------------------------
+
+        datos_cliente = {
+
+            "nombre": cliente.get(
+                "nombre",
+                ""
+            ),
+
+            "nit": cliente.get(
+                "nit",
+                request.cookies.get(
+                    "cliente_nit",
+                    ""
+                )
+            ),
+
+            "telefono": cliente.get(
+                "telefono",
+                ""
+            ),
+
+            "direccion": cliente.get(
+                "direccion",
+                ""
+            )
+
+        }
+
+
+        # -------------------------------------------------
+        # CREAR ID DEL PEDIDO
+        # -------------------------------------------------
+
+        pedido_id = (
+            "PED-"
+            + uuid.uuid4().hex[:12].upper()
+        )
+
+
+        # -------------------------------------------------
+        # GUARDAR PEDIDO
+        # -------------------------------------------------
+
+        pedido = {
+
+            "cliente": datos_cliente,
+
+            "articulos": articulos,
+
+            "total": total,
+
+            "estado": "Pendiente",
+
+            "fecha": datetime.now(
+                timezone.utc
+            ).isoformat()
+
+        }
+
+
+        guardado = guardar_documento(
+            "pedidos",
+            pedido_id,
+            pedido
+        )
+
+
+        if not guardado:
+
+            return jsonify({
+                "status": "error",
+                "message": (
+                    "No fue posible guardar "
+                    "el pedido."
+                )
+            }), 500
+
+
+        print(
+            "========================================"
+        )
+
+        print(
+            "✅ PEDIDO GUARDADO CORRECTAMENTE"
+        )
+
+        print(
+            f"🧾 Pedido: {pedido_id}"
+        )
+
+        print(
+            f"👤 Cliente: "
+            f"{datos_cliente.get('nombre')}"
+        )
+
+        print(
+            f"💰 Total: ${total}"
+        )
+
+        print(
+            "========================================"
+        )
+
+
+        return jsonify({
+
+            "status": "ok",
+
+            "message": (
+                "Pedido guardado correctamente."
+            ),
+
+            "pedido_id": pedido_id,
+
+            "total": total
+
+        })
+    
+
+
+    except Exception as e:
+
+        print(
+            "========================================"
+        )
+
+        print(
+            "❌ ERROR HACIENDO PEDIDO"
+        )
+
+        print(
+            str(e)
+        )
+
+        print(
+            "========================================"
+        )
+
+
+        return jsonify({
+
+            "status": "error",
+
+            "message": (
+                "Error procesando el pedido: "
+                + str(e)
+            )
+
+        }), 500
+
 
 # =========================================================
 # VERCEL / FLASK
