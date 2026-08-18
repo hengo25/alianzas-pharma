@@ -241,16 +241,35 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ articulos: car, cliente: infoCliente })
             })
-            .then(res => res.json())
-            .then(data => {
-                // Al recibir la confirmación de Firebase, dispara el aviso y limpia
-                alert("¡Pedido enviado con éxito!\n💰 Valor Total: $" + totalFactura.toLocaleString('es-CO'));
-                window.location.reload();
-            }).catch(err => {
-                if (pantallaCarga) { pantallaCarga.style.display = "none"; }
-                if (botonEnviar) { botonEnviar.disabled = false; botonEnviar.style.background = "#2ecc71"; botonEnviar.innerText = "Finalizar e Enviar Pedido"; }
-                alert("Hubo un problema de conexión con Firebase Cloud.");
-            });
+            .then(async res => {
+
+    const data = await res.json();
+
+    if (!res.ok || data.status !== "ok") {
+        throw new Error(
+            data.message || "No fue posible crear el pedido."
+        );
+    }
+
+    alert(
+        "¡Pedido enviado con éxito!\n" +
+        "💰 Valor Total: $" +
+        Number(data.total || totalFactura).toLocaleString("es-CO")
+    );
+
+    window.location.reload();
+})
+.catch(err => {
+    if (pantallaCarga) {
+        pantallaCarga.style.display = "none";
+    }
+
+    if (botonEnviar) {
+        botonEnviar.disabled = false;
+    }
+
+    alert("Hubo un problema de conexión con Firebase Cloud.");
+});
         }
 
 
