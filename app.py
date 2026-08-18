@@ -1012,12 +1012,12 @@ def obtener_productos():
         # -------------------------------------------------
 
         imagen = (
-            "/imagenes/"
-            + quote(
-                imagen_original,
+          "/public/"
+          + quote(
+               imagen_original,
                 safe="/"
-            )
-        )
+           )
+       )
 
         print(
             "🖼️ IMAGEN PRODUCTO:"
