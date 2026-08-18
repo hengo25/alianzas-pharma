@@ -869,37 +869,37 @@ def obtener_productos():
 
 
         imagen = (
-            imagen
-            .replace("/static/", "")
-            .replace("/public/", "")
-            .lstrip("/")
+    imagen
+    .replace("/static/", "")
+    .replace("/public/", "")
+    .lstrip("/")
+)
+
+    lista.append({
+
+    "id": producto.get(
+        "_id",
+        ""
+    ),
+
+    "nombre": producto.get(
+        "nombre",
+        "Medicamento sin nombre"
+    ),
+
+    "precio": precio,
+
+    "imagen": (
+        "/imagenes/"
+        + quote(
+            imagen,
+            safe="/"
         )
+    ),
 
+    "existencias": existencias
 
-        lista.append({
-
-            "id": producto.get(
-                "_id",
-                ""
-            ),
-
-            "nombre": producto.get(
-                "nombre",
-                "Medicamento sin nombre"
-            ),
-
-            "precio": precio,
-
-            "imagen": (
-                "/imagenes/"
-                + quote(
-                    imagen
-                )
-            ),
-
-            "existencias": existencias
-
-        })
+})
 
 
     lista.sort(
