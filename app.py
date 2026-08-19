@@ -2296,13 +2296,65 @@ async function cancelarPedido(pedidoId) {{
 
 <script>
 
-function cancelarPedido(pedidoId) {{
+async function cancelarPedido(pedidoId) {{
 
-    alert(
-        "BOTÓN FUNCIONANDO - Pedido: " + pedidoId
+    const confirmar = confirm(
+        "¿Estas seguro de cancelar este pedido? " +
+        "El pedido sera cancelado y las unidades volveran al inventario."
     );
 
-    return;
+    if (!confirmar) {{
+        return;
+    }}
+
+    try {{
+
+        const respuesta = await fetch(
+            "/cancelar-pedido",
+            {{
+                method: "POST",
+
+                headers: {{
+                    "Content-Type": "application/json"
+                }},
+
+                body: JSON.stringify({{
+                    pedido_id: pedidoId
+                }})
+            }}
+        );
+
+        const resultado = await respuesta.json();
+
+        if (resultado.status === "ok") {{
+
+            alert(
+                "Pedido cancelado correctamente. " +
+                "Las unidades fueron devueltas al inventario."
+            );
+
+            window.location.reload();
+
+            return;
+        }}
+
+        alert(
+            resultado.message ||
+            "No fue posible cancelar el pedido."
+        );
+
+    }} catch (error) {{
+
+        console.error(
+            "Error cancelando pedido:",
+            error
+        );
+
+        alert(
+            "Ocurrio un error al cancelar el pedido."
+        );
+
+    }}
 
 }}
 
@@ -2310,15 +2362,13 @@ function cancelarPedido(pedidoId) {{
 async function eliminarPedido(pedidoId) {{
 
     const confirmar = confirm(
-        "🗑️ ¿Estás seguro de eliminar este pedido del historial?\n\n" +
-        "Esta acción no se puede deshacer."
+        "¿Estas seguro de eliminar este pedido del historial? " +
+        "Esta accion no se puede deshacer."
     );
-
 
     if (!confirmar) {{
         return;
     }}
-
 
     try {{
 
@@ -2337,14 +2387,12 @@ async function eliminarPedido(pedidoId) {{
             }}
         );
 
-
         const resultado = await respuesta.json();
-
 
         if (resultado.status === "ok") {{
 
             alert(
-                "✅ " + resultado.message
+                "El pedido fue eliminado del historial."
             );
 
             window.location.reload();
@@ -2352,15 +2400,10 @@ async function eliminarPedido(pedidoId) {{
             return;
         }}
 
-
         alert(
-            "❌ " +
-            (
-                resultado.message ||
-                "No fue posible eliminar el pedido."
-            )
+            resultado.message ||
+            "No fue posible eliminar el pedido."
         );
-
 
     }} catch (error) {{
 
@@ -2370,7 +2413,7 @@ async function eliminarPedido(pedidoId) {{
         );
 
         alert(
-            "❌ Ocurrió un error al eliminar el pedido."
+            "Ocurrio un error al eliminar el pedido."
         );
 
     }}
