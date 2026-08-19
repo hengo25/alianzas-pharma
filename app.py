@@ -2294,6 +2294,18 @@ async function cancelarPedido(pedidoId) {{
 
 }}
 
+<script>
+
+function cancelarPedido(pedidoId) {{
+
+    alert(
+        "BOTÓN FUNCIONANDO - Pedido: " + pedidoId
+    );
+
+    return;
+
+}}
+
 
 async function eliminarPedido(pedidoId) {{
 
