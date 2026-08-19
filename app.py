@@ -2152,12 +2152,24 @@ def mis_pedidos():
 
                 {
                     f'''
+                <form
+                    method="POST"
+                    action="/cancelar-pedido"
+                    onsubmit="return confirm('¿Está seguro de cancelar este pedido? Las unidades volverán al inventario.');"
+                >
+
+                    <input
+                       type="hidden"
+                       name="pedido_id"
+                       value="{pedido_id}"
+                    >
                     <button
+                        type="submit"
                         class="btn-cancelar"
-                        onclick="cancelarPedido('{pedido_id}')"
                     >
                         🚫 Cancelar pedido
                     </button>
+                </form>    
                     '''
                     if estado_normalizado == "pendiente"
                     else ""
@@ -2950,11 +2962,14 @@ def cancelar_pedido():
 
 
         pedido_id = str(
-            datos.get(
-                "pedido_id",
-                ""
-            )
-        ).strip()
+           datos.get(
+                 "pedido_id",
+                request.form.get(
+                  "pedido_id",
+                 ""
+        )
+    )
+).strip()
 
 
         if not pedido_id:
@@ -3359,6 +3374,18 @@ def cancelar_pedido():
         print(
             "========================================"
         )
+
+
+
+          # Si vino desde el formulario de Mis Pedidos
+        if request.form.get("pedido_id"):
+
+             return redirect(
+                url_for("mis_pedidos")
+            )
+
+
+        # Si vino mediante JSON
 
 
         return jsonify({
