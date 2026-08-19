@@ -2178,9 +2178,20 @@ def mis_pedidos():
 
                 {
                     f'''
+                    <form
+                       method="POST"
+                       action="/eliminar-pedido-historial"
+                       onsubmit="return confirm('¿Está seguro de eliminar este pedido del historial? Esta acción no se puede deshacer.');"
+                    >
+
+                     <input
+                       type="hidden"
+                       name="pedido_id"
+                       value="{pedido_id}"
+                    >
                     <button
+                        type="submit"
                         class="btn-eliminar"
-                        onclick="eliminarPedido('{pedido_id}')"
                     >
                         🗑️ Eliminar del historial
                     </button>
@@ -3434,7 +3445,215 @@ def cancelar_pedido():
 
         }), 500
 
+# =========================================================
+# ELIMINAR PEDIDO DEL HISTORIAL
+# =========================================================
 
+@app.route(
+    "/eliminar-pedido-historial",
+    methods=["POST"]
+)
+def eliminar_pedido_historial():
+
+    try:
+
+        # -------------------------------------------------
+        # VERIFICAR CLIENTE LOGUEADO
+        # -------------------------------------------------
+
+        cliente = obtener_cliente_logueado()
+
+        if not cliente:
+
+            return redirect(
+                url_for("inicio")
+            )
+
+
+        # -------------------------------------------------
+        # RECIBIR ID DEL PEDIDO
+        # -------------------------------------------------
+
+        pedido_id = str(
+            request.form.get(
+                "pedido_id",
+                ""
+            )
+        ).strip()
+
+
+        if not pedido_id:
+
+            return redirect(
+                url_for("mis_pedidos")
+            )
+
+
+        # -------------------------------------------------
+        # BUSCAR PEDIDO
+        # -------------------------------------------------
+
+        pedido = obtener_documento(
+            "pedidos",
+            pedido_id
+        )
+
+
+        if not pedido:
+
+            return redirect(
+                url_for("mis_pedidos")
+            )
+
+
+        # -------------------------------------------------
+        # COMPROBAR QUE EL PEDIDO SEA DEL CLIENTE
+        # -------------------------------------------------
+
+        nit_cliente = str(
+            cliente.get(
+                "nit",
+                request.cookies.get(
+                    "cliente_nit",
+                    ""
+                )
+            )
+        ).strip()
+
+
+        datos_pedido_cliente = pedido.get(
+            "cliente",
+            {}
+        )
+
+
+        nit_pedido = str(
+            datos_pedido_cliente.get(
+                "nit",
+                ""
+            )
+        ).strip()
+
+
+        if nit_cliente != nit_pedido:
+
+            return redirect(
+                url_for("mis_pedidos")
+            )
+
+
+        # -------------------------------------------------
+        # SOLO BORRAR PEDIDOS CANCELADOS
+        # -------------------------------------------------
+
+        estado = str(
+            pedido.get(
+                "estado",
+                ""
+            )
+        ).strip().lower()
+
+
+        if estado != "cancelado":
+
+            return redirect(
+                url_for("mis_pedidos")
+            )
+
+
+        # -------------------------------------------------
+        # URL DEL DOCUMENTO EN FIRESTORE
+        # -------------------------------------------------
+
+        url = (
+            firestore_base_url()
+            + "/"
+            + quote(
+                "pedidos",
+                safe=""
+            )
+            + "/"
+            + quote(
+                pedido_id,
+                safe=""
+            )
+        )
+
+
+        # -------------------------------------------------
+        # ELIMINAR DOCUMENTO
+        # -------------------------------------------------
+
+        respuesta = requests.delete(
+            url,
+            headers=firestore_headers(),
+            timeout=10
+        )
+
+
+        print(
+            "========================================"
+        )
+
+        print(
+            "🗑️ ELIMINAR PEDIDO DEL HISTORIAL"
+        )
+
+        print(
+            f"Pedido: {pedido_id}"
+        )
+
+        print(
+            f"HTTP: {respuesta.status_code}"
+        )
+
+        print(
+            "========================================"
+        )
+
+
+        if not respuesta.ok:
+
+            print(
+                "❌ No fue posible eliminar el pedido"
+            )
+
+            print(
+                respuesta.text[:1000]
+            )
+
+
+        # -------------------------------------------------
+        # VOLVER A MIS PEDIDOS
+        # -------------------------------------------------
+
+        return redirect(
+            url_for("mis_pedidos")
+        )
+
+
+    except Exception as e:
+
+        print(
+            "========================================"
+        )
+
+        print(
+            "❌ ERROR ELIMINANDO PEDIDO"
+        )
+
+        print(
+            str(e)
+        )
+
+        print(
+            "========================================"
+        )
+
+
+        return redirect(
+            url_for("mis_pedidos")
+        )
 
 
 
