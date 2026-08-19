@@ -2135,8 +2135,7 @@ def mis_pedidos():
 
             </div>
 
-
-            <div class="pedido-total">
+                        <div class="pedido-total">
 
                 <span>
                     Total del pedido
@@ -2149,10 +2148,44 @@ def mis_pedidos():
             </div>
 
 
+            <div class="acciones-pedido">
+
+                {
+                    f'''
+                    <button
+                        class="btn-cancelar"
+                        onclick="cancelarPedido('{pedido_id}')"
+                    >
+                        🚫 Cancelar pedido
+                    </button>
+                    '''
+                    if estado_normalizado == "pendiente"
+                    else ""
+                }
+
+
+                {
+                    f'''
+                    <button
+                        class="btn-eliminar"
+                        onclick="eliminarPedido('{pedido_id}')"
+                    >
+                        🗑️ Eliminar del historial
+                    </button>
+                    '''
+                    if estado_normalizado != "pendiente"
+                    else ""
+                }
+
+            </div>
+
+
             {cancelado_html}
 
         </div>
         """
+
+        
 
 
     # -----------------------------------------------------
@@ -2186,6 +2219,154 @@ def mis_pedidos():
     # -----------------------------------------------------
 
     return f"""
+
+
+   <script>
+
+async function cancelarPedido(pedidoId) {{
+
+    const confirmar = confirm(
+        "⚠️ ¿Estás seguro de cancelar este pedido?\n\n" +
+        "El pedido será cancelado y las unidades " +
+        "volverán al inventario."
+    );
+
+
+    if (!confirmar) {{
+        return;
+    }}
+
+
+    try {{
+
+        const respuesta = await fetch(
+            "/cancelar-pedido",
+            {{
+                method: "POST",
+
+                headers: {{
+                    "Content-Type": "application/json"
+                }},
+
+                body: JSON.stringify({{
+                    pedido_id: pedidoId
+                }})
+            }}
+        );
+
+
+        const resultado = await respuesta.json();
+
+
+        if (resultado.status === "ok") {{
+
+            alert(
+                "✅ " + resultado.message
+            );
+
+            window.location.reload();
+
+            return;
+        }}
+
+
+        alert(
+            "❌ " +
+            (
+                resultado.message ||
+                "No fue posible cancelar el pedido."
+            )
+        );
+
+
+    }} catch (error) {{
+
+        console.error(
+            "Error cancelando pedido:",
+            error
+        );
+
+        alert(
+            "❌ Ocurrió un error al cancelar el pedido."
+        );
+
+    }}
+
+}}
+
+
+async function eliminarPedido(pedidoId) {{
+
+    const confirmar = confirm(
+        "🗑️ ¿Estás seguro de eliminar este pedido del historial?\n\n" +
+        "Esta acción no se puede deshacer."
+    );
+
+
+    if (!confirmar) {{
+        return;
+    }}
+
+
+    try {{
+
+        const respuesta = await fetch(
+            "/eliminar-pedido-historial",
+            {{
+                method: "POST",
+
+                headers: {{
+                    "Content-Type": "application/json"
+                }},
+
+                body: JSON.stringify({{
+                    pedido_id: pedidoId
+                }})
+            }}
+        );
+
+
+        const resultado = await respuesta.json();
+
+
+        if (resultado.status === "ok") {{
+
+            alert(
+                "✅ " + resultado.message
+            );
+
+            window.location.reload();
+
+            return;
+        }}
+
+
+        alert(
+            "❌ " +
+            (
+                resultado.message ||
+                "No fue posible eliminar el pedido."
+            )
+        );
+
+
+    }} catch (error) {{
+
+        console.error(
+            "Error eliminando pedido:",
+            error
+        );
+
+        alert(
+            "❌ Ocurrió un error al eliminar el pedido."
+        );
+
+    }}
+
+}}
+
+</script>
+
 <!DOCTYPE html>
 
 <html lang="es">
@@ -2498,6 +2679,46 @@ body {{
         14px;
 
 }}
+
+        .acciones-pedido {{
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }}
+
+
+        .acciones-pedido button {{
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+        }}
+
+
+        .btn-cancelar {{
+            background: #e74c3c;
+            color: white;
+        }}
+
+
+        .btn-cancelar:hover {{
+            background: #c0392b;
+        }}
+
+
+        .btn-eliminar {{
+            background: #64748b;
+            color: white;
+        }}
+
+
+        .btn-eliminar:hover {{
+            background: #475569;
+        }}
 
 
 .sin-pedidos {{
@@ -3016,6 +3237,8 @@ def cancelar_pedido():
 
         if not guardado_pedido:
 
+            
+
             # ---------------------------------------------
             # REVERTIR INVENTARIO
             # ---------------------------------------------
@@ -3128,6 +3351,10 @@ def cancelar_pedido():
                 + str(e)
 
         }), 500
+
+
+
+
 
 
 # =========================================================
