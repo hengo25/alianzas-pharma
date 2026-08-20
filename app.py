@@ -5852,6 +5852,201 @@ def descargar_pdf_pedido(pedido_id):
 
     return respuesta
 
+# =========================================================
+# ADMIN - BORRAR PEDIDO
+# =========================================================
+
+@app.route(
+    "/eliminar-pedido/<pedido_id>",
+    methods=["POST"]
+)
+def eliminar_pedido_admin(pedido_id):
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # BUSCAR PEDIDO
+    # -----------------------------------------------------
+
+    pedido = obtener_documento(
+        "pedidos",
+        pedido_id
+    )
+
+
+    if not pedido:
+
+        return redirect(
+            url_for("ver_pedidos_admin")
+        )
+
+
+    # -----------------------------------------------------
+    # VERIFICAR ESTADO
+    # -----------------------------------------------------
+
+    estado = str(
+        pedido.get(
+            "estado",
+            "Pendiente"
+        )
+    ).strip().lower()
+
+
+    # No borrar pedidos pendientes
+    if estado == "pendiente":
+
+        return """
+        <!DOCTYPE html>
+        <html lang="es">
+
+        <head>
+            <meta charset="UTF-8">
+            <title>Pedido no eliminado</title>
+        </head>
+
+        <body
+            style="
+            font-family:'Segoe UI',sans-serif;
+            background:#f4f6f9;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            min-height:100vh;
+            margin:0;
+            "
+        >
+
+            <div
+                style="
+                background:white;
+                padding:35px;
+                border-radius:16px;
+                text-align:center;
+                max-width:480px;
+                box-shadow:0 10px 25px rgba(0,0,0,0.08);
+                "
+            >
+
+                <h2>
+                    ⚠️ Pedido pendiente
+                </h2>
+
+                <p>
+                    Este pedido todavía está pendiente
+                    y no se puede borrar.
+                </p>
+
+                <p>
+                    Primero debe ser despachado
+                    o cancelado.
+                </p>
+
+                <a
+                    href="/ver-pedidos"
+                    style="
+                    display:inline-block;
+                    margin-top:15px;
+                    background:#3498db;
+                    color:white;
+                    padding:10px 20px;
+                    border-radius:8px;
+                    text-decoration:none;
+                    font-weight:bold;
+                    "
+                >
+                    Volver a pedidos
+                </a>
+
+            </div>
+
+        </body>
+        </html>
+        """
+
+
+    # -----------------------------------------------------
+    # URL DEL PEDIDO EN FIRESTORE
+    # -----------------------------------------------------
+
+    url = (
+        firestore_base_url()
+        + "/"
+        + quote(
+            "pedidos",
+            safe=""
+        )
+        + "/"
+        + quote(
+            pedido_id,
+            safe=""
+        )
+    )
+
+
+    # -----------------------------------------------------
+    # ELIMINAR
+    # -----------------------------------------------------
+
+    try:
+
+        respuesta = requests.delete(
+            url,
+            headers=firestore_headers(),
+            timeout=10
+        )
+
+
+        if not respuesta.ok:
+
+            print(
+                "❌ ERROR BORRANDO PEDIDO:"
+            )
+
+            print(
+                respuesta.status_code
+            )
+
+            print(
+                respuesta.text[:1000]
+            )
+
+
+            return redirect(
+                url_for("ver_pedidos_admin")
+            )
+
+
+        print(
+            "✅ PEDIDO BORRADO: "
+            + pedido_id
+        )
+
+
+    except Exception as e:
+
+        print(
+            "❌ ERROR BORRANDO PEDIDO:"
+        )
+
+        print(
+            str(e)
+        )
+
+
+    return redirect(
+        url_for("ver_pedidos_admin")
+    )
+
 
 # =========================================================
 # VERCEL / FLASK
