@@ -5452,12 +5452,24 @@ def descargar_pdf_pedido(pedido_id):
         "Content-Type"
     ] = "application/pdf"
 
+    nombre_drogueria = str(
+        cliente.get(
+            "nombre",
+            "DROGUERIA"
+        )
+    ).strip()
+
+    nombre_drogueria_archivo = (
+        nombre_drogueria
+        .replace(" ", "_")
+        .replace("/", "-")
+    )
+
     respuesta.headers[
         "Content-Disposition"
     ] = (
-        f'attachment; filename="pedido_{pedido_id}.pdf"'
+        f'attachment; filename="pedido_{nombre_drogueria_archivo}_{pedido_id}.pdf"'
     )
-
 
     return respuesta
 
