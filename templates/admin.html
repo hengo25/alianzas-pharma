@@ -88,7 +88,20 @@
                                 data-precio="{{ p.precio }}" 
                                 data-stock="{{ p.existencias }}" 
                                 onclick="abrirVentanaEdicion(this)">Editar</button>
-                        <a href="/eliminar/{{ p.id }}" class="btn-action-del" onclick="return confirm('¿Borrar producto del catálogo?')">Eliminar</a>
+                       <form
+    action="/eliminar/{{ p.id }}"
+    method="POST"
+    style="display:inline;"
+    onsubmit="return confirm('¿Está seguro de eliminar este producto? Se borrará del catálogo y de Firebase.');"
+>
+    <button
+        type="submit"
+        class="btn-action-del"
+        style="border:none; cursor:pointer;"
+    >
+        Eliminar
+    </button>
+</form>
                     </td>
                 </tr>
                 {% endfor %}
