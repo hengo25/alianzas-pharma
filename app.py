@@ -5077,6 +5077,108 @@ def ver_pedidos_admin():
 
 
 # =========================================================
+# ADMIN - DESPACHAR PEDIDO
+# =========================================================
+
+@app.route(
+    "/cambiar-estado/<pedido_id>"
+)
+def cambiar_estado_pedido_admin(pedido_id):
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # BUSCAR PEDIDO
+    # -----------------------------------------------------
+
+    pedido = obtener_documento(
+        "pedidos",
+        pedido_id
+    )
+
+
+    if not pedido:
+
+        return redirect(
+            url_for("ver_pedidos_admin")
+        )
+
+
+    # -----------------------------------------------------
+    # VERIFICAR ESTADO ACTUAL
+    # -----------------------------------------------------
+
+    estado_actual = str(
+        pedido.get(
+            "estado",
+            "Pendiente"
+        )
+    ).strip()
+
+
+    # Solamente se puede despachar un pedido pendiente
+    if estado_actual.lower() != "pendiente":
+
+        return redirect(
+            url_for("ver_pedidos_admin")
+        )
+
+
+    # -----------------------------------------------------
+    # CAMBIAR ESTADO
+    # -----------------------------------------------------
+
+    pedido["estado"] = "Despachado"
+
+
+    # -----------------------------------------------------
+    # GUARDAR EN FIREBASE
+    # -----------------------------------------------------
+
+    guardado = guardar_documento(
+        "pedidos",
+        pedido_id,
+        pedido
+    )
+
+
+    if not guardado:
+
+        print(
+            "❌ ERROR CAMBIANDO ESTADO DEL PEDIDO: "
+            + pedido_id
+        )
+
+
+        return redirect(
+            url_for("ver_pedidos_admin")
+        )
+
+
+    print(
+        "✅ PEDIDO DESPACHADO: "
+        + pedido_id
+    )
+
+
+    # -----------------------------------------------------
+    # VOLVER A VER PEDIDOS
+    # -----------------------------------------------------
+
+    return redirect(
+        url_for("ver_pedidos_admin")
+    )
+
+# =========================================================
 # VERCEL / FLASK
 # =========================================================
 
