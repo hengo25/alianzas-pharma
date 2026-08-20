@@ -3,7 +3,7 @@ import json
 import uuid
 import hashlib
 import hmac
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from urllib.parse import quote
 from io import BytesIO
 from reportlab.lib.utils import ImageReader
@@ -5250,7 +5250,59 @@ def descargar_pdf_pedido(pedido_id):
         "fecha",
         ""
     )
+    # -----------------------------------------------------
+# FECHA Y HORA DE COLOMBIA
+# -----------------------------------------------------
 
+    try:
+
+        fecha_obj = datetime.fromisoformat(
+            str(fecha).replace(
+                "Z",
+                "+00:00"
+            )
+        )
+
+        hora_colombia = timezone(
+            timedelta(
+                hours=-5
+            )
+        )
+
+        fecha_colombia = (
+            fecha_obj.astimezone(
+                hora_colombia
+            )
+        )
+
+        hora_pdf = (
+            fecha_colombia
+            .strftime("%I:%M")
+            .lstrip("0")
+        )
+
+        if fecha_colombia.hour < 12:
+
+            periodo = "a. m."
+
+        else:
+
+            periodo = "p. m."
+
+
+        fecha_pdf = (
+            fecha_colombia.strftime(
+                "%d/%m/%Y"
+            )
+            + " - "
+            + hora_pdf
+            + " "
+            + periodo
+        )
+
+    except Exception:
+
+            fecha_pdf = str(fecha)
 
     # -----------------------------------------------------
     # CREAR PDF
@@ -5426,7 +5478,7 @@ def descargar_pdf_pedido(pedido_id):
     pdf.drawString(
         110,
         y,
-        str(fecha)
+        str(fecha_pdf)
     )
 
 
