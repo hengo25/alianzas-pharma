@@ -49,7 +49,20 @@
             
             <div style="margin-top: 15px; text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
                 <a href="/descargar-pdf/{{ ped.id }}" style="background-color: #3498db; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.85rem; font-family: sans-serif;">🖨️ Descargar PDF</a>
-                <a href="/eliminar-pedido/{{ ped.id }}" class="btn-del-ped" onclick="return confirm('¿Borrar pedido?')">🗑️ Borrar</a>
+                <form
+    action="/eliminar-pedido/{{ ped.id }}"
+    method="POST"
+    style="display:inline;"
+    onsubmit="return confirm('¿Está seguro de borrar este pedido? Esta acción no se puede deshacer.');"
+>
+    <button
+        type="submit"
+        class="btn-del-ped"
+        style="border:none; cursor:pointer;"
+    >
+        🗑️ Borrar
+    </button>
+</form>
                 {% if ped.estado == 'Pendiente' %}
                 <a
     href="/cambiar-estado/{{ ped.id }}"
