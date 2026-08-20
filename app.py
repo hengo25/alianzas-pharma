@@ -5010,6 +5010,71 @@ def eliminar_producto_admin(producto_id):
         url_for("administrador")
     )
 
+# =========================================================
+# ADMIN - VER PEDIDOS
+# =========================================================
+
+@app.route(
+    "/ver-pedidos"
+)
+def ver_pedidos_admin():
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # OBTENER PEDIDOS DE FIREBASE
+    # -----------------------------------------------------
+
+    pedidos = obtener_coleccion(
+        "pedidos"
+    )
+
+
+    # -----------------------------------------------------
+    # PREPARAR ID PARA LA PLANTILLA
+    # -----------------------------------------------------
+
+    for pedido in pedidos:
+
+        pedido["id"] = pedido.get(
+            "_id",
+            ""
+        )
+
+
+    # -----------------------------------------------------
+    # MOSTRAR LOS MÁS NUEVOS PRIMERO
+    # -----------------------------------------------------
+
+    pedidos.sort(
+        key=lambda x: str(
+            x.get(
+                "fecha",
+                ""
+            )
+        ),
+        reverse=True
+    )
+
+
+    # -----------------------------------------------------
+    # MOSTRAR PÁGINA
+    # -----------------------------------------------------
+
+    return render_template(
+        "pedidos.html",
+        pedidos=pedidos
+    )
+
 
 # =========================================================
 # VERCEL / FLASK
