@@ -4543,7 +4543,150 @@ def admin_salir():
 
     return respuesta
 
+# =========================================================
+# ADMIN - ACTUALIZAR EXISTENCIAS +1 / -1
+# =========================================================
 
+@app.route(
+    "/actualizar-stock/<producto_id>",
+    methods=["POST"]
+)
+def actualizar_stock_admin(producto_id):
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # RECIBIR CAMBIO
+    # -----------------------------------------------------
+
+    cantidad_cambio = request.form.get(
+        "cantidad_cambio"
+    )
+
+
+    # Por ahora esta ruta solamente manejará +1 y -1
+    if cantidad_cambio is None:
+
+        return redirect(
+            url_for("administrador")
+        )
+
+
+    try:
+
+        cantidad_cambio = int(
+            cantidad_cambio
+        )
+
+    except:
+
+        return redirect(
+            url_for("administrador")
+        )
+
+
+    # -----------------------------------------------------
+    # SOLO PERMITIR +1 O -1
+    # -----------------------------------------------------
+
+    if cantidad_cambio not in (-1, 1):
+
+        return redirect(
+            url_for("administrador")
+        )
+
+
+    # -----------------------------------------------------
+    # BUSCAR PRODUCTO
+    # -----------------------------------------------------
+
+    producto = obtener_documento(
+        "productos",
+        producto_id
+    )
+
+
+    if not producto:
+
+        return redirect(
+            url_for("administrador")
+        )
+
+
+    # -----------------------------------------------------
+    # EXISTENCIAS ACTUALES
+    # -----------------------------------------------------
+
+    try:
+
+        existencias_actuales = int(
+            producto.get(
+                "existencias",
+                0
+            )
+        )
+
+    except:
+
+        existencias_actuales = 0
+
+
+    # -----------------------------------------------------
+    # CALCULAR NUEVA EXISTENCIA
+    # -----------------------------------------------------
+
+    nuevas_existencias = (
+        existencias_actuales
+        + cantidad_cambio
+    )
+
+
+    # Nunca permitir cantidades negativas
+    if nuevas_existencias < 0:
+
+        nuevas_existencias = 0
+
+
+    # -----------------------------------------------------
+    # GUARDAR EN FIREBASE
+    # -----------------------------------------------------
+
+    producto["existencias"] = (
+        nuevas_existencias
+    )
+
+
+    guardado = guardar_documento(
+        "productos",
+        producto_id,
+        producto
+    )
+
+
+    if not guardado:
+
+        print(
+            "❌ No fue posible actualizar "
+            f"existencias de {producto_id}"
+        )
+
+
+    # -----------------------------------------------------
+    # VOLVER AL ADMIN
+    # -----------------------------------------------------
+
+    return redirect(
+        url_for("administrador")
+    )
 
 
 # =========================================================
