@@ -5,7 +5,10 @@ import hashlib
 import hmac
 from datetime import datetime, timezone
 from urllib.parse import quote
+from io import BytesIO
 
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 import requests
 
 from flask import (
@@ -5177,6 +5180,287 @@ def cambiar_estado_pedido_admin(pedido_id):
     return redirect(
         url_for("ver_pedidos_admin")
     )
+
+# =========================================================
+# ADMIN - DESCARGAR PEDIDO EN PDF
+# =========================================================
+
+@app.route(
+    "/descargar-pdf/<pedido_id>"
+)
+def descargar_pdf_pedido(pedido_id):
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # BUSCAR PEDIDO
+    # -----------------------------------------------------
+
+    pedido = obtener_documento(
+        "pedidos",
+        pedido_id
+    )
+
+
+    if not pedido:
+
+        return redirect(
+            url_for("ver_pedidos_admin")
+        )
+
+
+    cliente = pedido.get(
+        "cliente",
+        {}
+    )
+
+    articulos = pedido.get(
+        "articulos",
+        []
+    )
+
+    total = pedido.get(
+        "total",
+        0
+    )
+
+    estado = pedido.get(
+        "estado",
+        ""
+    )
+
+    fecha = pedido.get(
+        "fecha",
+        ""
+    )
+
+
+    # -----------------------------------------------------
+    # CREAR PDF EN MEMORIA
+    # -----------------------------------------------------
+
+    buffer = BytesIO()
+
+    pdf = canvas.Canvas(
+        buffer,
+        pagesize=letter
+    )
+
+    ancho, alto = letter
+
+    y = alto - 50
+
+
+    # -----------------------------------------------------
+    # ENCABEZADO
+    # -----------------------------------------------------
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        18
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        "ALIANZAS PHARMA"
+    )
+
+    y -= 25
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        13
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        "ORDEN DE PEDIDO"
+    )
+
+    y -= 30
+
+
+    # -----------------------------------------------------
+    # DATOS DEL PEDIDO
+    # -----------------------------------------------------
+
+    pdf.setFont(
+        "Helvetica",
+        10
+    )
+
+    datos = [
+
+        f"Pedido: {pedido_id}",
+
+        f"Fecha: {fecha}",
+
+        f"Estado: {estado}",
+
+        "",
+
+        "DATOS DEL CLIENTE",
+
+        f"Nombre: {cliente.get('nombre', '')}",
+
+        f"NIT: {cliente.get('nit', '')}",
+
+        f"Telefono: {cliente.get('telefono', '')}",
+
+        f"Direccion: {cliente.get('direccion', '')}",
+
+        "",
+
+        "PRODUCTOS"
+
+    ]
+
+
+    for linea in datos:
+
+        pdf.drawString(
+            50,
+            y,
+            str(linea)
+        )
+
+        y -= 18
+
+
+    # -----------------------------------------------------
+    # PRODUCTOS
+    # -----------------------------------------------------
+
+    for articulo in articulos:
+
+        nombre = str(
+            articulo.get(
+                "nombre",
+                "Producto"
+            )
+        )
+
+        cantidad = int(
+            articulo.get(
+                "cantidad",
+                0
+            )
+        )
+
+        precio = int(
+            articulo.get(
+                "precio",
+                0
+            )
+        )
+
+        subtotal = (
+            cantidad
+            * precio
+        )
+
+
+        linea = (
+            f"{nombre} | "
+            f"Cantidad: {cantidad} | "
+            f"Precio: ${precio:,} | "
+            f"Subtotal: ${subtotal:,}"
+        )
+
+
+        # Dividir líneas largas
+        while len(linea) > 90:
+
+            parte = linea[:90]
+
+            pdf.drawString(
+                50,
+                y,
+                parte
+            )
+
+            linea = linea[90:]
+
+            y -= 16
+
+
+        pdf.drawString(
+            50,
+            y,
+            linea
+        )
+
+        y -= 20
+
+
+        # Nueva página si hace falta
+        if y < 80:
+
+            pdf.showPage()
+
+            pdf.setFont(
+                "Helvetica",
+                10
+            )
+
+            y = alto - 50
+
+
+    # -----------------------------------------------------
+    # TOTAL
+    # -----------------------------------------------------
+
+    y -= 10
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        13
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        f"TOTAL FACTURA: ${int(total):,}"
+    )
+
+
+    # -----------------------------------------------------
+    # FINALIZAR PDF
+    # -----------------------------------------------------
+
+    pdf.save()
+
+    buffer.seek(0)
+
+
+    respuesta = make_response(
+        buffer.getvalue()
+    )
+
+    respuesta.headers[
+        "Content-Type"
+    ] = "application/pdf"
+
+    respuesta.headers[
+        "Content-Disposition"
+    ] = (
+        f'attachment; filename="pedido_{pedido_id}.pdf"'
+    )
+
+
+    return respuesta
+
 
 # =========================================================
 # VERCEL / FLASK
