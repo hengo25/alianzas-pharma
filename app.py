@@ -6,7 +6,7 @@ import hmac
 from datetime import datetime, timezone
 from urllib.parse import quote
 from io import BytesIO
-
+from reportlab.lib.utils import ImageReader
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import requests
@@ -5269,36 +5269,51 @@ def descargar_pdf_pedido(pedido_id):
     # -----------------------------------------------------
     # LOGO ALIANZAS PHARMA
     # -----------------------------------------------------
+    
+    try:
 
-    logo_path = os.path.join(
-        os.path.dirname(__file__),
-        "public",
-        "logo.jpeg"
-    )
+        logo_url = (
+             request.host_url.rstrip("/")
+             + "/public/logo.jpeg"
+        )
 
+        respuesta_logo = requests.get(
+            logo_url,
+            timeout=10
+        )
 
-    if os.path.exists(
-        logo_path
-    ):
+        if respuesta_logo.ok:
 
-        try:
+            logo_imagen = ImageReader(
+                BytesIO(
+                    respuesta_logo.content
+                )
+            )
 
             pdf.drawImage(
-                logo_path,
+                logo_imagen,
                 50,
-                alto - 100,
-                width=110,
-                height=55,
+                alto - 105,
+                width=95,
+                height=60,
                 preserveAspectRatio=True,
                 mask="auto"
             )
 
-        except Exception as e:
+        else:
 
             print(
-                "⚠️ No se pudo cargar el logo en PDF:",
-                str(e)
+            "⚠️ No se pudo descargar el logo:",
+            respuesta_logo.status_code
             )
+
+    except Exception as e:
+
+        print(
+        "⚠️ Error cargando logo en PDF:",
+        str(e)
+    )
+    
 
 
     # -----------------------------------------------------
