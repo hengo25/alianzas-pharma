@@ -4586,6 +4586,8 @@ def actualizar_stock_admin(producto_id):
         )
 
 
+
+
     # =====================================================
     # CASO 1: BOTONES +1 / -1
     # =====================================================
@@ -4905,6 +4907,104 @@ def actualizar_stock_admin(producto_id):
     # -----------------------------------------------------
     # VOLVER AL ADMIN
     # -----------------------------------------------------
+
+    return redirect(
+        url_for("administrador")
+    )
+
+# =========================================================
+# ADMIN - ELIMINAR PRODUCTO
+# =========================================================
+
+@app.route(
+    "/eliminar/<producto_id>",
+    methods=["POST"]
+)
+def eliminar_producto_admin(producto_id):
+
+    # Verificar administrador
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # Buscar producto
+    producto = obtener_documento(
+        "productos",
+        producto_id
+    )
+
+
+    if not producto:
+
+        return redirect(
+            url_for("administrador")
+        )
+
+
+    # URL DEL PRODUCTO EN FIRESTORE
+    url = (
+        firestore_base_url()
+        + "/"
+        + quote(
+            "productos",
+            safe=""
+        )
+        + "/"
+        + quote(
+            producto_id,
+            safe=""
+        )
+    )
+
+
+    try:
+
+        respuesta = requests.delete(
+            url,
+            headers=firestore_headers(),
+            timeout=10
+        )
+
+
+        if not respuesta.ok:
+
+            print(
+                "❌ ERROR ELIMINANDO PRODUCTO:"
+            )
+
+            print(
+                respuesta.status_code
+            )
+
+            print(
+                respuesta.text[:1000]
+            )
+
+
+            return redirect(
+                url_for("administrador")
+            )
+
+
+        print(
+            "✅ PRODUCTO ELIMINADO: "
+            + producto_id
+        )
+
+
+    except Exception as e:
+
+        print(
+            "❌ ERROR ELIMINANDO PRODUCTO:"
+        )
+
+        print(
+            str(e)
+        )
+
 
     return redirect(
         url_for("administrador")
