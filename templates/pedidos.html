@@ -51,7 +51,13 @@
                 <a href="/descargar-pdf/{{ ped.id }}" style="background-color: #3498db; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; font-size: 0.85rem; font-family: sans-serif;">🖨️ Descargar PDF</a>
                 <a href="/eliminar-pedido/{{ ped.id }}" class="btn-del-ped" onclick="return confirm('¿Borrar pedido?')">🗑️ Borrar</a>
                 {% if ped.estado == 'Pendiente' %}
-                <a href="/cambiar-estado/{{ ped.id }}" class="btn-check-ped">✓ Despachar</a>
+                <a
+    href="/cambiar-estado/{{ ped.id }}"
+    class="btn-check-ped"
+    onclick="return confirm('¿Está seguro de marcar este pedido como DESPACHADO? El cliente ya no podrá cancelarlo.');"
+>
+    ✓ Despachar
+</a>
                 {% endif %}
             </div>
         </div>
