@@ -6047,6 +6047,83 @@ def eliminar_pedido_admin(pedido_id):
         url_for("ver_pedidos_admin")
     )
 
+# =========================================================
+# ADMIN - CONTADOR DE PEDIDOS PENDIENTES
+# =========================================================
+
+@app.route(
+    "/api/conteo-pendientes"
+)
+def conteo_pedidos_pendientes():
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return jsonify({
+            "conteo": 0,
+            "pedidos": []
+        }), 401
+
+
+    # -----------------------------------------------------
+    # OBTENER PEDIDOS
+    # -----------------------------------------------------
+
+    pedidos = obtener_coleccion(
+        "pedidos"
+    )
+
+
+    pendientes = []
+
+
+    # -----------------------------------------------------
+    # CONTAR PENDIENTES
+    # -----------------------------------------------------
+
+    for pedido in pedidos:
+
+        estado = str(
+            pedido.get(
+                "estado",
+                ""
+            )
+        ).strip().lower()
+
+
+        if estado == "pendiente":
+
+            pedido_id = str(
+                pedido.get(
+                    "_id",
+                    ""
+                )
+            ).strip()
+
+
+            if pedido_id:
+
+                pendientes.append(
+                    pedido_id
+                )
+
+
+    # -----------------------------------------------------
+    # RESPUESTA
+    # -----------------------------------------------------
+
+    return jsonify({
+
+        "conteo":
+            len(pendientes),
+
+        "pedidos":
+            pendientes
+
+    })
 
 # =========================================================
 # VERCEL / FLASK
