@@ -45,7 +45,7 @@
         </div>
         
         <div style="display: flex; align-items: center; gap: 15px; margin-top: 10px; margin-bottom: 20px;">
-            <img src="/static/logo.jpeg" style="max-height: 50px; border-radius: 6px;">
+            <img src="/public/logo.jpeg" style="max-height: 50px; border-radius: 6px;">
             <h1 style="color: #2c3e50; margin: 0; font-size: 1.8rem;">Panel de Control | ALIANZAS PHARMA 🛠️</h1>
         </div>
         
@@ -114,7 +114,17 @@
                 <div class="form-group"><label>Nombre del Medicamento:</label><input type="text" name="nombre" id="mod-nombre" required></div>
                 <div class="form-group"><label>Precio de Venta ($):</label><input type="number" name="precio" id="mod-precio" required></div>
                 <div class="form-group"><label>Existencias en Bodega:</label><input type="number" name="existencias" id="mod-stock" required></div>
-                <div class="form-group"><label>Cambiar Foto (Opcional):</label><input type="file" name="foto"></div>
+                <div class="form-group">
+    <label>
+        Foto del producto:
+    </label>
+
+    <input
+        type="text"
+        value="La fotografía se conserva sin cambios"
+        disabled
+    >
+</div>
                 <br>
                 <button type="submit" class="btn-submit" style="background:#3498db;">Actualizar Cambios en Firebase 💾</button>
                 <button type="button" class="btn-submit" style="background:#94a3b8;" onclick="cerrarVentanaEdicion()">Cancelar</button>
