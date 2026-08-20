@@ -37,6 +37,23 @@
             <a href="/" style="color:#3498db; font-weight:bold; text-decoration:none;">← Catálogo Público</a> 
             <div style="display:flex; gap:12px; align-items:center;">
                 <a href="/ver-clientes" style="background:#f39c12; color:white; padding:10px 16px; border-radius:20px; text-decoration:none; font-weight:bold;">👥 Ver Droguerías</a>
+
+                <button
+    type="button"
+    id="btn-sonido"
+    onclick="activarSonidoPedidos()"
+    style="
+        background:#27ae60;
+        color:white;
+        border:none;
+        padding:10px 14px;
+        border-radius:20px;
+        font-weight:bold;
+        cursor:pointer;
+    "
+>
+    🔊 Activar sonido
+</button>
                 <a href="/ver-pedidos" id="link-pedidos" style="background:#9b59b6; color:white; padding:10px 16px; border-radius:20px; text-decoration:none; font-weight:bold; position:relative; display:inline-flex; align-items:center; gap:6px;">
                     <span>🔔</span> Ver Pedidos
                     <span id="campana-contador" class="notif-badge">0</span>
@@ -225,15 +242,267 @@
             document.getElementById('modal-editar-producto').style.display = "none";
         }
 
-        function chequearPedidosVisual() {
-            fetch('/api/conteo-pendientes')
-                .then(res => res.json())
-                .then(data => {
-                    let total = data.conteo || 0;
-                    let badge = document.getElementById('campana-contador');
-                    if (total > 0 && badge) { badge.innerText = total; badge.style.display = "block"; } else if(badge) { badge.style.display = "none"; }
-                }).catch(err => console.log("Sincronizando..."));
+        let audioPedidos = null;
+let sonidoPedidosActivo = false;
+let pedidosConocidos = null;
+
+
+function activarSonidoPedidos() {
+
+    try {
+
+        audioPedidos = new (
+            window.AudioContext ||
+            window.webkitAudioContext
+        )();
+
+        sonidoPedidosActivo = true;
+
+        const boton = document.getElementById(
+            "btn-sonido"
+        );
+
+        if (boton) {
+
+            boton.innerHTML = "🔔 Sonido activo";
+
+            boton.style.background = "#16a34a";
         }
+
+    } catch (error) {
+
+        console.log(
+            "No fue posible activar el sonido",
+            error
+        );
+    }
+}
+
+
+function sonarNuevoPedido() {
+
+    if (
+        !sonidoPedidosActivo ||
+        !audioPedidos
+    ) {
+        return;
+    }
+
+
+    const ahora = audioPedidos.currentTime;
+
+
+    const oscilador1 =
+        audioPedidos.createOscillator();
+
+    const ganancia1 =
+        audioPedidos.createGain();
+
+
+    oscilador1.connect(
+        ganancia1
+    );
+
+    ganancia1.connect(
+        audioPedidos.destination
+    );
+
+
+    oscilador1.frequency.value = 880;
+
+    ganancia1.gain.setValueAtTime(
+        0.20,
+        ahora
+    );
+
+    ganancia1.gain.exponentialRampToValueAtTime(
+        0.01,
+        ahora + 0.35
+    );
+
+
+    oscilador1.start(
+        ahora
+    );
+
+    oscilador1.stop(
+        ahora + 0.35
+    );
+
+
+    const oscilador2 =
+        audioPedidos.createOscillator();
+
+    const ganancia2 =
+        audioPedidos.createGain();
+
+
+    oscilador2.connect(
+        ganancia2
+    );
+
+    ganancia2.connect(
+        audioPedidos.destination
+    );
+
+
+    oscilador2.frequency.value = 1175;
+
+    ganancia2.gain.setValueAtTime(
+        0.18,
+        ahora + 0.18
+    );
+
+    ganancia2.gain.exponentialRampToValueAtTime(
+        0.01,
+        ahora + 0.60
+    );
+
+
+    oscilador2.start(
+        ahora + 0.18
+    );
+
+    oscilador2.stop(
+        ahora + 0.60
+    );
+}
+
+
+function mostrarAlertaNuevoPedido() {
+
+    const aviso = document.createElement(
+        "div"
+    );
+
+    aviso.innerHTML =
+        "🔔 <strong>¡Nuevo pedido recibido!</strong>";
+
+
+    aviso.style.position = "fixed";
+    aviso.style.top = "20px";
+    aviso.style.right = "20px";
+    aviso.style.background = "#16a34a";
+    aviso.style.color = "white";
+    aviso.style.padding = "16px 22px";
+    aviso.style.borderRadius = "12px";
+    aviso.style.fontWeight = "bold";
+    aviso.style.zIndex = "999999";
+    aviso.style.boxShadow =
+        "0 8px 25px rgba(0,0,0,0.25)";
+
+
+    document.body.appendChild(
+        aviso
+    );
+
+
+    setTimeout(
+        function() {
+
+            aviso.remove();
+
+        },
+        5000
+    );
+}
+
+
+function chequearPedidosVisual() {
+
+    fetch(
+        "/api/conteo-pendientes"
+    )
+
+    .then(
+        res => res.json()
+    )
+
+    .then(
+        data => {
+
+            const total =
+                data.conteo || 0;
+
+            const pedidosActuales =
+                data.pedidos || [];
+
+            const badge =
+                document.getElementById(
+                    "campana-contador"
+                );
+
+
+            // -----------------------------
+            // ACTUALIZAR CAMPANA
+            // -----------------------------
+
+            if (
+                total > 0 &&
+                badge
+            ) {
+
+                badge.innerText = total;
+
+                badge.style.display =
+                    "block";
+
+            } else if (badge) {
+
+                badge.style.display =
+                    "none";
+            }
+
+
+            // -----------------------------
+            // PRIMERA CONSULTA
+            // -----------------------------
+
+            if (
+                pedidosConocidos === null
+            ) {
+
+                pedidosConocidos =
+                    pedidosActuales;
+
+                return;
+            }
+
+
+            // -----------------------------
+            // DETECTAR PEDIDO NUEVO
+            // -----------------------------
+
+            const pedidosNuevos =
+                pedidosActuales.filter(
+                    id =>
+                        !pedidosConocidos.includes(
+                            id
+                        )
+                );
+
+
+            if (
+                pedidosNuevos.length > 0
+            ) {
+
+                sonarNuevoPedido();
+
+                mostrarAlertaNuevoPedido();
+            }
+
+
+            pedidosConocidos =
+                pedidosActuales;
+        }
+    )
+
+    .catch(
+        err => console.log(
+            "Sincronizando..."
+        )
+    );
+}
         
         setInterval(chequearPedidosVisual, 3000);
         
