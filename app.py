@@ -1,6 +1,8 @@
 import os
 import json
 import uuid
+import hashlib
+import hmac
 from datetime import datetime, timezone
 from urllib.parse import quote
 
@@ -4159,6 +4161,389 @@ def hacer_pedido():
                 + str(e)
 
         }), 500
+
+
+# =========================================================
+# ADMINISTRADOR - ETAPA 1
+# LOGIN + VISUALIZAR PRODUCTOS
+# =========================================================
+
+ADMIN_PASSWORD = os.getenv(
+    "ADMIN_PASSWORD",
+    ""
+).strip()
+
+
+# =========================================================
+# TOKEN DE SESIÓN ADMIN
+# =========================================================
+
+def token_sesion_admin():
+
+    if not ADMIN_PASSWORD:
+        return ""
+
+    return hashlib.sha256(
+        ADMIN_PASSWORD.encode("utf-8")
+    ).hexdigest()
+
+
+# =========================================================
+# VERIFICAR SESIÓN ADMIN
+# =========================================================
+
+def verificar_sesion_admin():
+
+    token_actual = request.cookies.get(
+        "admin_sesion",
+        ""
+    )
+
+    token_esperado = token_sesion_admin()
+
+    if not token_actual or not token_esperado:
+        return False
+
+    return hmac.compare_digest(
+        token_actual,
+        token_esperado
+    )
+
+
+# =========================================================
+# LOGIN ADMINISTRADOR
+# =========================================================
+
+@app.route(
+    "/login",
+    methods=["GET", "POST"]
+)
+@app.route(
+    "/admin-login",
+    methods=["GET", "POST"]
+)
+def admin_login():
+
+    # -----------------------------------------------------
+    # VERIFICAR VARIABLE DE ENTORNO
+    # -----------------------------------------------------
+
+    if not ADMIN_PASSWORD:
+
+        return """
+        <html>
+
+        <body
+            style="
+            font-family:sans-serif;
+            text-align:center;
+            padding:50px;
+            "
+        >
+
+            <h2>
+                ⚠️ Administrador no configurado
+            </h2>
+
+            <p>
+                Falta configurar ADMIN_PASSWORD
+                en Vercel.
+            </p>
+
+        </body>
+
+        </html>
+        """, 500
+
+
+    # -----------------------------------------------------
+    # RECIBIR CONTRASEÑA
+    # -----------------------------------------------------
+
+    if request.method == "POST":
+
+        password = str(
+            request.form.get(
+                "password",
+                ""
+            )
+        )
+
+
+        if hmac.compare_digest(
+            password,
+            ADMIN_PASSWORD
+        ):
+
+            respuesta = make_response(
+                redirect(
+                    url_for(
+                        "administrador"
+                    )
+                )
+            )
+
+
+            respuesta.set_cookie(
+                "admin_sesion",
+                token_sesion_admin(),
+                max_age=60 * 60 * 8,
+                path="/",
+                httponly=True,
+                secure=True,
+                samesite="Lax"
+            )
+
+
+            return respuesta
+
+
+        return """
+        <html>
+
+        <body
+            style="
+            font-family:sans-serif;
+            text-align:center;
+            padding:50px;
+            "
+        >
+
+            <h2>
+                ❌ Contraseña incorrecta
+            </h2>
+
+            <a href="/login">
+                Volver
+            </a>
+
+        </body>
+
+        </html>
+        """, 401
+
+
+    # -----------------------------------------------------
+    # PANTALLA LOGIN
+    # -----------------------------------------------------
+
+    return """
+    <!DOCTYPE html>
+
+    <html lang="es">
+
+    <head>
+
+        <meta charset="UTF-8">
+
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+        >
+
+        <title>
+            Administrador - Alianzas Pharma
+        </title>
+
+    </head>
+
+
+    <body
+        style="
+        font-family:'Segoe UI',sans-serif;
+        background:#f4f6f9;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        height:100vh;
+        margin:0;
+        "
+    >
+
+
+        <div
+            style="
+            background:white;
+            padding:35px;
+            border-radius:14px;
+            box-shadow:0 8px 25px rgba(0,0,0,0.08);
+            text-align:center;
+            width:320px;
+            "
+        >
+
+
+            <img
+                src="/public/logo.jpeg"
+                style="
+                max-height:75px;
+                margin-bottom:10px;
+                border-radius:8px;
+                "
+            >
+
+
+            <h2
+                style="
+                color:#2c3e50;
+                "
+            >
+                Administrador 🔐
+            </h2>
+
+
+            <form
+                method="POST"
+                action="/login"
+            >
+
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Contraseña de administrador"
+                    required
+                    style="
+                    box-sizing:border-box;
+                    width:100%;
+                    padding:12px;
+                    border:1px solid #cbd5e1;
+                    border-radius:8px;
+                    margin-bottom:15px;
+                    "
+                >
+
+
+                <button
+                    type="submit"
+                    style="
+                    width:100%;
+                    background:#3498db;
+                    color:white;
+                    border:none;
+                    padding:12px;
+                    border-radius:8px;
+                    font-weight:bold;
+                    cursor:pointer;
+                    "
+                >
+
+                    Entrar al Panel
+
+                </button>
+
+
+            </form>
+
+
+        </div>
+
+
+    </body>
+
+    </html>
+    """
+
+
+# =========================================================
+# PANEL ADMINISTRADOR
+# =========================================================
+
+@app.route(
+    "/admin",
+    methods=["GET", "POST"]
+)
+def administrador():
+
+    # -----------------------------------------------------
+    # PROTEGER ADMIN
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for(
+                "admin_login"
+            )
+        )
+
+
+    # -----------------------------------------------------
+    # TODAVÍA NO ACTIVAMOS CREAR PRODUCTOS
+    # -----------------------------------------------------
+
+    if request.method == "POST":
+
+        return """
+        <html>
+
+        <body
+            style="
+            font-family:sans-serif;
+            text-align:center;
+            padding:50px;
+            "
+        >
+
+            <h2>
+                ℹ️ Esta función se habilitará
+                en el siguiente paso.
+            </h2>
+
+            <a href="/admin">
+                Volver al administrador
+            </a>
+
+        </body>
+
+        </html>
+        """
+
+
+    # -----------------------------------------------------
+    # CARGAR PRODUCTOS ACTUALES
+    # -----------------------------------------------------
+
+    productos = obtener_productos()
+
+
+    # -----------------------------------------------------
+    # MOSTRAR ADMIN.HTML EXISTENTE
+    # -----------------------------------------------------
+
+    return render_template(
+        "admin.html",
+        productos=productos
+    )
+
+
+# =========================================================
+# SALIR DEL ADMINISTRADOR
+# =========================================================
+
+@app.route("/admin-salir")
+def admin_salir():
+
+    respuesta = make_response(
+        redirect(
+            url_for(
+                "admin_login"
+            )
+        )
+    )
+
+
+    respuesta.set_cookie(
+        "admin_sesion",
+        "",
+        expires=0,
+        path="/"
+    )
+
+
+    return respuesta
+
+
 
 
 # =========================================================
