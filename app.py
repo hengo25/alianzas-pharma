@@ -5185,6 +5185,10 @@ def cambiar_estado_pedido_admin(pedido_id):
 # ADMIN - DESCARGAR PEDIDO EN PDF
 # =========================================================
 
+# =========================================================
+# ADMIN - DESCARGAR PEDIDO EN PDF
+# =========================================================
+
 @app.route(
     "/descargar-pdf/<pedido_id>"
 )
@@ -5218,6 +5222,10 @@ def descargar_pdf_pedido(pedido_id):
         )
 
 
+    # -----------------------------------------------------
+    # DATOS DEL PEDIDO
+    # -----------------------------------------------------
+
     cliente = pedido.get(
         "cliente",
         {}
@@ -5245,7 +5253,7 @@ def descargar_pdf_pedido(pedido_id):
 
 
     # -----------------------------------------------------
-    # CREAR PDF EN MEMORIA
+    # CREAR PDF
     # -----------------------------------------------------
 
     buffer = BytesIO()
@@ -5257,7 +5265,40 @@ def descargar_pdf_pedido(pedido_id):
 
     ancho, alto = letter
 
-    y = alto - 50
+
+    # -----------------------------------------------------
+    # LOGO ALIANZAS PHARMA
+    # -----------------------------------------------------
+
+    logo_path = os.path.join(
+        os.path.dirname(__file__),
+        "public",
+        "logo.jpeg"
+    )
+
+
+    if os.path.exists(
+        logo_path
+    ):
+
+        try:
+
+            pdf.drawImage(
+                logo_path,
+                50,
+                alto - 100,
+                width=110,
+                height=55,
+                preserveAspectRatio=True,
+                mask="auto"
+            )
+
+        except Exception as e:
+
+            print(
+                "⚠️ No se pudo cargar el logo en PDF:",
+                str(e)
+            )
 
 
     # -----------------------------------------------------
@@ -5270,12 +5311,11 @@ def descargar_pdf_pedido(pedido_id):
     )
 
     pdf.drawString(
-        50,
-        y,
+        180,
+        alto - 60,
         "ALIANZAS PHARMA"
     )
 
-    y -= 25
 
     pdf.setFont(
         "Helvetica-Bold",
@@ -5283,87 +5323,311 @@ def descargar_pdf_pedido(pedido_id):
     )
 
     pdf.drawString(
-        50,
-        y,
+        180,
+        alto - 82,
         "ORDEN DE PEDIDO"
     )
 
-    y -= 30
+
+    pdf.line(
+        50,
+        alto - 115,
+        ancho - 50,
+        alto - 115
+    )
 
 
     # -----------------------------------------------------
-    # DATOS DEL PEDIDO
+    # INFORMACIÓN DEL PEDIDO
     # -----------------------------------------------------
+
+    y = alto - 145
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        10
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        "PEDIDO:"
+    )
 
     pdf.setFont(
         "Helvetica",
         10
     )
 
-    datos = [
-
-        f"Pedido: {pedido_id}",
-
-        f"Fecha: {fecha}",
-
-        f"Estado: {estado}",
-
-        "",
-
-        "DATOS DEL CLIENTE",
-
-        f"Nombre: {cliente.get('nombre', '')}",
-
-        f"NIT: {cliente.get('nit', '')}",
-
-        f"Telefono: {cliente.get('telefono', '')}",
-
-        f"Direccion: {cliente.get('direccion', '')}",
-
-        "",
-
-        "PRODUCTOS"
-
-    ]
+    pdf.drawString(
+        110,
+        y,
+        str(pedido_id)
+    )
 
 
-    for linea in datos:
+    pdf.setFont(
+        "Helvetica-Bold",
+        10
+    )
+
+    pdf.drawString(
+        350,
+        y,
+        "ESTADO:"
+    )
+
+    pdf.setFont(
+        "Helvetica",
+        10
+    )
+
+    pdf.drawString(
+        405,
+        y,
+        str(estado)
+    )
+
+
+    y -= 20
+
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        10
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        "FECHA:"
+    )
+
+    pdf.setFont(
+        "Helvetica",
+        10
+    )
+
+    pdf.drawString(
+        110,
+        y,
+        str(fecha)
+    )
+
+
+    # -----------------------------------------------------
+    # DATOS DE LA DROGUERÍA
+    # -----------------------------------------------------
+
+    y -= 40
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        12
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        "DATOS DE LA DROGUERIA"
+    )
+
+    y -= 22
+
+
+    pdf.setFont(
+        "Helvetica",
+        10
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        "Nombre: "
+        + str(
+            cliente.get(
+                "nombre",
+                ""
+            )
+        )
+    )
+
+    y -= 18
+
+
+    pdf.drawString(
+        50,
+        y,
+        "NIT: "
+        + str(
+            cliente.get(
+                "nit",
+                ""
+            )
+        )
+    )
+
+    y -= 18
+
+
+    pdf.drawString(
+        50,
+        y,
+        "Telefono: "
+        + str(
+            cliente.get(
+                "telefono",
+                ""
+            )
+        )
+    )
+
+    y -= 18
+
+
+    direccion = str(
+        cliente.get(
+            "direccion",
+            ""
+        )
+    )
+
+
+    pdf.drawString(
+        50,
+        y,
+        "Direccion: "
+        + direccion[:80]
+    )
+
+
+    if len(direccion) > 80:
+
+        y -= 16
 
         pdf.drawString(
-            50,
+            105,
             y,
-            str(linea)
+            direccion[80:160]
         )
-
-        y -= 18
 
 
     # -----------------------------------------------------
     # PRODUCTOS
     # -----------------------------------------------------
 
+    y -= 40
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        12
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        "PRODUCTOS"
+    )
+
+    y -= 25
+
+
+    # Encabezados de tabla
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        9
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        "Producto"
+    )
+
+    pdf.drawString(
+        340,
+        y,
+        "Cant."
+    )
+
+    pdf.drawString(
+        390,
+        y,
+        "Precio"
+    )
+
+    pdf.drawString(
+        475,
+        y,
+        "Subtotal"
+    )
+
+
+    y -= 8
+
+
+    pdf.line(
+        50,
+        y,
+        ancho - 50,
+        y
+    )
+
+
+    y -= 18
+
+
+    # -----------------------------------------------------
+    # FILAS DE PRODUCTOS
+    # -----------------------------------------------------
+
+    pdf.setFont(
+        "Helvetica",
+        8
+    )
+
+
     for articulo in articulos:
 
         nombre = str(
             articulo.get(
                 "nombre",
-                "Producto"
+                articulo.get(
+                    "producto",
+                    "Producto"
+                )
             )
         )
 
-        cantidad = int(
-            articulo.get(
-                "cantidad",
-                0
-            )
-        )
 
-        precio = int(
-            articulo.get(
-                "precio",
-                0
+        try:
+
+            cantidad = int(
+                articulo.get(
+                    "cantidad",
+                    0
+                )
             )
-        )
+
+        except:
+
+            cantidad = 0
+
+
+        try:
+
+            precio = int(
+                articulo.get(
+                    "precio",
+                    0
+                )
+            )
+
+        except:
+
+            precio = 0
+
 
         subtotal = (
             cantidad
@@ -5371,50 +5635,59 @@ def descargar_pdf_pedido(pedido_id):
         )
 
 
-        linea = (
-            f"{nombre} | "
-            f"Cantidad: {cantidad} | "
-            f"Precio: ${precio:,} | "
-            f"Subtotal: ${subtotal:,}"
-        )
+        # Acortar nombre si es demasiado largo
+        nombre_pdf = nombre
 
+        if len(nombre_pdf) > 52:
 
-        # Dividir líneas largas
-        while len(linea) > 90:
-
-            parte = linea[:90]
-
-            pdf.drawString(
-                50,
-                y,
-                parte
+            nombre_pdf = (
+                nombre_pdf[:49]
+                + "..."
             )
-
-            linea = linea[90:]
-
-            y -= 16
 
 
         pdf.drawString(
             50,
             y,
-            linea
+            nombre_pdf
         )
+
+
+        pdf.drawRightString(
+            370,
+            y,
+            str(cantidad)
+        )
+
+
+        pdf.drawRightString(
+            455,
+            y,
+            f"${precio:,.0f}"
+        )
+
+
+        pdf.drawRightString(
+            ancho - 50,
+            y,
+            f"${subtotal:,.0f}"
+        )
+
 
         y -= 20
 
 
-        # Nueva página si hace falta
-        if y < 80:
+        # Nueva página si hay muchos productos
+        if y < 100:
 
             pdf.showPage()
 
+            y = alto - 60
+
             pdf.setFont(
                 "Helvetica",
-                10
+                8
             )
-
-            y = alto - 50
 
 
     # -----------------------------------------------------
@@ -5423,15 +5696,45 @@ def descargar_pdf_pedido(pedido_id):
 
     y -= 10
 
-    pdf.setFont(
-        "Helvetica-Bold",
-        13
+
+    pdf.line(
+        350,
+        y,
+        ancho - 50,
+        y
     )
 
-    pdf.drawString(
-        50,
+
+    y -= 25
+
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        14
+    )
+
+
+    pdf.drawRightString(
+        ancho - 50,
         y,
-        f"TOTAL FACTURA: ${int(total):,}"
+        f"TOTAL: ${int(total):,.0f}"
+    )
+
+
+    # -----------------------------------------------------
+    # PIE DE PÁGINA
+    # -----------------------------------------------------
+
+    pdf.setFont(
+        "Helvetica",
+        8
+    )
+
+
+    pdf.drawCentredString(
+        ancho / 2,
+        35,
+        "Alianzas Pharma - Portal de Pedidos"
     )
 
 
@@ -5448,9 +5751,15 @@ def descargar_pdf_pedido(pedido_id):
         buffer.getvalue()
     )
 
+
     respuesta.headers[
         "Content-Type"
     ] = "application/pdf"
+
+
+    # -----------------------------------------------------
+    # NOMBRE DEL ARCHIVO
+    # -----------------------------------------------------
 
     nombre_drogueria = str(
         cliente.get(
@@ -5459,17 +5768,20 @@ def descargar_pdf_pedido(pedido_id):
         )
     ).strip()
 
+
     nombre_drogueria_archivo = (
         nombre_drogueria
         .replace(" ", "_")
         .replace("/", "-")
     )
 
+
     respuesta.headers[
         "Content-Disposition"
     ] = (
         f'attachment; filename="pedido_{nombre_drogueria_archivo}_{pedido_id}.pdf"'
     )
+
 
     return respuesta
 
