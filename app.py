@@ -4547,6 +4547,11 @@ def admin_salir():
 # ADMIN - ACTUALIZAR EXISTENCIAS +1 / -1
 # =========================================================
 
+# =========================================================
+# ADMIN - ACTUALIZAR PRODUCTO
+# +1 / -1 / EDITAR DATOS
+# =========================================================
+
 @app.route(
     "/actualizar-stock/<producto_id>",
     methods=["POST"]
@@ -4562,6 +4567,223 @@ def actualizar_stock_admin(producto_id):
         return redirect(
             url_for("admin_login")
         )
+
+
+    # -----------------------------------------------------
+    # BUSCAR PRODUCTO ACTUAL
+    # -----------------------------------------------------
+
+    producto = obtener_documento(
+        "productos",
+        producto_id
+    )
+
+
+    if not producto:
+
+        return redirect(
+            url_for("administrador")
+        )
+
+
+    # =====================================================
+    # CASO 1: BOTONES +1 / -1
+    # =====================================================
+
+    cantidad_cambio = request.form.get(
+        "cantidad_cambio"
+    )
+
+
+    if cantidad_cambio is not None:
+
+        try:
+
+            cantidad_cambio = int(
+                cantidad_cambio
+            )
+
+        except:
+
+            return redirect(
+                url_for("administrador")
+            )
+
+
+        # Solo permitir +1 o -1
+        if cantidad_cambio not in (-1, 1):
+
+            return redirect(
+                url_for("administrador")
+            )
+
+
+        try:
+
+            existencias_actuales = int(
+                producto.get(
+                    "existencias",
+                    0
+                )
+            )
+
+        except:
+
+            existencias_actuales = 0
+
+
+        nuevas_existencias = (
+            existencias_actuales
+            + cantidad_cambio
+        )
+
+
+        if nuevas_existencias < 0:
+
+            nuevas_existencias = 0
+
+
+        producto["existencias"] = (
+            nuevas_existencias
+        )
+
+
+        guardado = guardar_documento(
+            "productos",
+            producto_id,
+            producto
+        )
+
+
+        if not guardado:
+
+            print(
+                "❌ Error actualizando existencias: "
+                + producto_id
+            )
+
+
+        return redirect(
+            url_for("administrador")
+        )
+
+
+    # =====================================================
+    # CASO 2: EDITAR NOMBRE, PRECIO Y EXISTENCIAS
+    # =====================================================
+
+    nombre = str(
+        request.form.get(
+            "nombre",
+            ""
+        )
+    ).strip()
+
+
+    precio_form = str(
+        request.form.get(
+            "precio",
+            ""
+        )
+    ).strip()
+
+
+    existencias_form = str(
+        request.form.get(
+            "existencias",
+            ""
+        )
+    ).strip()
+
+
+    # -----------------------------------------------------
+    # VALIDAR CAMPOS
+    # -----------------------------------------------------
+
+    if (
+        not nombre
+        or not precio_form
+        or not existencias_form
+    ):
+
+        return redirect(
+            url_for("administrador")
+        )
+
+
+    try:
+
+        precio = int(
+            precio_form
+        )
+
+        existencias = int(
+            existencias_form
+        )
+
+    except:
+
+        return redirect(
+            url_for("administrador")
+        )
+
+
+    # -----------------------------------------------------
+    # NO PERMITIR VALORES NEGATIVOS
+    # -----------------------------------------------------
+
+    if precio < 0:
+
+        precio = 0
+
+
+    if existencias < 0:
+
+        existencias = 0
+
+
+    # -----------------------------------------------------
+    # ACTUALIZAR SOLO LOS DATOS NECESARIOS
+    # -----------------------------------------------------
+
+    producto["nombre"] = nombre
+
+    producto["precio"] = precio
+
+    producto["existencias"] = existencias
+
+
+    # IMPORTANTE:
+    # NO MODIFICAMOS producto["imagen"]
+    # La fotografía actual permanece igual.
+
+
+    # -----------------------------------------------------
+    # GUARDAR EN FIREBASE
+    # -----------------------------------------------------
+
+    guardado = guardar_documento(
+        "productos",
+        producto_id,
+        producto
+    )
+
+
+    if not guardado:
+
+        print(
+            "❌ Error editando producto: "
+            + producto_id
+        )
+
+
+    # -----------------------------------------------------
+    # VOLVER AL ADMINISTRADOR
+    # -----------------------------------------------------
+
+    return redirect(
+        url_for("administrador")
+    )
 
 
     # -----------------------------------------------------
