@@ -5600,6 +5600,152 @@ def descargar_pdf_pedido(pedido_id):
             direccion[80:160]
         )
 
+    # -----------------------------------------------------
+    # ENTREGA SOLICITADA
+    # -----------------------------------------------------
+
+    fecha_entrega = str(
+        pedido.get(
+            "fecha_entrega",
+            ""
+        )
+    ).strip()
+
+
+    observaciones = str(
+        pedido.get(
+            "observaciones",
+            ""
+        )
+    ).strip()
+
+
+    creado_por = str(
+        pedido.get(
+            "creado_por",
+            ""
+        )
+    ).strip().lower()
+
+
+    # -----------------------------------------------------
+    # FORMATEAR FECHA DE ENTREGA
+    # -----------------------------------------------------
+
+    if fecha_entrega:
+
+        try:
+
+            fecha_entrega_obj = datetime.strptime(
+                fecha_entrega,
+                "%Y-%m-%d"
+            )
+
+            fecha_entrega_pdf = (
+                fecha_entrega_obj.strftime(
+                    "%d/%m/%Y"
+                )
+            )
+
+        except:
+
+            fecha_entrega_pdf = fecha_entrega
+
+    else:
+
+        fecha_entrega_pdf = "No especificada"
+
+
+    # -----------------------------------------------------
+    # ORIGEN DEL PEDIDO
+    # -----------------------------------------------------
+
+    if creado_por == "administrador":
+
+        origen_pdf = (
+            "Pedido tomado por Alianzas Pharma"
+        )
+
+    else:
+
+        origen_pdf = (
+            "Pedido realizado por la drogueria"
+        )
+
+
+    # -----------------------------------------------------
+    # DIBUJAR DATOS DE ENTREGA
+    # -----------------------------------------------------
+
+    y -= 32
+
+    pdf.setFont(
+        "Helvetica-Bold",
+        11
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        "ENTREGA SOLICITADA"
+    )
+
+
+    y -= 20
+
+    pdf.setFont(
+        "Helvetica",
+        10
+    )
+
+    pdf.drawString(
+        50,
+        y,
+        "Fecha: "
+        + fecha_entrega_pdf
+    )
+
+
+    y -= 18
+
+    if observaciones:
+
+        pdf.drawString(
+            50,
+            y,
+            "Observaciones: "
+            + observaciones[:60]
+        )
+
+        if len(observaciones) > 60:
+
+            y -= 16
+
+            pdf.drawString(
+                120,
+                y,
+                observaciones[60:120]
+            )
+
+    else:
+
+        pdf.drawString(
+            50,
+            y,
+            "Observaciones: Sin observaciones"
+        )
+
+
+    y -= 18
+
+    pdf.drawString(
+        50,
+        y,
+        "Origen: "
+        + origen_pdf
+    )
+
+
 
     # -----------------------------------------------------
     # PRODUCTOS
