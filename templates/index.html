@@ -307,7 +307,18 @@
             if(!car.length) return alert("El carrito está vacío.");
             let totalFactura = car.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
             if (totalFactura < 150000) { alert("⚠️ El monto mínimo para realizar un pedido es de $150.000 COP."); return; }
-            
+                        
+            const fechaEntrega =
+                document.getElementById(
+                         "fecha-entrega"
+                ).value;
+
+            const observacionesPedido =
+                document.getElementById(
+                    "observaciones-pedido"
+                ).value.trim();
+
+
             // 🎯 ENCIENDE LA VENTANA FLOTANTE CON TU LOGO EN EL CENTRO
             const pantallaCarga = document.getElementById('pantalla-carga-pharma');
             if (pantallaCarga) { pantallaCarga.style.display = "flex"; }
@@ -331,7 +342,12 @@
             fetch('/hacer-pedido', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ articulos: car, cliente: infoCliente })
+                body: JSON.stringify({
+                articulos: car,
+                cliente: infoCliente,
+                fecha_entrega: fechaEntrega,
+                observaciones: observacionesPedido
+            })
             })
             .then(async res => {
 
