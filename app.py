@@ -6524,6 +6524,64 @@ def eliminar_cliente_admin(cliente_id):
     )
 
 # =========================================================
+# ADMIN - CREAR PEDIDO PARA DROGUERÍA
+# =========================================================
+
+@app.route(
+    "/crear-pedido-admin"
+)
+def crear_pedido_admin():
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # OBTENER DROGUERÍAS
+    # -----------------------------------------------------
+
+    clientes = obtener_coleccion(
+        "clientes"
+    )
+
+
+    for cliente in clientes:
+
+        if not cliente.get("nit"):
+
+            cliente["nit"] = cliente.get(
+                "_id",
+                ""
+            )
+
+
+    clientes.sort(
+        key=lambda x: str(
+            x.get(
+                "nombre",
+                ""
+            )
+        ).lower()
+    )
+
+
+    # -----------------------------------------------------
+    # MOSTRAR PANTALLA
+    # -----------------------------------------------------
+
+    return render_template(
+        "crear_pedido_admin.html",
+        clientes=clientes
+    )
+
+# =========================================================
 # VERCEL / FLASK
 # =========================================================
 
