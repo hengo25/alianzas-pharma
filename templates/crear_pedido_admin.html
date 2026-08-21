@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Crear Pedido - Alianzas Pharma</title>
+
+    <style>
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 35px 20px;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .volver {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 9px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+
+        .encabezado {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .encabezado img {
+            max-height: 55px;
+            border-radius: 6px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.7rem;
+        }
+
+        .caja {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 22px;
+            border-radius: 12px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            margin-bottom: 20px;
+        }
+
+        .btn-continuar {
+            width: 100%;
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .ayuda {
+            color: #64748b;
+            font-size: 0.92rem;
+            margin-top: 6px;
+            margin-bottom: 20px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="container">
+
+        <a
+            href="/admin"
+            class="volver"
+        >
+            ← Volver al Panel de Admin
+        </a>
+
+
+        <div class="encabezado">
+
+            <img
+                src="/public/logo.jpeg"
+                alt="Alianzas Pharma"
+            >
+
+            <div>
+
+                <h1>
+                    🛒 Crear Pedido
+                </h1>
+
+                <div>
+                    Pedido realizado por Alianzas Pharma
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="caja">
+
+            <label for="cliente">
+                Seleccione la droguería
+            </label>
+
+            <select id="cliente">
+
+                <option value="">
+                    -- Seleccione una droguería --
+                </option>
+
+                {% for cliente in clientes %}
+
+                    <option
+                        value="{{ cliente.get('_id', cliente.get('nit', '')) }}"
+                    >
+                        {{ cliente.get('nombre', 'Sin nombre') }}
+                        - NIT {{ cliente.get('nit', '') }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+
+            <div class="ayuda">
+                Seleccione el cliente para el cual desea realizar el pedido.
+            </div>
+
+
+            <button
+                type="button"
+                class="btn-continuar"
+                onclick="continuarPedido()"
+            >
+                Continuar con el pedido →
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <script>
+
+        function continuarPedido() {
+
+            const cliente =
+                document.getElementById(
+                    "cliente"
+                ).value;
+
+            if (!cliente) {
+
+                alert(
+                    "Seleccione una droguería para continuar."
+                );
+
+                return;
+            }
+
+
+            window.location.href =
+                "/crear-pedido-admin/"
+                + encodeURIComponent(cliente);
+
+        }
+
+    </script>
+
+</body>
+
+</html>
