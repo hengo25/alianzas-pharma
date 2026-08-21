@@ -298,6 +298,31 @@
         ✏️ Editar
     </a>
 
+<form
+    method="POST"
+    action="/eliminar-cliente/{{ cliente.get('_id', cliente.get('nit', '')) }}"
+    onsubmit="return confirm('¿Está seguro de eliminar esta droguería? Esta acción no se puede deshacer.');"
+    style="display:inline-block; margin-left:6px;"
+>
+
+    <button
+        type="submit"
+        style="
+            background:#e74c3c;
+            color:white;
+            border:none;
+            padding:7px 12px;
+            border-radius:7px;
+            font-weight:bold;
+            cursor:pointer;
+            white-space:nowrap;
+        "
+    >
+        🗑️ Eliminar
+    </button>
+
+</form>
+
 </td>
 
                 </tr>
