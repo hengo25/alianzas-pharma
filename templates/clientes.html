@@ -161,6 +161,42 @@
 
         </div>
 
+        <div
+    style="
+        display:flex;
+        gap:12px;
+        align-items:center;
+        margin-bottom:20px;
+        flex-wrap:wrap;
+    "
+>
+
+    <input
+        type="text"
+        id="buscar-cliente"
+        placeholder="🔎 Buscar por nombre, NIT, dirección o teléfono..."
+        style="
+            flex:1;
+            min-width:260px;
+            padding:12px 15px;
+            border:1px solid #cbd5e1;
+            border-radius:10px;
+            font-size:15px;
+            outline:none;
+        "
+    >
+
+    <span
+        id="resultado-busqueda"
+        style="
+            color:#64748b;
+            font-weight:600;
+        "
+    >
+    </span>
+
+</div>
+
 
         {% if clientes %}
 
@@ -191,11 +227,11 @@
             </thead>
 
 
-            <tbody>
+            <tbody id="lista-clientes">
 
                 {% for cliente in clientes %}
 
-                <tr>
+                <tr class="fila-cliente">
 
                     <td>
                         <strong>
@@ -247,6 +283,63 @@
 
         </table>
 
+        <div
+    id="paginacion"
+    style="
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:12px;
+        margin-top:25px;
+    "
+>
+
+    <button
+        type="button"
+        id="btn-anterior"
+        style="
+            background:#3498db;
+            color:white;
+            border:none;
+            padding:9px 16px;
+            border-radius:8px;
+            cursor:pointer;
+            font-weight:bold;
+        "
+    >
+        ← Anterior
+    </button>
+
+
+    <span
+        id="info-pagina"
+        style="
+            font-weight:bold;
+            color:#475569;
+        "
+    >
+        Página 1
+    </span>
+
+
+    <button
+        type="button"
+        id="btn-siguiente"
+        style="
+            background:#3498db;
+            color:white;
+            border:none;
+            padding:9px 16px;
+            border-radius:8px;
+            cursor:pointer;
+            font-weight:bold;
+        "
+    >
+        Siguiente →
+    </button>
+
+</div>
+
 
         {% else %}
 
@@ -259,6 +352,237 @@
         {% endif %}
 
     </div>
+
+    <script>
+
+    const filasClientes = Array.from(
+        document.querySelectorAll(
+            ".fila-cliente"
+        )
+    );
+
+    const buscador = document.getElementById(
+        "buscar-cliente"
+    );
+
+    const btnAnterior = document.getElementById(
+        "btn-anterior"
+    );
+
+    const btnSiguiente = document.getElementById(
+        "btn-siguiente"
+    );
+
+    const infoPagina = document.getElementById(
+        "info-pagina"
+    );
+
+    const resultadoBusqueda = document.getElementById(
+        "resultado-busqueda"
+    );
+
+
+    const clientesPorPagina = 10;
+
+    let paginaActual = 1;
+
+    let filasFiltradas = [
+        ...filasClientes
+    ];
+
+
+    function mostrarPagina() {
+
+        filasClientes.forEach(
+            fila => {
+
+                fila.style.display =
+                    "none";
+            }
+        );
+
+
+        const totalPaginas = Math.max(
+            1,
+            Math.ceil(
+                filasFiltradas.length
+                /
+                clientesPorPagina
+            )
+        );
+
+
+        if (
+            paginaActual
+            >
+            totalPaginas
+        ) {
+
+            paginaActual =
+                totalPaginas;
+        }
+
+
+        const inicio = (
+            paginaActual - 1
+        ) * clientesPorPagina;
+
+
+        const fin =
+            inicio
+            +
+            clientesPorPagina;
+
+
+        filasFiltradas
+            .slice(
+                inicio,
+                fin
+            )
+            .forEach(
+                fila => {
+
+                    fila.style.display =
+                        "";
+                }
+            );
+
+
+        if (infoPagina) {
+
+            infoPagina.textContent =
+                "Página "
+                + paginaActual
+                + " de "
+                + totalPaginas;
+        }
+
+
+        if (resultadoBusqueda) {
+
+            resultadoBusqueda.textContent =
+                filasFiltradas.length
+                + " resultado(s)";
+        }
+
+
+        if (btnAnterior) {
+
+            btnAnterior.disabled =
+                paginaActual === 1;
+
+            btnAnterior.style.opacity =
+                paginaActual === 1
+                ? "0.5"
+                : "1";
+        }
+
+
+        if (btnSiguiente) {
+
+            btnSiguiente.disabled =
+                paginaActual
+                >=
+                totalPaginas;
+
+            btnSiguiente.style.opacity =
+                paginaActual
+                >=
+                totalPaginas
+                ? "0.5"
+                : "1";
+        }
+    }
+
+
+    function buscarClientes() {
+
+        const texto = buscador.value
+            .toLowerCase()
+            .trim();
+
+
+        filasFiltradas =
+            filasClientes.filter(
+                fila => {
+
+                    return fila
+                        .textContent
+                        .toLowerCase()
+                        .includes(
+                            texto
+                        );
+                }
+            );
+
+
+        paginaActual = 1;
+
+        mostrarPagina();
+    }
+
+
+    if (buscador) {
+
+        buscador.addEventListener(
+            "input",
+            buscarClientes
+        );
+    }
+
+
+    if (btnAnterior) {
+
+        btnAnterior.addEventListener(
+            "click",
+            function() {
+
+                if (
+                    paginaActual > 1
+                ) {
+
+                    paginaActual--;
+
+                    mostrarPagina();
+                }
+            }
+        );
+    }
+
+
+    if (btnSiguiente) {
+
+        btnSiguiente.addEventListener(
+            "click",
+            function() {
+
+                const totalPaginas =
+                    Math.ceil(
+                        filasFiltradas.length
+                        /
+                        clientesPorPagina
+                    );
+
+
+                if (
+                    paginaActual
+                    <
+                    totalPaginas
+                ) {
+
+                    paginaActual++;
+
+                    mostrarPagina();
+                }
+            }
+        );
+    }
+
+
+    mostrarPagina();
+
+</script>
+
 
 </body>
 
