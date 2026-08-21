@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Droguerías - Alianzas Pharma
+    </title>
+
+    <style>
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px;
+            color: #1e293b;
+        }
+
+        .contenedor {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        .encabezado {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .encabezado img {
+            max-height: 55px;
+        }
+
+        h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .volver {
+            display: inline-block;
+            margin-bottom: 25px;
+            background: #3498db;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .total {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        .sin-dato {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .sin-clientes {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+
+        @media (max-width: 700px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .contenedor {
+                padding: 18px;
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 700px;
+            }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="contenedor">
+
+        <a
+            href="/admin"
+            class="volver"
+        >
+            ← Volver al Panel de Admin
+        </a>
+
+
+        <div class="encabezado">
+
+            <img
+                src="/public/logo.jpeg"
+                alt="Alianzas Pharma"
+            >
+
+            <div>
+
+                <h1>
+                    👥 Droguerías Registradas
+                </h1>
+
+                <p>
+                    Clientes afiliados a Alianzas Pharma
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="total">
+
+            Total de droguerías:
+            {{ clientes|length }}
+
+        </div>
+
+
+        {% if clientes %}
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>
+                        Droguería
+                    </th>
+
+                    <th>
+                        NIT
+                    </th>
+
+                    <th>
+                        Dirección
+                    </th>
+
+                    <th>
+                        Teléfono / WhatsApp
+                    </th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for cliente in clientes %}
+
+                <tr>
+
+                    <td>
+                        <strong>
+                            {{ cliente.get("nombre", "Sin nombre") }}
+                        </strong>
+                    </td>
+
+                    <td>
+                        {{ cliente.get("nit", cliente.get("_id", "")) }}
+                    </td>
+
+                    <td>
+
+                        {% if cliente.get("direccion") %}
+
+                            {{ cliente.get("direccion") }}
+
+                        {% else %}
+
+                            <span class="sin-dato">
+                                No registrado
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        {% if cliente.get("telefono") %}
+
+                            {{ cliente.get("telefono") }}
+
+                        {% else %}
+
+                            <span class="sin-dato">
+                                No registrado
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+
+        {% else %}
+
+        <div class="sin-clientes">
+
+            No hay droguerías registradas.
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</body>
+
+</html>
