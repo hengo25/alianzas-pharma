@@ -37,7 +37,7 @@
             <span style="font-size:1.15rem; color:#2c3e50;">👋 Hola, <b>{{ cliente.nombre }}</b> (NIT: {{ cliente.nit }})</span>
             <div style="display:flex; gap:10px;">
                 <a href="/mis-pedidos" class="btn-premium-nav" style="background:#f39c12;">📋 Mis Pedidos</a>
-                <a href="/logout-cliente" class="btn-premium-nav" style="background:#e74c3c;">🚪 Salir</a>
+                <a href="/salir" class="btn-premium-nav" style="background:#e74c3c;">Salir</a>
             </div>
         </div>
         <h1 style="color: #2c3e50; font-family: sans-serif; text-align: left; font-size: 1.8rem; margin-top: 15px;">Catálogo de Productos | Alianzas Pharma</h1>
@@ -81,7 +81,84 @@
                     </table>
                 </div>
                 <div id="aviso-minimo" style="color:#e67e22; font-weight:600; font-size:0.9rem; margin-top:10px; text-align:center; display:none;">⚠️ Pedido mínimo requerido: $150.000</div>
-                <h4 id="tot" style="color:#27ae60; text-align:right; margin:15px 0 0 0; font-size:1.25rem; border-top:2px solid #f1f5f9; padding-top:10px; display:none;">Total: $<span id="v-tot">0</span></h4>
+                <h4 id="tot" <div
+    style="
+        margin-top:18px;
+        padding:15px;
+        background:#f8fafc;
+        border:1px solid #e2e8f0;
+        border-radius:10px;
+        text-align:left;
+    "
+>
+
+    <div
+        style="
+            font-weight:bold;
+            color:#2c3e50;
+            margin-bottom:12px;
+            font-size:1rem;
+        "
+    >
+        📦 Datos de entrega
+    </div>
+
+
+    <label
+        for="fecha-entrega"
+        style="
+            display:block;
+            font-weight:600;
+            margin-bottom:5px;
+            color:#475569;
+        "
+    >
+        Fecha deseada de entrega
+    </label>
+
+    <input
+        type="date"
+        id="fecha-entrega"
+        style="
+            width:100%;
+            box-sizing:border-box;
+            padding:10px;
+            border:1px solid #cbd5e1;
+            border-radius:7px;
+            margin-bottom:12px;
+            font-size:0.95rem;
+        "
+    >
+
+
+    <label
+        for="observaciones-pedido"
+        style="
+            display:block;
+            font-weight:600;
+            margin-bottom:5px;
+            color:#475569;
+        "
+    >
+        Observaciones
+    </label>
+
+    <textarea
+        id="observaciones-pedido"
+        placeholder="Ej. Entregar después de las 4:00 p. m."
+        style="
+            width:100%;
+            box-sizing:border-box;
+            padding:10px;
+            border:1px solid #cbd5e1;
+            border-radius:7px;
+            min-height:70px;
+            resize:vertical;
+            font-size:0.95rem;
+        "
+    ></textarea>
+
+</div> style="color:#27ae60; text-align:right; margin:15px 0 0 0; font-size:1.25rem; border-top:2px solid #f1f5f9; padding-top:10px; display:none;">Total: $<span id="v-tot">0</span></h4>
                 <button class="btn-success" onclick="send()" style="margin-top:15px; width:100%; border-radius:8px;">Finalizar e Enviar Pedido (<span id="contador">0</span> ud)</button>
             </div>
         </div>
@@ -89,7 +166,13 @@
 
     <script>
         let car = [], pg = 1; const lim = 12;
-        const clienteFijo = { nombre: "{{ cliente.nombre }}", telefono: "{{ cliente.telefono }}", direccion: "{{ cliente.direccion }}", nit: "{{ cliente.nit }}" };
+                // 🎯 CAPTURA DINÁMICA: Lee los datos directo del servidor web sin importar la URL
+        const clienteFijo = {
+            nit: "{{ cliente.nit if cliente else '' }}",
+            nombre: "{{ cliente.nombre if cliente else '' }}",
+            telefono: "{{ cliente.telefono if cliente else '' }}",
+            direccion: "{{ cliente.direccion if cliente else '' }}"
+        };
 
         // 🔌 ESCUCHADOR MAESTRO DE CLICS RECONECTADO
         document.addEventListener('click', function(e) {
@@ -235,16 +318,35 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ articulos: car, cliente: infoCliente })
             })
-            .then(res => res.json())
-            .then(data => {
-                // Al recibir la confirmación de Firebase, dispara el aviso y limpia
-                alert("¡Pedido enviado con éxito!\n💰 Valor Total: $" + totalFactura.toLocaleString('es-CO'));
-                window.location.reload();
-            }).catch(err => {
-                if (pantallaCarga) { pantallaCarga.style.display = "none"; }
-                if (botonEnviar) { botonEnviar.disabled = false; botonEnviar.style.background = "#2ecc71"; botonEnviar.innerText = "Finalizar e Enviar Pedido"; }
-                alert("Hubo un problema de conexión con Firebase Cloud.");
-            });
+            .then(async res => {
+
+    const data = await res.json();
+
+    if (!res.ok || data.status !== "ok") {
+        throw new Error(
+            data.message || "No fue posible crear el pedido."
+        );
+    }
+
+    alert(
+        "¡Pedido enviado con éxito!\n" +
+        "💰 Valor Total: $" +
+        Number(data.total || totalFactura).toLocaleString("es-CO")
+    );
+
+    window.location.reload();
+})
+.catch(err => {
+    if (pantallaCarga) {
+        pantallaCarga.style.display = "none";
+    }
+
+    if (botonEnviar) {
+        botonEnviar.disabled = false;
+    }
+
+    alert("Hubo un problema de conexión con Firebase Cloud.");
+});
         }
 
 
