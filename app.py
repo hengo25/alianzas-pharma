@@ -1,4 +1,4 @@
-import os
+*import os
 import json
 import uuid
 import hashlib
@@ -6652,6 +6652,481 @@ def armar_pedido_admin(cliente_id):
         cliente=cliente,
         productos=productos
     )
+
+# =========================================================
+# ADMIN - GUARDAR PEDIDO PARA DROGUERÍA
+# =========================================================
+
+@app.route(
+    "/guardar-pedido-admin/<cliente_id>",
+    methods=["POST"]
+)
+def guardar_pedido_admin(cliente_id):
+
+    try:
+
+        # -------------------------------------------------
+        # VERIFICAR ADMINISTRADOR
+        # -------------------------------------------------
+
+        if not verificar_sesion_admin():
+
+            return jsonify({
+                "status": "error",
+                "message": "La sesión de administrador no es válida."
+            }), 401
+
+
+        # -------------------------------------------------
+        # BUSCAR DROGUERÍA
+        # -------------------------------------------------
+
+        cliente = obtener_documento(
+            "clientes",
+            cliente_id
+        )
+
+
+        if not cliente:
+
+            return jsonify({
+                "status": "error",
+                "message": "No fue posible encontrar la droguería."
+            }), 404
+
+
+        # -------------------------------------------------
+        # RECIBIR DATOS
+        # -------------------------------------------------
+
+        datos = request.get_json(
+            silent=True
+        ) or {}
+
+
+        articulos = datos.get(
+            "articulos",
+            []
+        )
+
+
+        fecha_entrega = str(
+            datos.get(
+                "fecha_entrega",
+                ""
+            )
+        ).strip()
+
+
+        observaciones = str(
+            datos.get(
+                "observaciones",
+                ""
+            )
+        ).strip()
+
+
+        if not articulos:
+
+            return jsonify({
+                "status": "error",
+                "message": "Debe seleccionar al menos un producto."
+            }), 400
+
+
+        # -------------------------------------------------
+        # VALIDAR PRODUCTOS
+        # -------------------------------------------------
+
+        productos_validos = []
+
+        articulos_guardados = []
+
+        total = 0
+
+
+        for articulo in articulos:
+
+            producto_id = str(
+                articulo.get(
+                    "id",
+                    ""
+                )
+            ).strip()
+
+
+            try:
+
+                cantidad = int(
+                    articulo.get(
+                        "cantidad",
+                        0
+                    )
+                )
+
+            except:
+
+                cantidad = 0
+
+
+            if (
+                not producto_id
+                or cantidad <= 0
+            ):
+
+                return jsonify({
+                    "status": "error",
+                    "message": "Producto o cantidad inválida."
+                }), 400
+
+
+            producto = obtener_documento(
+                "productos",
+                producto_id
+            )
+
+
+            if not producto:
+
+                return jsonify({
+                    "status": "error",
+                    "message": "Uno de los productos ya no existe."
+                }), 400
+
+
+            try:
+
+                existencias = int(
+                    producto.get(
+                        "existencias",
+                        0
+                    )
+                )
+
+            except:
+
+                existencias = 0
+
+
+            if existencias < cantidad:
+
+                return jsonify({
+                    "status": "error",
+                    "message":
+                        "Inventario insuficiente para: "
+                        + str(
+                            producto.get(
+                                "nombre",
+                                "Producto"
+                            )
+                        )
+                }), 400
+
+
+            try:
+
+                precio = int(
+                    producto.get(
+                        "precio",
+                        0
+                    )
+                )
+
+            except:
+
+                precio = 0
+
+
+            total += (
+                precio * cantidad
+            )
+
+
+            productos_validos.append({
+
+                "id":
+                    producto_id,
+
+                "producto":
+                    producto,
+
+                "cantidad":
+                    cantidad
+
+            })
+
+
+            articulos_guardados.append({
+
+                "id":
+                    producto_id,
+
+                "nombre":
+                    producto.get(
+                        "nombre",
+                        ""
+                    ),
+
+                "precio":
+                    precio,
+
+                "cantidad":
+                    cantidad
+
+            })
+
+
+        # -------------------------------------------------
+        # DESCONTAR INVENTARIO
+        # -------------------------------------------------
+
+        productos_descontados = []
+
+
+        for item in productos_validos:
+
+            producto_id = item[
+                "id"
+            ]
+
+            producto = item[
+                "producto"
+            ]
+
+            cantidad = item[
+                "cantidad"
+            ]
+
+
+            existencias_antes = int(
+                producto.get(
+                    "existencias",
+                    0
+                )
+            )
+
+
+            producto[
+                "existencias"
+            ] = (
+                existencias_antes
+                - cantidad
+            )
+
+
+            guardado = guardar_documento(
+                "productos",
+                producto_id,
+                producto
+            )
+
+
+            if not guardado:
+
+                for anterior in productos_descontados:
+
+                    producto_anterior = anterior[
+                        "producto"
+                    ]
+
+                    producto_anterior[
+                        "existencias"
+                    ] = anterior[
+                        "existencias_antes"
+                    ]
+
+                    guardar_documento(
+                        "productos",
+                        anterior["id"],
+                        producto_anterior
+                    )
+
+
+                return jsonify({
+                    "status": "error",
+                    "message":
+                        "No fue posible actualizar el inventario."
+                }), 500
+
+
+            productos_descontados.append({
+
+                "id":
+                    producto_id,
+
+                "producto":
+                    producto,
+
+                "existencias_antes":
+                    existencias_antes
+
+            })
+
+
+        # -------------------------------------------------
+        # DATOS DE LA DROGUERÍA
+        # -------------------------------------------------
+
+        datos_cliente = {
+
+            "nombre":
+                cliente.get(
+                    "nombre",
+                    ""
+                ),
+
+            "nit":
+                cliente.get(
+                    "nit",
+                    cliente_id
+                ),
+
+            "telefono":
+                cliente.get(
+                    "telefono",
+                    ""
+                ),
+
+            "direccion":
+                cliente.get(
+                    "direccion",
+                    ""
+                )
+
+        }
+
+
+        # -------------------------------------------------
+        # CREAR ID
+        # -------------------------------------------------
+
+        pedido_id = (
+            "PED-"
+            + uuid.uuid4()
+            .hex[:12]
+            .upper()
+        )
+
+
+        # -------------------------------------------------
+        # CREAR PEDIDO
+        # -------------------------------------------------
+
+        pedido = {
+
+            "cliente":
+                datos_cliente,
+
+            "articulos":
+                articulos_guardados,
+
+            "total":
+                total,
+
+            "estado":
+                "Pendiente",
+
+            "fecha":
+                datetime.now(
+                    timezone.utc
+                ).isoformat(),
+
+            "fecha_entrega":
+                fecha_entrega,
+
+            "observaciones":
+                observaciones,
+
+            "creado_por":
+                "administrador"
+
+        }
+
+
+        # -------------------------------------------------
+        # GUARDAR PEDIDO
+        # -------------------------------------------------
+
+        guardado = guardar_documento(
+            "pedidos",
+            pedido_id,
+            pedido
+        )
+
+
+        if not guardado:
+
+            # ---------------------------------------------
+            # RESTAURAR INVENTARIO
+            # ---------------------------------------------
+
+            for anterior in productos_descontados:
+
+                producto_anterior = anterior[
+                    "producto"
+                ]
+
+                producto_anterior[
+                    "existencias"
+                ] = anterior[
+                    "existencias_antes"
+                ]
+
+                guardar_documento(
+                    "productos",
+                    anterior["id"],
+                    producto_anterior
+                )
+
+
+            return jsonify({
+                "status": "error",
+                "message":
+                    "No fue posible guardar el pedido. "
+                    "El inventario fue restaurado."
+            }), 500
+
+
+        # -------------------------------------------------
+        # ÉXITO
+        # -------------------------------------------------
+
+        return jsonify({
+
+            "status":
+                "ok",
+
+            "message":
+                "Pedido creado correctamente.",
+
+            "pedido_id":
+                pedido_id,
+
+            "total":
+                total
+
+        })
+
+
+    except Exception as e:
+
+        print(
+            "❌ ERROR CREANDO PEDIDO DESDE ADMIN:",
+            str(e)
+        )
+
+
+        return jsonify({
+
+            "status":
+                "error",
+
+            "message":
+                "Error procesando el pedido: "
+                + str(e)
+
+        }), 500
+
 
 # =========================================================
 # VERCEL / FLASK
