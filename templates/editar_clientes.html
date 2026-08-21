@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Editar Droguería - Alianzas Pharma
+    </title>
+
+    <style>
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px;
+            color: #1e293b;
+        }
+
+        .contenedor {
+            max-width: 520px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        .encabezado {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .encabezado img {
+            max-height: 65px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        input {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            font-size: 15px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .nit {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .guardar {
+            width: 100%;
+            margin-top: 25px;
+            padding: 12px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 9px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .guardar:hover {
+            background: #219150;
+        }
+
+        .volver {
+            display: block;
+            text-align: center;
+            margin-top: 18px;
+            text-decoration: none;
+            color: #3498db;
+            font-weight: bold;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="contenedor">
+
+        <div class="encabezado">
+
+            <img
+                src="/public/logo.jpeg"
+                alt="Alianzas Pharma"
+            >
+
+            <h1>
+                ✏️ Editar Droguería
+            </h1>
+
+        </div>
+
+
+        <form
+            method="POST"
+            action="/editar-cliente/{{ cliente.get('_id', cliente.get('nit', '')) }}"
+        >
+
+            <label>
+                NIT
+            </label>
+
+            <input
+                type="text"
+                class="nit"
+                value="{{ cliente.get('nit', cliente.get('_id', '')) }}"
+                readonly
+            >
+
+
+            <label>
+                Nombre de la Droguería
+            </label>
+
+            <input
+                type="text"
+                name="nombre"
+                value="{{ cliente.get('nombre', '') }}"
+                required
+            >
+
+
+            <label>
+                Dirección
+            </label>
+
+            <input
+                type="text"
+                name="direccion"
+                value="{{ cliente.get('direccion', '') }}"
+                required
+            >
+
+
+            <label>
+                Teléfono / WhatsApp
+            </label>
+
+            <input
+                type="text"
+                name="telefono"
+                value="{{ cliente.get('telefono', '') }}"
+                required
+            >
+
+
+            <button
+                type="submit"
+                class="guardar"
+            >
+                💾 Guardar Cambios
+            </button>
+
+        </form>
+
+
+        <a
+            href="/ver-clientes"
+            class="volver"
+        >
+            ← Volver a Droguerías
+        </a>
+
+    </div>
+
+</body>
+
+</html>
