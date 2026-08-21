@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Armar Pedido - Alianzas Pharma</title>
+
+    <style>
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px 20px;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1050px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .volver {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 9px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-bottom: 25px;
+        }
+
+        .encabezado {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .encabezado img {
+            max-height: 55px;
+            border-radius: 6px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.7rem;
+        }
+
+        .cliente-box {
+            background: #eef7ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 25px;
+        }
+
+        .cliente-box strong {
+            color: #1d4ed8;
+        }
+
+        .buscador {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 1rem;
+            margin-bottom: 20px;
+            outline: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #34495e;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+        }
+
+        .foto-producto {
+            width: 55px;
+            height: 55px;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .stock-ok {
+            color: #16a34a;
+            font-weight: bold;
+        }
+
+        .stock-no {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .cantidad {
+            width: 70px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 1rem;
+        }
+
+        .datos-entrega {
+            margin-top: 30px;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .datos-entrega label {
+            display: block;
+            font-weight: bold;
+            margin-top: 12px;
+            margin-bottom: 6px;
+        }
+
+        .datos-entrega input,
+        .datos-entrega textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .datos-entrega textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .total-box {
+            margin-top: 25px;
+            text-align: right;
+            font-size: 1.35rem;
+            font-weight: bold;
+        }
+
+        .btn-crear {
+            width: 100%;
+            margin-top: 20px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 9px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .sin-stock {
+            opacity: 0.55;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <div class="container">
+
+        <a
+            href="/crear-pedido-admin"
+            class="volver"
+        >
+            ← Cambiar droguería
+        </a>
+
+
+        <div class="encabezado">
+
+            <img
+                src="/public/logo.jpeg"
+                alt="Alianzas Pharma"
+            >
+
+            <div>
+
+                <h1>
+                    🛒 Armar Pedido
+                </h1>
+
+                <div>
+                    Pedido realizado desde administración
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="cliente-box">
+
+            <strong>Droguería:</strong>
+            {{ cliente.get('nombre', 'Sin nombre') }}
+
+            <br>
+
+            <strong>NIT:</strong>
+            {{ cliente.get('nit', '') }}
+
+            <br>
+
+            <strong>Teléfono:</strong>
+            {{ cliente.get('telefono', 'No registrado') }}
+
+            <br>
+
+            <strong>Dirección:</strong>
+            {{ cliente.get('direccion', 'No registrada') }}
+
+        </div>
+
+
+        <input
+            type="text"
+            id="buscar-producto"
+            class="buscador"
+            placeholder="🔎 Buscar medicamento..."
+            onkeyup="filtrarProductos()"
+        >
+
+
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>Foto</th>
+
+                    <th>Producto</th>
+
+                    <th>Precio</th>
+
+                    <th>Disponible</th>
+
+                    <th>Cantidad</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for p in productos %}
+
+                <tr
+                    class="fila-producto {% if p.existencias <= 0 %}sin-stock{% endif %}"
+                    data-nombre="{{ p.nombre|lower }}"
+                >
+
+                    <td>
+
+                        <img
+                            src="{{ p.imagen }}"
+                            class="foto-producto"
+                        >
+
+                    </td>
+
+
+                    <td>
+
+                        <strong>
+                            {{ p.nombre }}
+                        </strong>
+
+                    </td>
+
+
+                    <td>
+
+                        ${{ p.precio }}
+
+                    </td>
+
+
+                    <td>
+
+                        {% if p.existencias > 0 %}
+
+                            <span class="stock-ok">
+                                {{ p.existencias }} uds
+                            </span>
+
+                        {% else %}
+
+                            <span class="stock-no">
+                                Sin existencias
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+
+                    <td>
+
+                        <input
+                            type="number"
+                            class="cantidad"
+                            data-id="{{ p.id }}"
+                            data-precio="{{ p.precio }}"
+                            data-stock="{{ p.existencias }}"
+                            min="0"
+                            max="{{ p.existencias }}"
+                            value="0"
+                            {% if p.existencias <= 0 %}disabled{% endif %}
+                            oninput="actualizarTotal(this)"
+                        >
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+
+        <div class="datos-entrega">
+
+            <h3 style="margin-top:0;">
+                📦 Datos de entrega
+            </h3>
+
+
+            <label for="fecha-entrega">
+                Fecha deseada de entrega
+            </label>
+
+            <input
+                type="date"
+                id="fecha-entrega"
+            >
+
+
+            <label for="observaciones">
+                Observaciones
+            </label>
+
+            <textarea
+                id="observaciones"
+                placeholder="Ej. Entregar después de las 2:00 p. m."
+            ></textarea>
+
+        </div>
+
+
+        <div class="total-box">
+
+            Total:
+            $<span id="total-pedido">0</span>
+
+        </div>
+
+
+        <button
+            type="button"
+            class="btn-crear"
+            onclick="probarPedido()"
+        >
+            ✅ Crear Pedido
+        </button>
+
+    </div>
+
+
+    <script>
+
+        function filtrarProductos() {
+
+            const texto =
+                document.getElementById(
+                    "buscar-producto"
+                ).value.toLowerCase().trim();
+
+            const filas =
+                document.querySelectorAll(
+                    ".fila-producto"
+                );
+
+            filas.forEach(
+                function(fila) {
+
+                    const nombre =
+                        fila.getAttribute(
+                            "data-nombre"
+                        );
+
+                    fila.style.display =
+                        nombre.includes(texto)
+                        ? ""
+                        : "none";
+
+                }
+            );
+
+        }
+
+
+        function actualizarTotal(input) {
+
+            let cantidad =
+                parseInt(
+                    input.value || 0
+                );
+
+            const stock =
+                parseInt(
+                    input.getAttribute(
+                        "data-stock"
+                    ) || 0
+                );
+
+
+            if (cantidad < 0) {
+
+                cantidad = 0;
+                input.value = 0;
+
+            }
+
+
+            if (cantidad > stock) {
+
+                cantidad = stock;
+                input.value = stock;
+
+            }
+
+
+            let total = 0;
+
+
+            document
+                .querySelectorAll(
+                    ".cantidad"
+                )
+                .forEach(
+                    function(campo) {
+
+                        const unidades =
+                            parseInt(
+                                campo.value || 0
+                            );
+
+                        const precio =
+                            parseInt(
+                                campo.getAttribute(
+                                    "data-precio"
+                                ) || 0
+                            );
+
+                        total +=
+                            unidades * precio;
+
+                    }
+                );
+
+
+            document.getElementById(
+                "total-pedido"
+            ).innerText =
+                total.toLocaleString(
+                    "es-CO"
+                );
+
+        }
+
+
+        function probarPedido() {
+
+            alert(
+                "La pantalla ya está lista. En el siguiente paso conectaremos este botón con Firebase."
+            );
+
+        }
+
+    </script>
+
+</body>
+
+</html>
