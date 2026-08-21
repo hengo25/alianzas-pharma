@@ -6358,6 +6358,171 @@ def editar_cliente_admin(cliente_id):
         cliente=cliente_vista
     )
 
+
+# =========================================================
+# ADMIN - ELIMINAR DROGUERÍA
+# =========================================================
+
+@app.route(
+    "/eliminar-cliente/<cliente_id>",
+    methods=["POST"]
+)
+def eliminar_cliente_admin(cliente_id):
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # BUSCAR DROGUERÍA
+    # -----------------------------------------------------
+
+    cliente = obtener_documento(
+        "clientes",
+        cliente_id
+    )
+
+
+    if not cliente:
+
+        return redirect(
+            url_for(
+                "ver_clientes_admin"
+            )
+        )
+
+
+    nit_cliente = str(
+        cliente.get(
+            "nit",
+            cliente_id
+        )
+    ).strip()
+
+
+    # -----------------------------------------------------
+    # COMPROBAR PEDIDOS PENDIENTES
+    # -----------------------------------------------------
+
+    pedidos = obtener_coleccion(
+        "pedidos"
+    )
+
+
+    for pedido in pedidos:
+
+        datos_cliente = pedido.get(
+            "cliente",
+            {}
+        )
+
+
+        nit_pedido = str(
+            datos_cliente.get(
+                "nit",
+                ""
+            )
+        ).strip()
+
+
+        estado = str(
+            pedido.get(
+                "estado",
+                ""
+            )
+        ).strip().lower()
+
+
+        if (
+            nit_pedido == nit_cliente
+            and estado == "pendiente"
+        ):
+
+            return """
+            <script>
+
+                alert(
+                    "⚠️ No se puede eliminar esta droguería porque tiene pedidos pendientes."
+                );
+
+                window.location.href =
+                    "/ver-clientes";
+
+            </script>
+            """
+
+
+    # -----------------------------------------------------
+    # URL DEL DOCUMENTO EN FIREBASE
+    # -----------------------------------------------------
+
+    url = (
+        firestore_base_url()
+        + "/"
+        + quote(
+            "clientes",
+            safe=""
+        )
+        + "/"
+        + quote(
+            cliente_id,
+            safe=""
+        )
+    )
+
+
+    # -----------------------------------------------------
+    # ELIMINAR DROGUERÍA
+    # -----------------------------------------------------
+
+    respuesta = requests.delete(
+        url,
+        headers=firestore_headers(),
+        timeout=10
+    )
+
+
+    if not respuesta.ok:
+
+        print(
+            "❌ Error eliminando droguería:"
+        )
+
+        print(
+            respuesta.text[:1000]
+        )
+
+        return """
+        <script>
+
+            alert(
+                "❌ No fue posible eliminar la droguería."
+            );
+
+            window.location.href =
+                "/ver-clientes";
+
+        </script>
+        """, 500
+
+
+    # -----------------------------------------------------
+    # VOLVER A LA LISTA
+    # -----------------------------------------------------
+
+    return redirect(
+        url_for(
+            "ver_clientes_admin"
+        )
+    )
+
 # =========================================================
 # VERCEL / FLASK
 # =========================================================
