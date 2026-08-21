@@ -6581,6 +6581,78 @@ def crear_pedido_admin():
         clientes=clientes
     )
 
+
+# =========================================================
+# ADMIN - ARMAR PEDIDO PARA DROGUERÍA
+# =========================================================
+
+@app.route(
+    "/crear-pedido-admin/<cliente_id>"
+)
+def armar_pedido_admin(cliente_id):
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # BUSCAR DROGUERÍA
+    # -----------------------------------------------------
+
+    cliente = obtener_documento(
+        "clientes",
+        cliente_id
+    )
+
+
+    if not cliente:
+
+        return """
+        <script>
+
+            alert(
+                "No fue posible encontrar la droguería."
+            );
+
+            window.location.href =
+                "/crear-pedido-admin";
+
+        </script>
+        """, 404
+
+
+    cliente["_id"] = cliente_id
+
+
+    if not cliente.get("nit"):
+
+        cliente["nit"] = cliente_id
+
+
+    # -----------------------------------------------------
+    # CARGAR PRODUCTOS
+    # -----------------------------------------------------
+
+    productos = obtener_productos()
+
+
+    # -----------------------------------------------------
+    # MOSTRAR CATÁLOGO PARA EL PEDIDO
+    # -----------------------------------------------------
+
+    return render_template(
+        "crear_pedido_admin_productos.html",
+        cliente=cliente,
+        productos=productos
+    )
+
 # =========================================================
 # VERCEL / FLASK
 # =========================================================
