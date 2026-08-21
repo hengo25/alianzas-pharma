@@ -41,6 +41,61 @@
             👤 <b>CLIENTE:</b> {{ ped.cliente.nombre }}<br>
             📞 <b>TELÉFONO:</b> {{ ped.cliente.telefono }}<br>
             📍 <b>DIRECCIÓN:</b> {{ ped.cliente.direccion }}<br>
+
+            {% if ped.fecha_entrega or ped.observaciones or ped.creado_por %}
+
+<div
+    style="
+        margin:12px 0;
+        padding:10px 12px;
+        background:#2d2d30;
+        border-left:4px solid #3498db;
+        border-radius:5px;
+    "
+>
+
+    {% if ped.fecha_entrega %}
+
+        📅 <b>ENTREGA SOLICITADA:</b>
+
+        {% set partes_fecha = ped.fecha_entrega.split('-') %}
+
+        {% if partes_fecha|length == 3 %}
+            {{ partes_fecha[2] }}/{{ partes_fecha[1] }}/{{ partes_fecha[0] }}
+        {% else %}
+            {{ ped.fecha_entrega }}
+        {% endif %}
+
+        <br>
+
+    {% endif %}
+
+
+    {% if ped.observaciones %}
+
+        📝 <b>OBSERVACIONES:</b>
+        {{ ped.observaciones }}
+        <br>
+
+    {% endif %}
+
+
+    🏷️ <b>ORIGEN:</b>
+
+    {% if ped.creado_por == 'administrador' %}
+
+        Pedido tomado por Alianzas Pharma
+
+    {% else %}
+
+        Pedido realizado por la droguería
+
+    {% endif %}
+
+</div>
+
+{% endif %}
+
             📦 <b>PRODUCTOS:</b><br>
             {% for art in ped.articulos %}
               - {{ art.nombre }} (Cantidad: {{ art.cantidad }})<br>
