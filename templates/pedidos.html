@@ -64,6 +64,31 @@
     </button>
 </form>
                 {% if ped.estado == 'Pendiente' %}
+
+<form
+    method="POST"
+    action="/cancelar-pedido-admin/{{ ped.id }}"
+    style="display:inline;"
+    onsubmit="return confirm('¿Está seguro de CANCELAR este pedido? Las unidades serán devueltas al inventario.');"
+>
+    <button
+        type="submit"
+        style="
+            background:#e74c3c;
+            color:white;
+            border:none;
+            padding:11px 15px;
+            border-radius:6px;
+            font-weight:bold;
+            cursor:pointer;
+            font-size:16px;
+        "
+    >
+        🚫 Cancelar
+    </button>
+</form>
+
+
                 <a
     href="/cambiar-estado/{{ ped.id }}"
     class="btn-check-ped"
