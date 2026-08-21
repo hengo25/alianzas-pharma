@@ -2022,6 +2022,129 @@ def mis_pedidos():
         )
 
 
+        # -------------------------------------------------
+        # DATOS DE ENTREGA Y ORIGEN
+        # -------------------------------------------------
+
+        fecha_entrega = str(
+            pedido.get(
+                "fecha_entrega",
+                ""
+            )
+        ).strip()
+
+
+        observaciones = str(
+            pedido.get(
+                "observaciones",
+                ""
+            )
+        ).strip()
+
+
+        creado_por = str(
+            pedido.get(
+                "creado_por",
+                ""
+            )
+        ).strip().lower()
+
+
+        # -------------------------------------------------
+        # FORMATEAR FECHA DE ENTREGA
+        # -------------------------------------------------
+
+        fecha_entrega_mostrar = (
+            fecha_entrega
+        )
+
+
+        if fecha_entrega:
+
+            try:
+
+                fecha_entrega_mostrar = (
+                    datetime.strptime(
+                        fecha_entrega,
+                        "%Y-%m-%d"
+                    ).strftime(
+                        "%d/%m/%Y"
+                    )
+                )
+
+            except:
+
+                pass
+
+
+        # -------------------------------------------------
+        # ORIGEN
+        # -------------------------------------------------
+
+        if creado_por == "administrador":
+
+            origen_pedido = (
+                "Pedido tomado por Alianzas Pharma"
+            )
+
+        else:
+
+            origen_pedido = (
+                "Pedido realizado por la droguería"
+            )
+
+        # -------------------------------------------------
+        # CAJA VISUAL DE ENTREGA
+        # -------------------------------------------------
+
+        entrega_html = ""
+
+
+        if (
+            fecha_entrega
+            or observaciones
+            or creado_por
+        ):
+
+            entrega_html = f"""
+            <div
+                style="
+                    margin:15px 0;
+                    padding:14px 16px;
+                    background:#eef7ff;
+                    border-left:4px solid #3498db;
+                    border-radius:8px;
+                    line-height:1.7;
+                "
+            >
+
+                <strong>📦 Datos de entrega</strong>
+
+                <br>
+
+                {
+                    "📅 Entrega solicitada: "
+                    + fecha_entrega_mostrar
+                    + "<br>"
+                    if fecha_entrega
+                    else ""
+                }
+
+                {
+                    "📝 Observaciones: "
+                    + observaciones
+                    + "<br>"
+                    if observaciones
+                    else ""
+                }
+
+                🏷️ Origen: {origen_pedido}
+
+            </div>
+            """
+
+
+
         productos_html = ""
 
 
@@ -2155,7 +2278,8 @@ def mis_pedidos():
 
             </div>
 
-
+                {entrega_html}   
+                   
             <div class="productos">
 
                 {productos_html}
