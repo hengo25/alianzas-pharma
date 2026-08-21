@@ -1785,9 +1785,20 @@ def registro_cliente():
             ""
         ).strip()
 
-
         nombre = request.form.get(
             "nombre",
+            ""
+        ).strip()
+
+
+        direccion = request.form.get(
+            "direccion",
+            ""
+        ).strip()
+
+
+        telefono = request.form.get(
+            "telefono",
             ""
         ).strip()
 
@@ -1796,9 +1807,16 @@ def registro_cliente():
             "password",
             ""
         ).strip()
+        
 
 
-        if not nit or not nombre or not password:
+        if (
+            not nit
+            or not nombre
+            or not direccion
+            or not telefono
+            or not password
+        ):
 
             return """
             <h2>Faltan datos</h2>
@@ -1814,6 +1832,10 @@ def registro_cliente():
             "nit": nit,
 
             "nombre": nombre,
+
+            "direccion": direccion,
+
+            "telefono": telefono,
 
             "password": password
 
