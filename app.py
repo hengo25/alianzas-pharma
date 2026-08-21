@@ -29,7 +29,7 @@ from google.auth.transport.requests import Request
 
 
 # =========================================================
-# FLASK2222221111
+# FLASK
 # =========================================================
 
 app = Flask(__name__)
@@ -7127,6 +7127,333 @@ def guardar_pedido_admin(cliente_id):
 
         }), 500
 
+
+# =========================================================
+# ADMIN - CANCELAR PEDIDO Y RESTAURAR INVENTARIO
+# =========================================================
+
+@app.route(
+    "/cancelar-pedido-admin/<pedido_id>",
+    methods=["POST"]
+)
+def cancelar_pedido_admin(pedido_id):
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # BUSCAR PEDIDO
+    # -----------------------------------------------------
+
+    pedido = obtener_documento(
+        "pedidos",
+        pedido_id
+    )
+
+
+    if not pedido:
+
+        return """
+        <script>
+            alert("❌ El pedido no existe.");
+            window.location.href = "/ver-pedidos";
+        </script>
+        """, 404
+
+
+    # -----------------------------------------------------
+    # SOLO SE PUEDE CANCELAR SI ESTÁ PENDIENTE
+    # -----------------------------------------------------
+
+    estado = str(
+        pedido.get(
+            "estado",
+            ""
+        )
+    ).strip().lower()
+
+
+    if estado != "pendiente":
+
+        return """
+        <script>
+            alert("⚠️ Solo se pueden cancelar pedidos pendientes.");
+            window.location.href = "/ver-pedidos";
+        </script>
+        """
+
+
+    # -----------------------------------------------------
+    # OBTENER ARTÍCULOS
+    # -----------------------------------------------------
+
+    articulos = pedido.get(
+        "articulos",
+        []
+    )
+
+
+    if not articulos:
+
+        return """
+        <script>
+            alert("❌ El pedido no contiene productos.");
+            window.location.href = "/ver-pedidos";
+        </script>
+        """, 400
+
+
+    # -----------------------------------------------------
+    # PREPARAR PRODUCTOS PARA RESTAURAR
+    # -----------------------------------------------------
+
+    productos_a_restaurar = []
+
+
+    for articulo in articulos:
+
+        producto_id = str(
+            articulo.get(
+                "id",
+                ""
+            )
+        ).strip()
+
+
+        try:
+
+            cantidad = int(
+                articulo.get(
+                    "cantidad",
+                    0
+                )
+            )
+
+        except:
+
+            cantidad = 0
+
+
+        if (
+            not producto_id
+            or cantidad <= 0
+        ):
+
+            return """
+            <script>
+                alert("❌ El pedido contiene datos de productos inválidos.");
+                window.location.href = "/ver-pedidos";
+            </script>
+            """, 400
+
+
+        producto = obtener_documento(
+            "productos",
+            producto_id
+        )
+
+
+        if not producto:
+
+            return """
+            <script>
+                alert("❌ No se encontró uno de los productos para restaurar el inventario.");
+                window.location.href = "/ver-pedidos";
+            </script>
+            """, 500
+
+
+        try:
+
+            existencias_antes = int(
+                producto.get(
+                    "existencias",
+                    0
+                )
+            )
+
+        except:
+
+            existencias_antes = 0
+
+
+        productos_a_restaurar.append({
+
+            "id":
+                producto_id,
+
+            "producto":
+                producto,
+
+            "cantidad":
+                cantidad,
+
+            "existencias_antes":
+                existencias_antes
+
+        })
+
+
+    # -----------------------------------------------------
+    # RESTAURAR INVENTARIO
+    # -----------------------------------------------------
+
+    productos_actualizados = []
+
+
+    for item in productos_a_restaurar:
+
+        producto = item[
+            "producto"
+        ]
+
+        existencias_antes = item[
+            "existencias_antes"
+        ]
+
+        cantidad = item[
+            "cantidad"
+        ]
+
+
+        producto[
+            "existencias"
+        ] = (
+            existencias_antes
+            + cantidad
+        )
+
+
+        guardado = guardar_documento(
+            "productos",
+            item["id"],
+            producto
+        )
+
+
+        if not guardado:
+
+            # ---------------------------------------------
+            # REVERTIR PRODUCTOS YA ACTUALIZADOS
+            # ---------------------------------------------
+
+            for anterior in productos_actualizados:
+
+                producto_anterior = anterior[
+                    "producto"
+                ]
+
+                producto_anterior[
+                    "existencias"
+                ] = anterior[
+                    "existencias_antes"
+                ]
+
+                guardar_documento(
+                    "productos",
+                    anterior["id"],
+                    producto_anterior
+                )
+
+
+            return """
+            <script>
+                alert("❌ No fue posible restaurar todo el inventario. El pedido continúa pendiente.");
+                window.location.href = "/ver-pedidos";
+            </script>
+            """, 500
+
+
+        productos_actualizados.append({
+
+            "id":
+                item["id"],
+
+            "producto":
+                producto,
+
+            "existencias_antes":
+                existencias_antes
+
+        })
+
+
+    # -----------------------------------------------------
+    # CAMBIAR PEDIDO A CANCELADO
+    # -----------------------------------------------------
+
+    pedido[
+        "estado"
+    ] = "Cancelado"
+
+    pedido[
+        "cancelado_por"
+    ] = "administrador"
+
+    pedido[
+        "fecha_cancelacion"
+    ] = datetime.now(
+        timezone.utc
+    ).isoformat()
+
+
+    guardado_pedido = guardar_documento(
+        "pedidos",
+        pedido_id,
+        pedido
+    )
+
+
+    # -----------------------------------------------------
+    # SI FALLA EL PEDIDO, REVERTIR INVENTARIO
+    # -----------------------------------------------------
+
+    if not guardado_pedido:
+
+        for anterior in productos_actualizados:
+
+            producto_anterior = anterior[
+                "producto"
+            ]
+
+            producto_anterior[
+                "existencias"
+            ] = anterior[
+                "existencias_antes"
+            ]
+
+            guardar_documento(
+                "productos",
+                anterior["id"],
+                producto_anterior
+            )
+
+
+        return """
+        <script>
+            alert("❌ No fue posible cancelar el pedido. El inventario fue devuelto a su estado anterior.");
+            window.location.href = "/ver-pedidos";
+        </script>
+        """, 500
+
+
+    # -----------------------------------------------------
+    # ÉXITO
+    # -----------------------------------------------------
+
+    return redirect(
+        url_for(
+            "ver_pedidos_admin"
+        )
+    )
 
 # =========================================================
 # VERCEL / FLASK
