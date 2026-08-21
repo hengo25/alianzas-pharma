@@ -6214,6 +6214,150 @@ def ver_clientes_admin():
         clientes=clientes
     )
 
+    # =========================================================
+    # ADMIN - EDITAR DROGUERÍA
+    # =========================================================
+
+@app.route(
+    "/editar-cliente/<cliente_id>",
+    methods=["GET", "POST"]
+)
+def editar_cliente_admin(cliente_id):
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # BUSCAR CLIENTE
+    # -----------------------------------------------------
+
+    cliente = obtener_documento(
+        "clientes",
+        cliente_id
+    )
+
+
+    if not cliente:
+
+        return """
+        <h2>Droguería no encontrada</h2>
+
+        <a href="/ver-clientes">
+            Volver
+        </a>
+        """, 404
+
+
+    # -----------------------------------------------------
+    # GUARDAR CAMBIOS
+    # -----------------------------------------------------
+
+    if request.method == "POST":
+
+        nombre = request.form.get(
+            "nombre",
+            ""
+        ).strip()
+
+
+        direccion = request.form.get(
+            "direccion",
+            ""
+        ).strip()
+
+
+        telefono = request.form.get(
+            "telefono",
+            ""
+        ).strip()
+
+
+        if (
+            not nombre
+            or not direccion
+            or not telefono
+        ):
+
+            return """
+            <h2>Faltan datos</h2>
+
+            <a href="/ver-clientes">
+                Volver
+            </a>
+            """, 400
+
+
+        # ---------------------------------------------
+        # ACTUALIZAR SOLO ESTOS DATOS
+        # ---------------------------------------------
+
+        cliente["nombre"] = nombre
+
+        cliente["direccion"] = direccion
+
+        cliente["telefono"] = telefono
+
+
+        # Asegurar que conserve su NIT
+        if not cliente.get("nit"):
+
+            cliente["nit"] = cliente_id
+
+
+        # La contraseña que ya existe en cliente
+        # permanece intacta.
+
+        guardado = guardar_documento(
+            "clientes",
+            cliente_id,
+            cliente
+        )
+
+
+        if guardado:
+
+            return redirect(
+                url_for(
+                    "ver_clientes_admin"
+                )
+            )
+
+
+        return """
+        <h2>Error guardando los cambios</h2>
+
+        <a href="/ver-clientes">
+            Volver
+        </a>
+        """, 500
+
+
+    # -----------------------------------------------------
+    # MOSTRAR FORMULARIO
+    # -----------------------------------------------------
+
+    cliente_vista = dict(
+        cliente
+    )
+
+    cliente_vista["_id"] = (
+        cliente_id
+    )
+
+
+    return render_template(
+        "editar_cliente.html",
+        cliente=cliente_vista
+    )
+
 # =========================================================
 # VERCEL / FLASK
 # =========================================================
