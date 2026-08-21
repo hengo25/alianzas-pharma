@@ -351,6 +351,63 @@
 
         </table>
 
+        <div
+    style="
+        margin:25px 0;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        gap:12px;
+    "
+>
+
+    <button
+        type="button"
+        id="btn-anterior-productos"
+        onclick="cambiarPaginaProductos(-1)"
+        style="
+            background:#3498db;
+            color:white;
+            border:none;
+            padding:8px 15px;
+            border-radius:8px;
+            font-weight:bold;
+            cursor:pointer;
+        "
+    >
+        ← Anterior
+    </button>
+
+
+    <span
+        id="info-pagina-productos"
+        style="
+            font-weight:bold;
+            color:#475569;
+        "
+    >
+        Página 1 de 1
+    </span>
+
+
+    <button
+        type="button"
+        id="btn-siguiente-productos"
+        onclick="cambiarPaginaProductos(1)"
+        style="
+            background:#3498db;
+            color:white;
+            border:none;
+            padding:8px 15px;
+            border-radius:8px;
+            font-weight:bold;
+            cursor:pointer;
+        "
+    >
+        Siguiente →
+    </button>
+
+</div>
 
         <div class="datos-entrega">
 
@@ -402,35 +459,184 @@
 
     <script>
 
-        function filtrarProductos() {
+        let paginaProductos = 1;
 
-            const texto =
-                document.getElementById(
-                    "buscar-producto"
-                ).value.toLowerCase().trim();
+const productosPorPagina = 10;
 
-            const filas =
-                document.querySelectorAll(
-                    ".fila-producto"
-                );
 
-            filas.forEach(
-                function(fila) {
+function obtenerProductosFiltrados() {
 
-                    const nombre =
-                        fila.getAttribute(
-                            "data-nombre"
-                        );
+    const texto =
+        document.getElementById(
+            "buscar-producto"
+        ).value.toLowerCase().trim();
 
-                    fila.style.display =
-                        nombre.includes(texto)
-                        ? ""
-                        : "none";
 
-                }
+    const filas =
+        Array.from(
+            document.querySelectorAll(
+                ".fila-producto"
+            )
+        );
+
+
+    return filas.filter(
+        function(fila) {
+
+            const nombre =
+                fila.getAttribute(
+                    "data-nombre"
+                ) || "";
+
+            return nombre.includes(
+                texto
             );
 
         }
+    );
+
+}
+
+
+function mostrarPaginaProductos() {
+
+    const todasLasFilas =
+        document.querySelectorAll(
+            ".fila-producto"
+        );
+
+
+    const filasFiltradas =
+        obtenerProductosFiltrados();
+
+
+    todasLasFilas.forEach(
+        function(fila) {
+
+            fila.style.display = "none";
+
+        }
+    );
+
+
+    const totalPaginas =
+        Math.max(
+            1,
+            Math.ceil(
+                filasFiltradas.length /
+                productosPorPagina
+            )
+        );
+
+
+    if (
+        paginaProductos >
+        totalPaginas
+    ) {
+
+        paginaProductos =
+            totalPaginas;
+
+    }
+
+
+    if (
+        paginaProductos < 1
+    ) {
+
+        paginaProductos = 1;
+
+    }
+
+
+    const inicio =
+        (
+            paginaProductos - 1
+        ) * productosPorPagina;
+
+
+    const fin =
+        inicio +
+        productosPorPagina;
+
+
+    filasFiltradas
+        .slice(
+            inicio,
+            fin
+        )
+        .forEach(
+            function(fila) {
+
+                fila.style.display = "";
+
+            }
+        );
+
+
+    document.getElementById(
+        "info-pagina-productos"
+    ).innerText =
+        "Página " +
+        paginaProductos +
+        " de " +
+        totalPaginas;
+
+
+    const anterior =
+        document.getElementById(
+            "btn-anterior-productos"
+        );
+
+
+    const siguiente =
+        document.getElementById(
+            "btn-siguiente-productos"
+        );
+
+
+    anterior.disabled =
+        paginaProductos === 1;
+
+
+    siguiente.disabled =
+        paginaProductos ===
+        totalPaginas;
+
+
+    anterior.style.opacity =
+        paginaProductos === 1
+        ? "0.45"
+        : "1";
+
+
+    siguiente.style.opacity =
+        paginaProductos ===
+        totalPaginas
+        ? "0.45"
+        : "1";
+
+}
+
+
+function cambiarPaginaProductos(
+    direccion
+) {
+
+    paginaProductos += direccion;
+
+    mostrarPaginaProductos();
+
+}
+
+
+function filtrarProductos() {
+
+    paginaProductos = 1;
+
+    mostrarPaginaProductos();
+
+}
 
 
         function actualizarTotal(input) {
@@ -510,6 +716,16 @@
             );
 
         }
+        
+        document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        mostrarPaginaProductos();
+
+    }
+);
+
 
     </script>
 
