@@ -2009,6 +2009,54 @@ def mis_pedidos():
             ""
         )
 
+        # -------------------------------------------------
+        # FORMATEAR FECHA DEL PEDIDO - HORA COLOMBIA
+        # -------------------------------------------------
+
+        try:
+
+            fecha_obj = datetime.fromisoformat(
+                str(fecha).replace(
+                    "Z",
+                    "+00:00"
+                )
+            )
+
+            hora_colombia = timezone(
+                timedelta(
+                    hours=-5
+                )
+            )
+
+            fecha_colombia = fecha_obj.astimezone(
+                hora_colombia
+            )
+
+            hora_mostrar = (
+                fecha_colombia
+                .strftime("%I:%M")
+                .lstrip("0")
+            )
+
+            if fecha_colombia.hour < 12:
+                periodo = "a. m."
+            else:
+                periodo = "p. m."
+
+            fecha_mostrar = (
+                fecha_colombia.strftime(
+                    "%d/%m/%Y"
+                )
+                + " - "
+                + hora_mostrar
+                + " "
+                + periodo
+            )
+
+        except:
+
+            fecha_mostrar = str(fecha) 
+
 
         total = pedido.get(
             "total",
@@ -2269,7 +2317,7 @@ def mis_pedidos():
 
                     <p>
                         Fecha:
-                        {fecha}
+                        {fecha_mostrar}
                     </p>
 
                 </div>
