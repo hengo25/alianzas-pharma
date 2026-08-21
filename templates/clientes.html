@@ -222,6 +222,10 @@
                         Teléfono / WhatsApp
                     </th>
 
+                    <th>
+                        Acciones
+                    </th>
+
                 </tr>
 
             </thead>
@@ -274,6 +278,27 @@
                         {% endif %}
 
                     </td>
+
+
+                    <td>
+
+    <a
+        href="/editar-cliente/{{ cliente.get('_id', cliente.get('nit', '')) }}"
+        style="
+            display:inline-block;
+            background:#f39c12;
+            color:white;
+            padding:7px 12px;
+            border-radius:7px;
+            text-decoration:none;
+            font-weight:bold;
+            white-space:nowrap;
+        "
+    >
+        ✏️ Editar
+    </a>
+
+</td>
 
                 </tr>
 
