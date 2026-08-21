@@ -29,7 +29,7 @@ from google.auth.transport.requests import Request
 
 
 # =========================================================
-# FLASK222222
+# FLASK2222221111
 # =========================================================
 
 app = Flask(__name__)
@@ -6124,6 +6124,73 @@ def conteo_pedidos_pendientes():
             pendientes
 
     })
+
+
+# =========================================================
+# ADMIN - VER DROGUERÍAS
+# =========================================================
+
+@app.route(
+    "/ver-clientes"
+)
+def ver_clientes_admin():
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # OBTENER CLIENTES DE FIREBASE
+    # -----------------------------------------------------
+
+    clientes = obtener_coleccion(
+        "clientes"
+    )
+
+
+    # -----------------------------------------------------
+    # ASEGURAR NIT
+    # -----------------------------------------------------
+
+    for cliente in clientes:
+
+        if not cliente.get("nit"):
+
+            cliente["nit"] = cliente.get(
+                "_id",
+                ""
+            )
+
+
+    # -----------------------------------------------------
+    # ORDENAR POR NOMBRE
+    # -----------------------------------------------------
+
+    clientes.sort(
+        key=lambda x: str(
+            x.get(
+                "nombre",
+                ""
+            )
+        ).lower()
+    )
+
+
+    # -----------------------------------------------------
+    # MOSTRAR PÁGINA
+    # -----------------------------------------------------
+
+    return render_template(
+        "clientes.html",
+        clientes=clientes
+    )
 
 # =========================================================
 # VERCEL / FLASK
