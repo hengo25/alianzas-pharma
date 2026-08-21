@@ -218,6 +218,11 @@
 
         </div>
 
+        <input
+            type="hidden"
+            id="cliente-id"
+            value="{{ cliente.get('_id', cliente.get('nit', '')) }}"
+        >
 
         <div class="cliente-box">
 
@@ -711,20 +716,203 @@ function filtrarProductos() {
 
         function probarPedido() {
 
-            alert(
-                "La pantalla ya está lista. En el siguiente paso conectaremos este botón con Firebase."
-            );
+    const articulos = [];
 
-        }
-        
-        document.addEventListener(
-    "DOMContentLoaded",
-    function() {
 
-        mostrarPaginaProductos();
+    document
+        .querySelectorAll(
+            ".cantidad"
+        )
+        .forEach(
+            function(campo) {
+
+                const cantidad =
+                    parseInt(
+                        campo.value || 0
+                    );
+
+
+                if (cantidad > 0) {
+
+                    articulos.push({
+
+                        id:
+                            campo.getAttribute(
+                                "data-id"
+                            ),
+
+                        cantidad:
+                            cantidad
+
+                    });
+
+                }
+
+            }
+        );
+
+
+    // ---------------------------------------------
+    // VALIDAR QUE HAYA PRODUCTOS
+    // ---------------------------------------------
+
+    if (articulos.length === 0) {
+
+        alert(
+            "Seleccione al menos un producto para crear el pedido."
+        );
+
+        return;
 
     }
-);
+
+
+    // ---------------------------------------------
+    // DATOS DE ENTREGA
+    // ---------------------------------------------
+
+    const fechaEntrega =
+        document.getElementById(
+            "fecha-entrega"
+        ).value;
+
+
+    const observaciones =
+        document.getElementById(
+            "observaciones"
+        ).value.trim();
+
+
+    // ---------------------------------------------
+    // CONFIRMAR
+    // ---------------------------------------------
+
+    const confirmar =
+        confirm(
+            "¿Está seguro de crear este pedido para la droguería seleccionada?"
+        );
+
+
+    if (!confirmar) {
+
+        return;
+
+    }
+
+
+    // ---------------------------------------------
+    // IDENTIFICAR DROGUERÍA
+    // ---------------------------------------------
+
+    const clienteId =
+    document.getElementById(
+        "cliente-id"
+    ).value;
+
+
+    // ---------------------------------------------
+    // DESACTIVAR BOTÓN PARA EVITAR DOBLE PEDIDO
+    // ---------------------------------------------
+
+    const boton =
+        document.querySelector(
+            ".btn-crear"
+        );
+
+
+    boton.disabled = true;
+
+    boton.innerHTML =
+        "⏳ Creando pedido...";
+
+
+    // ---------------------------------------------
+    // ENVIAR PEDIDO
+    // ---------------------------------------------
+
+    fetch(
+        "/guardar-pedido-admin/"
+        + encodeURIComponent(
+            clienteId
+        ),
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body: JSON.stringify({
+
+                articulos:
+                    articulos,
+
+                fecha_entrega:
+                    fechaEntrega,
+
+                observaciones:
+                    observaciones
+
+            })
+        }
+    )
+
+    .then(
+        async function(respuesta) {
+
+            const data =
+                await respuesta.json();
+
+            if (!respuesta.ok) {
+
+                throw new Error(
+                    data.message ||
+                    "No fue posible crear el pedido."
+                );
+
+            }
+
+            return data;
+
+        }
+    )
+
+    .then(
+        function(data) {
+
+            alert(
+                "✅ Pedido creado correctamente.\n\n"
+                + "Pedido: "
+                + data.pedido_id
+            );
+
+
+            window.location.href =
+                "/ver-pedidos";
+
+        }
+    )
+
+    .catch(
+        function(error) {
+
+            alert(
+                "❌ "
+                + error.message
+            );
+
+
+            boton.disabled = false;
+
+            boton.innerHTML =
+                "✅ Crear Pedido";
+
+        }
+    );
+
+}
+        
 
 
     </script>
