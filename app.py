@@ -2279,7 +2279,7 @@ def mis_pedidos():
             </div>
 
                 {entrega_html}   
-                   
+
             <div class="productos">
 
                 {productos_html}
@@ -3850,11 +3850,31 @@ def hacer_pedido():
             silent=True
         ) or {}
 
-
         articulos = datos.get(
             "articulos",
             []
         )
+
+
+        fecha_entrega = str(
+            datos.get(
+                "fecha_entrega",
+                ""
+            )
+        ).strip()
+
+
+        observaciones = str(
+            datos.get(
+                "observaciones",
+                ""
+            )
+        ).strip()
+        
+            
+            
+
+        
 
 
         if not articulos:
@@ -4182,7 +4202,16 @@ def hacer_pedido():
             "fecha":
                 datetime.now(
                     timezone.utc
-                ).isoformat()
+                ).isoformat(),
+
+            "fecha_entrega":
+                fecha_entrega,
+
+            "observaciones":
+                observaciones,
+
+            "creado_por":
+                "cliente"
 
         }
 
