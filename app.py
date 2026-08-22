@@ -1428,12 +1428,53 @@ Olvidé mi clave
     lista = obtener_productos()
 
 
+    # -----------------------------------------------------
+    # BANNER PRINCIPAL
+    # -----------------------------------------------------
+
+    banner = obtener_documento(
+        "configuracion",
+        "banner_principal"
+    )
+
+
+    # Si todavía no existe en Firebase,
+    # usar contenido predeterminado.
+
+    if not banner:
+
+        banner = {
+
+            "activo":
+                True,
+
+            "etiqueta":
+                "✨ Novedades Alianzas Pharma",
+
+            "titulo":
+                "Promoción especial para nuestros afiliados",
+
+            "mensaje":
+                "Aprovecha nuestras novedades, productos destacados y promociones disponibles para tu droguería.",
+
+            "imagen":
+                "/public/logo.jpeg",
+
+            "boton_texto":
+                "Ver promoción →",
+
+            "boton_link":
+                ""
+
+        }
+
+
     return render_template(
         "index.html",
         productos=lista,
-        cliente=cliente
+        cliente=cliente,
+        banner=banner
     )
-
 
 # =========================================================
 # LOGIN
