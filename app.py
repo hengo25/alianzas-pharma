@@ -1469,12 +1469,69 @@ Olvidé mi clave
         }
 
 
+    # -----------------------------------------------------
+    # LISTA DE PROMOCIONES PARA EL CARRUSEL
+    # -----------------------------------------------------
+
+    banners = obtener_coleccion(
+        "banners"
+    )
+
+
+    banners_activos = []
+
+
+    for item in banners:
+
+        if item.get(
+            "activo",
+            False
+        ):
+
+            banners_activos.append(
+                item
+            )
+
+
+    # -----------------------------------------------------
+    # ORDENAR PROMOCIONES
+    # -----------------------------------------------------
+
+    banners_activos.sort(
+        key=lambda item: int(
+            item.get(
+                "orden",
+                99
+            )
+        )
+    )
+
+
+    # -----------------------------------------------------
+    # MÁXIMO 3 PROMOCIONES
+    # -----------------------------------------------------
+
+    banners_activos = banners_activos[:3]
+
+
+    # -----------------------------------------------------
+    # SI TODAVÍA NO HAY CARRUSEL,
+    # USAR EL BANNER ACTUAL
+    # -----------------------------------------------------
+
+    if not banners_activos:
+
+        banners_activos = [
+            banner
+        ]
+
     return render_template(
         "index.html",
         productos=lista,
         cliente=cliente,
-        banner=banner
-    )
+        banner=banner,
+        banners=banners_activos
+    ) 
 
 # =========================================================
 # LOGIN
