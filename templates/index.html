@@ -55,6 +55,8 @@
      BANNER PRINCIPAL ALIANZAS PHARMA
 ===================================================== -->
 
+{% if banner and banner.get('activo', True) %}
+
 <div
     id="banner-principal"
     style="
@@ -73,7 +75,7 @@
     "
 >
 
-    <!-- IMAGEN DEL BANNER -->
+    <!-- IMAGEN -->
 
     <div
         style="
@@ -90,19 +92,20 @@
     >
 
         <img
-            src="/public/logo.jpeg"
-            alt="Alianzas Pharma"
+            src="{{ banner.get('imagen', '/public/logo.jpeg') }}"
+            alt="Banner Alianzas Pharma"
             style="
-                max-width:100px;
-                max-height:85px;
+                max-width:110px;
+                max-height:90px;
                 object-fit:contain;
+                border-radius:10px;
             "
         >
 
     </div>
 
 
-    <!-- TEXTO DEL BANNER -->
+    <!-- TEXTO -->
 
     <div
         style="
@@ -121,7 +124,7 @@
                 margin-bottom:5px;
             "
         >
-            ✨ Novedades Alianzas Pharma
+            {{ banner.get('etiqueta', '✨ Novedades Alianzas Pharma') }}
         </div>
 
 
@@ -133,7 +136,7 @@
                 margin-bottom:6px;
             "
         >
-            Promoción especial para nuestros afiliados
+            {{ banner.get('titulo', 'Promoción especial para nuestros afiliados') }}
         </div>
 
 
@@ -144,8 +147,7 @@
                 line-height:1.5;
             "
         >
-            Aprovecha nuestras novedades, productos destacados
-            y promociones disponibles para tu droguería.
+            {{ banner.get('mensaje', '') }}
         </div>
 
     </div>
@@ -153,28 +155,57 @@
 
     <!-- BOTÓN -->
 
+    {% if banner.get('boton_texto', '') %}
+
     <div>
 
-        <button
-            type="button"
-            onclick="return false;"
+        {% if banner.get('boton_link', '') %}
+
+        <a
+            href="{{ banner.get('boton_link') }}"
             style="
+                display:inline-block;
                 background:#8b5cf6;
                 color:white;
-                border:none;
+                text-decoration:none;
                 border-radius:25px;
                 padding:12px 22px;
                 font-size:14px;
                 font-weight:bold;
-                cursor:pointer;
                 white-space:nowrap;
                 box-shadow:0 4px 12px rgba(139,92,246,0.25);
             "
         >
-            Ver promoción →
-        </button>
+            {{ banner.get('boton_texto') }}
+        </a>
+
+        {% else %}
+
+        <span
+            style="
+                display:inline-block;
+                background:#8b5cf6;
+                color:white;
+                border-radius:25px;
+                padding:12px 22px;
+                font-size:14px;
+                font-weight:bold;
+                white-space:nowrap;
+                box-shadow:0 4px 12px rgba(139,92,246,0.25);
+            "
+        >
+            {{ banner.get('boton_texto') }}
+        </span>
+
+        {% endif %}
 
     </div>
+
+    {% endif %}
+
+</div>
+
+{% endif %}
 
 </div>
 
