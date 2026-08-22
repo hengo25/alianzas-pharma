@@ -1268,14 +1268,6 @@ font-weight:
 
 <div class="box">
 
-<h2
-style="
-color:#2c3e50;
-margin:0 0 5px 0;
-font-size:1.4rem;
-
-"
-
 <div
     style="
         text-align:center;
@@ -1292,19 +1284,28 @@ font-size:1.4rem;
         "
     >
 </div>
+
+
+<h2
+    style="
+        color:#2c3e50;
+        margin:0 0 5px 0;
+        font-size:1.4rem;
+    "
 >
-ALIANZAS PHARMA
+    ALIANZAS PHARMA
 </h2>
 
+
 <p
-style="
-color:#64748b;
-font-size:0.85rem;
-margin-bottom:25px;
-font-weight:bold;
-"
+    style="
+        color:#64748b;
+        font-size:0.85rem;
+        margin-bottom:25px;
+        font-weight:bold;
+    "
 >
-Portal de Pedidos para Droguerías Aliadas
+    Portal de Pedidos para Droguerías Afiliadas
 </p>
 
 <form
