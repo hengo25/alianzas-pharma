@@ -26,9 +26,48 @@
             <input type="text" name="nit" placeholder="NIT de la Empresa" required><br>
             <input type="text" name="direccion" placeholder="Dirección de Despacho" required><br>
             <input type="text" name="telefono" placeholder="Teléfono / WhatsApp" required><br>
-           
-            <input type="password" name="password" placeholder="Asigna una contraseña" required><br><br>
+           <div style="position:relative; margin-bottom:20px;">
 
+    <input
+        type="password"
+        id="password_registro"
+        name="password"
+        placeholder="Asigna una contraseña"
+        required
+        style="
+            padding-right:48px;
+            margin-bottom:0;
+        "
+    >
+
+    <button
+        type="button"
+        onclick="
+            const campo = document.getElementById('password_registro');
+            campo.type = campo.type === 'password' ? 'text' : 'password';
+            this.innerText = campo.type === 'password' ? '👁️' : '🙈';
+        "
+        style="
+            position:absolute;
+            right:14px;
+            top:50%;
+            transform:translateY(-50%);
+            width:auto !important;
+            background:transparent !important;
+            border:none !important;
+            box-shadow:none !important;
+            padding:0 !important;
+            margin:0 !important;
+            cursor:pointer;
+            font-size:20px;
+        "
+        title="Mostrar u ocultar contraseña"
+    >
+        👁️
+    </button>
+
+</div>
+            
             <button type="submit">Registrar Mi Droguería</button>
         </form>
         <br>
