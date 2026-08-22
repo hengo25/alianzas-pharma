@@ -8591,7 +8591,227 @@ def cambiar_nit_admin(cliente_id):
     </script>
     """
 
+# =========================================================
+# ADMIN - GESTIONAR BANNER PRINCIPAL
+# =========================================================
 
+@app.route(
+    "/admin/banner",
+    methods=["GET", "POST"]
+)
+def gestionar_banner():
+
+    # -----------------------------------------------------
+    # VERIFICAR SESIÓN ADMIN
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # VALORES PREDETERMINADOS
+    # -----------------------------------------------------
+
+    banner_default = {
+
+        "activo":
+            True,
+
+        "etiqueta":
+            "✨ Novedades Alianzas Pharma",
+
+        "titulo":
+            "Promoción especial para nuestros afiliados",
+
+        "mensaje":
+            "Aprovecha nuestras novedades, productos destacados y promociones disponibles para tu droguería.",
+
+        "imagen":
+            "/public/logo.jpeg",
+
+        "boton_texto":
+            "Ver promoción →",
+
+        "boton_link":
+            ""
+
+    }
+
+
+    # -----------------------------------------------------
+    # MOSTRAR FORMULARIO
+    # -----------------------------------------------------
+
+    if request.method == "GET":
+
+        banner = obtener_documento(
+            "configuracion",
+            "banner_principal"
+        )
+
+
+        if not banner:
+
+            banner = banner_default
+
+
+        return render_template(
+            "gestionar_banner.html",
+            banner=banner,
+            exito=request.args.get(
+                "exito",
+                ""
+            )
+        )
+
+
+    # -----------------------------------------------------
+    # RECIBIR DATOS DEL FORMULARIO
+    # -----------------------------------------------------
+
+    etiqueta = request.form.get(
+        "etiqueta",
+        ""
+    ).strip()
+
+
+    titulo = request.form.get(
+        "titulo",
+        ""
+    ).strip()
+
+
+    mensaje = request.form.get(
+        "mensaje",
+        ""
+    ).strip()
+
+
+    imagen = request.form.get(
+        "imagen",
+        ""
+    ).strip()
+
+
+    boton_texto = request.form.get(
+        "boton_texto",
+        ""
+    ).strip()
+
+
+    boton_link = request.form.get(
+        "boton_link",
+        ""
+    ).strip()
+
+
+    activo = (
+        request.form.get(
+            "activo"
+        )
+        == "on"
+    )
+
+
+    # -----------------------------------------------------
+    # VALIDACIÓN
+    # -----------------------------------------------------
+
+    if not titulo:
+
+        return render_template(
+            "gestionar_banner.html",
+            banner={
+                "activo":
+                    activo,
+
+                "etiqueta":
+                    etiqueta,
+
+                "titulo":
+                    titulo,
+
+                "mensaje":
+                    mensaje,
+
+                "imagen":
+                    imagen,
+
+                "boton_texto":
+                    boton_texto,
+
+                "boton_link":
+                    boton_link
+            },
+            error="El título del banner es obligatorio."
+        )
+
+
+    if not imagen:
+
+        imagen = "/public/logo.jpeg"
+
+
+    # -----------------------------------------------------
+    # GUARDAR EN FIRESTORE
+    # -----------------------------------------------------
+
+    banner = {
+
+        "activo":
+            activo,
+
+        "etiqueta":
+            etiqueta,
+
+        "titulo":
+            titulo,
+
+        "mensaje":
+            mensaje,
+
+        "imagen":
+            imagen,
+
+        "boton_texto":
+            boton_texto,
+
+        "boton_link":
+            boton_link
+
+    }
+
+
+    guardado = guardar_documento(
+        "configuracion",
+        "banner_principal",
+        banner
+    )
+
+
+    if not guardado:
+
+        return render_template(
+            "gestionar_banner.html",
+            banner=banner,
+            error="No fue posible guardar el banner."
+        )
+
+
+    # -----------------------------------------------------
+    # ÉXITO
+    # -----------------------------------------------------
+
+    return redirect(
+        url_for(
+            "gestionar_banner",
+            exito="1"
+        )
+    )
 
 # =========================================================
 # VERCEL / FLASK
