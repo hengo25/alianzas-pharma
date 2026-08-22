@@ -317,6 +317,26 @@
         </a>
 
 
+                <a
+            href="/cambiar-nit/{{ cliente.get('_id', cliente.get('nit', '')) }}"
+            style="
+                display:inline-flex;
+                align-items:center;
+                justify-content:center;
+                gap:4px;
+                background:#3498db;
+                color:white;
+                padding:7px 10px;
+                border-radius:7px;
+                text-decoration:none;
+                font-weight:bold;
+                font-size:12px;
+                white-space:nowrap;
+            "
+        >
+            🔄 Cambiar NIT
+        </a>
+
         <form
             method="POST"
             action="/eliminar-cliente/{{ cliente.get('_id', cliente.get('nit', '')) }}"
