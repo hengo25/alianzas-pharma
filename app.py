@@ -1767,6 +1767,180 @@ Intentar de Nuevo
 </html>
 """
 
+# =========================================================
+# RECUPERAR CONTRASEÑA
+# =========================================================
+
+@app.route(
+    "/recuperar-clave",
+    methods=["GET", "POST"]
+)
+def recuperar_clave():
+
+    # -----------------------------------------------------
+    # MOSTRAR FORMULARIO
+    # -----------------------------------------------------
+
+    if request.method == "GET":
+
+        return render_template(
+            "recuperar_clave.html"
+        )
+
+
+    # -----------------------------------------------------
+    # RECIBIR DATOS
+    # -----------------------------------------------------
+
+    nit = request.form.get(
+        "nit",
+        ""
+    ).strip()
+
+
+    telefono = request.form.get(
+        "telefono",
+        ""
+    ).strip()
+
+
+    nueva_password = request.form.get(
+        "nueva_password",
+        ""
+    ).strip()
+
+
+    confirmar_password = request.form.get(
+        "confirmar_password",
+        ""
+    ).strip()
+
+
+    # -----------------------------------------------------
+    # VALIDAR CAMPOS
+    # -----------------------------------------------------
+
+    if (
+        not nit
+        or not telefono
+        or not nueva_password
+        or not confirmar_password
+    ):
+
+        return render_template(
+            "recuperar_clave.html",
+            error="Debes completar todos los campos."
+        )
+
+
+    # -----------------------------------------------------
+    # VALIDAR CONTRASEÑAS
+    # -----------------------------------------------------
+
+    if nueva_password != confirmar_password:
+
+        return render_template(
+            "recuperar_clave.html",
+            error="Las contraseñas no coinciden."
+        )
+
+
+    if len(nueva_password) < 6:
+
+        return render_template(
+            "recuperar_clave.html",
+            error="La nueva contraseña debe tener mínimo 6 caracteres."
+        )
+
+
+    # -----------------------------------------------------
+    # BUSCAR DROGUERÍA
+    # -----------------------------------------------------
+
+    cliente = obtener_documento(
+        "clientes",
+        nit
+    )
+
+
+    if not cliente:
+
+        return render_template(
+            "recuperar_clave.html",
+            error="Los datos ingresados no coinciden con nuestros registros."
+        )
+
+
+    # -----------------------------------------------------
+    # NORMALIZAR TELÉFONOS
+    # -----------------------------------------------------
+
+    telefono_ingresado = "".join(
+        caracter
+        for caracter in telefono
+        if caracter.isdigit()
+    )
+
+
+    telefono_guardado = "".join(
+        caracter
+        for caracter in str(
+            cliente.get(
+                "telefono",
+                ""
+            )
+        )
+        if caracter.isdigit()
+    )
+
+
+    # -----------------------------------------------------
+    # VERIFICAR TELÉFONO
+    # -----------------------------------------------------
+
+    if (
+        not telefono_guardado
+        or telefono_ingresado != telefono_guardado
+    ):
+
+        return render_template(
+            "recuperar_clave.html",
+            error="Los datos ingresados no coinciden con nuestros registros."
+        )
+
+
+    # -----------------------------------------------------
+    # CAMBIAR CONTRASEÑA
+    # -----------------------------------------------------
+
+    cliente[
+        "password"
+    ] = nueva_password
+
+
+    guardado = guardar_documento(
+        "clientes",
+        nit,
+        cliente
+    )
+
+
+    if not guardado:
+
+        return render_template(
+            "recuperar_clave.html",
+            error="No fue posible actualizar la contraseña. Intenta nuevamente."
+        )
+
+
+    # -----------------------------------------------------
+    # ÉXITO
+    # -----------------------------------------------------
+
+    return render_template(
+        "recuperar_clave.html",
+        exito="Contraseña actualizada correctamente. Ya puedes iniciar sesión."
+    )
 
 # =========================================================
 # REGISTRO
