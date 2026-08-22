@@ -9141,6 +9141,35 @@ def gestionar_banner():
             error="No fue posible guardar el banner."
         )
 
+    # -----------------------------------------------------
+    # GUARDAR TAMBIÉN COMO PROMOCIÓN 1 DEL CARRUSEL
+    # -----------------------------------------------------
+
+    promocion_1 = dict(
+        banner
+    )
+
+
+    promocion_1[
+        "orden"
+    ] = 1
+
+
+    guardado_promocion = guardar_documento(
+        "banners",
+        "promocion_1",
+        promocion_1
+    )
+
+
+    if not guardado_promocion:
+
+        return render_template(
+            "gestionar_banner.html",
+            banner=banner,
+            error="El banner se guardó, pero no fue posible crear la Promoción 1 del carrusel."
+        )
+
 
     # -----------------------------------------------------
     # ÉXITO
