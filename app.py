@@ -6360,21 +6360,78 @@ def descargar_pdf_pedido(pedido_id):
         )
 
 
-        # Acortar nombre si es demasiado largo
-        nombre_pdf = nombre
+        # -------------------------------------------------
+        # NOMBRE DEL PRODUCTO EN VARIAS LÍNEAS
+        # -------------------------------------------------
 
-        if len(nombre_pdf) > 52:
+        palabras = str(nombre).split()
 
-            nombre_pdf = (
-                nombre_pdf[:49]
-                + "..."
+        lineas_nombre = []
+
+        linea_actual = ""
+
+        ancho_maximo_nombre = 270
+
+
+        for palabra in palabras:
+
+            if linea_actual:
+
+                prueba = (
+                    linea_actual
+                    + " "
+                    + palabra
+                )
+
+            else:
+
+                prueba = palabra
+
+
+            ancho_prueba = pdf.stringWidth(
+                prueba,
+                "Helvetica",
+                10
             )
 
+
+            if ancho_prueba <= ancho_maximo_nombre:
+
+                linea_actual = prueba
+
+            else:
+
+                if linea_actual:
+
+                    lineas_nombre.append(
+                        linea_actual
+                    )
+
+                linea_actual = palabra
+
+
+        if linea_actual:
+
+            lineas_nombre.append(
+                linea_actual
+            )
+
+
+        if not lineas_nombre:
+
+            lineas_nombre = [
+                str(nombre)
+            ]
+
+
+        # -------------------------------------------------
+        # PRIMERA LÍNEA DEL PRODUCTO
+        # -------------------------------------------------
 
         pdf.drawString(
             50,
             y,
-            nombre_pdf
+            lineas_nombre[0]
         )
 
 
@@ -6398,6 +6455,27 @@ def descargar_pdf_pedido(pedido_id):
             f"${subtotal:,.0f}"
         )
 
+
+        # -------------------------------------------------
+        # LÍNEAS ADICIONALES DEL NOMBRE
+        # -------------------------------------------------
+
+        if len(lineas_nombre) > 1:
+
+            for linea_extra in lineas_nombre[1:]:
+
+                y -= 14
+
+                pdf.drawString(
+                    50,
+                    y,
+                    linea_extra
+                )
+
+
+        # -------------------------------------------------
+        # ESPACIO PARA EL SIGUIENTE PRODUCTO
+        # -------------------------------------------------
 
         y -= 20
 
