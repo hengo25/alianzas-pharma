@@ -52,152 +52,254 @@
 </div>
 
 <!-- =====================================================
-     BANNER PRINCIPAL ALIANZAS PHARMA
+     CARRUSEL DE PROMOCIONES - ALIANZAS PHARMA
 ===================================================== -->
 
-{% if banner and banner.get('activo', True) %}
+{% if banners and banners|length > 0 %}
 
 <div
-    id="banner-principal"
+    id="carrusel-promociones"
     style="
         max-width:1350px;
         margin:12px auto 18px auto;
-        background:linear-gradient(135deg, #ffffff 0%, #f3f0ff 100%);
-        border:1px solid #e5e7eb;
-        border-radius:16px;
-        box-shadow:0 6px 20px rgba(0,0,0,0.05);
-        padding:18px 24px;
-        display:flex;
-        align-items:center;
-        gap:24px;
-        flex-wrap:wrap;
-        overflow:hidden;
+        position:relative;
     "
 >
 
-    <!-- IMAGEN -->
+    {% for promo in banners %}
 
     <div
+        class="banner-slide"
         style="
-            width:130px;
-            min-width:130px;
-            height:100px;
-            background:white;
-            border-radius:14px;
-            display:flex;
+            background:linear-gradient(135deg, #ffffff 0%, #f3f0ff 100%);
+            border:1px solid #e5e7eb;
+            border-radius:16px;
+            box-shadow:0 6px 20px rgba(0,0,0,0.05);
+            padding:18px 24px;
             align-items:center;
-            justify-content:center;
-            box-shadow:0 3px 12px rgba(0,0,0,0.06);
+            gap:24px;
+            flex-wrap:wrap;
+            overflow:hidden;
+            display:flex;
         "
     >
 
-        <img
-            src="{{ banner.get('imagen', '/public/logo.jpeg') }}"
-            alt="Banner Alianzas Pharma"
-            style="
-                max-width:110px;
-                max-height:90px;
-                object-fit:contain;
-                border-radius:10px;
-            "
-        >
-
-    </div>
-
-
-    <!-- TEXTO -->
-
-    <div
-        style="
-            flex:1;
-            min-width:260px;
-        "
-    >
+        <!-- IMAGEN -->
 
         <div
             style="
-                color:#8b5cf6;
-                font-size:13px;
-                font-weight:bold;
-                text-transform:uppercase;
-                letter-spacing:1px;
-                margin-bottom:5px;
+                width:130px;
+                min-width:130px;
+                height:100px;
+                background:white;
+                border-radius:14px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                box-shadow:0 3px 12px rgba(0,0,0,0.06);
             "
         >
-            {{ banner.get('etiqueta', '✨ Novedades Alianzas Pharma') }}
+
+            <img
+                src="{{ promo.get('imagen', '/public/logo.jpeg') }}"
+                alt="Promoción Alianzas Pharma"
+                style="
+                    max-width:110px;
+                    max-height:90px;
+                    object-fit:contain;
+                    border-radius:10px;
+                "
+                onerror="this.src='/public/logo.jpeg';"
+            >
+
         </div>
 
+
+        <!-- TEXTO -->
 
         <div
             style="
-                color:#243b53;
-                font-size:24px;
-                font-weight:800;
-                margin-bottom:6px;
+                flex:1;
+                min-width:260px;
             "
         >
-            {{ banner.get('titulo', 'Promoción especial para nuestros afiliados') }}
+
+            <div
+                style="
+                    color:#8b5cf6;
+                    font-size:13px;
+                    font-weight:bold;
+                    text-transform:uppercase;
+                    letter-spacing:1px;
+                    margin-bottom:5px;
+                "
+            >
+                {{ promo.get('etiqueta', '✨ Novedades Alianzas Pharma') }}
+            </div>
+
+
+            <div
+                style="
+                    color:#243b53;
+                    font-size:24px;
+                    font-weight:800;
+                    margin-bottom:6px;
+                "
+            >
+                {{ promo.get('titulo', '') }}
+            </div>
+
+
+            <div
+                style="
+                    color:#64748b;
+                    font-size:15px;
+                    line-height:1.5;
+                "
+            >
+                {{ promo.get('mensaje', '') }}
+            </div>
+
         </div>
 
 
-        <div
-            style="
-                color:#64748b;
-                font-size:15px;
-                line-height:1.5;
-            "
-        >
-            {{ banner.get('mensaje', '') }}
+        <!-- BOTÓN -->
+
+        {% if promo.get('boton_texto', '') %}
+
+        <div>
+
+            {% if promo.get('boton_link', '') %}
+
+            <a
+                href="{{ promo.get('boton_link') }}"
+                style="
+                    display:inline-block;
+                    background:#8b5cf6;
+                    color:white;
+                    text-decoration:none;
+                    border-radius:25px;
+                    padding:12px 22px;
+                    font-size:14px;
+                    font-weight:bold;
+                    white-space:nowrap;
+                    box-shadow:0 4px 12px rgba(139,92,246,0.25);
+                "
+            >
+                {{ promo.get('boton_texto') }}
+            </a>
+
+            {% else %}
+
+            <span
+                style="
+                    display:inline-block;
+                    background:#8b5cf6;
+                    color:white;
+                    border-radius:25px;
+                    padding:12px 22px;
+                    font-size:14px;
+                    font-weight:bold;
+                    white-space:nowrap;
+                    box-shadow:0 4px 12px rgba(139,92,246,0.25);
+                "
+            >
+                {{ promo.get('boton_texto') }}
+            </span>
+
+            {% endif %}
+
         </div>
-
-    </div>
-
-
-    <!-- BOTÓN -->
-
-    {% if banner.get('boton_texto', '') %}
-
-    <div>
-
-        {% if banner.get('boton_link', '') %}
-
-        <a
-            href="{{ banner.get('boton_link') }}"
-            style="
-                display:inline-block;
-                background:#8b5cf6;
-                color:white;
-                text-decoration:none;
-                border-radius:25px;
-                padding:12px 22px;
-                font-size:14px;
-                font-weight:bold;
-                white-space:nowrap;
-                box-shadow:0 4px 12px rgba(139,92,246,0.25);
-            "
-        >
-            {{ banner.get('boton_texto') }}
-        </a>
-
-        {% else %}
-
-        <span
-            style="
-                display:inline-block;
-                background:#8b5cf6;
-                color:white;
-                border-radius:25px;
-                padding:12px 22px;
-                font-size:14px;
-                font-weight:bold;
-                white-space:nowrap;
-                box-shadow:0 4px 12px rgba(139,92,246,0.25);
-            "
-        >
-            {{ banner.get('boton_texto') }}
-        </span>
 
         {% endif %}
+
+    </div>
+
+    {% endfor %}
+
+
+    <!-- CONTROLES - SOLO SI HAY MÁS DE UNA PROMOCIÓN -->
+
+    {% if banners|length > 1 %}
+
+    <button
+        type="button"
+        onclick="moverCarrusel(-1)"
+        style="
+            position:absolute;
+            left:-18px;
+            top:50%;
+            transform:translateY(-50%);
+            width:38px;
+            height:38px;
+            border-radius:50%;
+            border:none;
+            background:white;
+            color:#8b5cf6;
+            font-size:24px;
+            font-weight:bold;
+            cursor:pointer;
+            box-shadow:0 3px 12px rgba(0,0,0,0.15);
+            z-index:5;
+        "
+        title="Promoción anterior"
+    >
+        ‹
+    </button>
+
+
+    <button
+        type="button"
+        onclick="moverCarrusel(1)"
+        style="
+            position:absolute;
+            right:-18px;
+            top:50%;
+            transform:translateY(-50%);
+            width:38px;
+            height:38px;
+            border-radius:50%;
+            border:none;
+            background:white;
+            color:#8b5cf6;
+            font-size:24px;
+            font-weight:bold;
+            cursor:pointer;
+            box-shadow:0 3px 12px rgba(0,0,0,0.15);
+            z-index:5;
+        "
+        title="Siguiente promoción"
+    >
+        ›
+    </button>
+
+
+    <div
+        style="
+            text-align:center;
+            margin-top:9px;
+        "
+    >
+
+        {% for promo in banners %}
+
+        <button
+    type="button"
+    class="punto-banner"
+    style="
+        width:10px;
+        height:10px;
+        border:none;
+        border-radius:50%;
+        padding:0;
+        margin:0 4px;
+        cursor:pointer;
+        background:#cbd5e1;
+    "
+    title="Ver promoción"
+></button>
+
+        {% endfor %}
 
     </div>
 
@@ -205,10 +307,118 @@
 
 </div>
 
+
+{% if banners|length > 1 %}
+
+<script>
+
+let bannerActual = 0;
+
+const slidesBanner =
+    document.querySelectorAll(
+        ".banner-slide"
+    );
+
+    puntosBanner.forEach(
+    function(punto, indice) {
+
+        punto.addEventListener(
+            "click",
+            function() {
+
+                irABanner(
+                    indice
+                );
+
+            }
+        );
+
+    }
+);
+
+const puntosBanner =
+    document.querySelectorAll(
+        ".punto-banner"
+    );
+
+
+function mostrarBanner(indice) {
+
+    if (indice >= slidesBanner.length) {
+        indice = 0;
+    }
+
+    if (indice < 0) {
+        indice = slidesBanner.length - 1;
+    }
+
+
+    bannerActual = indice;
+
+
+    slidesBanner.forEach(
+        function(slide, posicion) {
+
+            slide.style.display =
+                posicion === bannerActual
+                    ? "flex"
+                    : "none";
+
+        }
+    );
+
+
+    puntosBanner.forEach(
+        function(punto, posicion) {
+
+            punto.style.background =
+                posicion === bannerActual
+                    ? "#8b5cf6"
+                    : "#cbd5e1";
+
+        }
+    );
+
+}
+
+
+function moverCarrusel(direccion) {
+
+    mostrarBanner(
+        bannerActual + direccion
+    );
+
+}
+
+
+function irABanner(indice) {
+
+    mostrarBanner(
+        indice
+    );
+
+}
+    mostrarBanner(0);
+
+/* CAMBIO AUTOMÁTICO CADA 5 SEGUNDOS */
+
+setInterval(
+    function() {
+
+        mostrarBanner(
+            bannerActual + 1
+        );
+
+    },
+    5000
+);
+
+</script>
+
 {% endif %}
 
-</div>
 
+{% endif %}
 
 
 
