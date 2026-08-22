@@ -16,6 +16,22 @@
 
     <style>
 
+            .promo-tab {
+        text-decoration: none;
+        padding: 11px 18px;
+        border-radius: 22px;
+        font-weight: bold;
+        background: #eef2f7;
+        color: #475569;
+    }
+
+        .promo-tab-activa {
+            background: #8b5cf6;
+            color: white;
+        }
+
+
+
         * {
             box-sizing: border-box;
         }
@@ -337,6 +353,49 @@
     {% endif %}
 
 
+<!-- ===============================================
+     SELECTOR DE PROMOCIONES
+=============================================== -->
+
+<div
+    style="
+        background:white;
+        padding:18px;
+        border-radius:16px;
+        box-shadow:0 6px 20px rgba(0,0,0,0.05);
+        margin-bottom:22px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:12px;
+        flex-wrap:wrap;
+    "
+>
+<a
+    href="/admin/banner?promo=1"
+    class="promo-tab {% if promo_num == '1' %}promo-tab-activa{% endif %}"
+>
+    1️⃣ Promoción 1
+</a>
+    
+
+ <a
+    href="/admin/banner?promo=2"
+    class="promo-tab {% if promo_num == '2' %}promo-tab-activa{% endif %}"
+>
+    2️⃣ Promoción 2
+</a>   
+
+<a
+    href="/admin/banner?promo=3"
+    class="promo-tab {% if promo_num == '3' %}promo-tab-activa{% endif %}"
+>
+    3️⃣ Promoción 3
+</a>
+
+</div>
+
+  
     <!-- ===============================================
          FORMULARIO
     ================================================ -->
@@ -344,13 +403,19 @@
     <div class="panel">
 
         <h2>
-            ✏️ Contenido del banner
+            ✏️ Editando Promoción {{ promo_num }}
         </h2>
 
         <form
             method="POST"
             action="/admin/banner"
             enctype="multipart/form-data"
+        >
+
+        <input
+            type="hidden"
+            name="promo_num"
+            value="{{ promo_num }}"
         >
 
             <div class="activo">
