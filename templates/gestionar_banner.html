@@ -350,6 +350,7 @@
         <form
             method="POST"
             action="/admin/banner"
+            enctype="multipart/form-data"
         >
 
             <div class="activo">
@@ -421,6 +422,38 @@
                 placeholder="/public/logo.jpeg"
                 oninput="actualizarVistaPrevia()"
             >
+
+            <label for="imagen_archivo">
+    📷 Subir nueva imagen desde el computador
+</label>
+
+<input
+    type="file"
+    id="imagen_archivo"
+    name="imagen_archivo"
+    accept="image/jpeg,image/png,image/webp"
+    onchange="previsualizarImagenSeleccionada(this)"
+    style="
+        width:100%;
+        padding:12px;
+        border:1px dashed #8b5cf6;
+        border-radius:8px;
+        background:#faf8ff;
+        margin-bottom:18px;
+        cursor:pointer;
+    "
+>
+
+<div
+    class="ayuda"
+    style="margin-top:-10px;"
+>
+    Formatos permitidos: JPG, PNG o WEBP. Máximo 3 MB.
+    Si seleccionas una imagen nueva, reemplazará la imagen actual.
+</div>
+
+
+
 
             <div class="ayuda">
                 Por ahora puedes usar una ruta de imagen existente,
@@ -551,6 +584,65 @@
 
 
 <script>
+
+
+function previsualizarImagenSeleccionada(input) {
+
+    if (
+        !input.files
+        || !input.files[0]
+    ) {
+        return;
+    }
+
+    const archivo = input.files[0];
+
+    const tiposPermitidos = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
+
+    if (!tiposPermitidos.includes(archivo.type)) {
+
+        alert(
+            "La imagen debe ser JPG, PNG o WEBP."
+        );
+
+        input.value = "";
+        return;
+    }
+
+
+    if (archivo.size > 3 * 1024 * 1024) {
+
+        alert(
+            "La imagen no puede superar los 3 MB."
+        );
+
+        input.value = "";
+        return;
+    }
+
+
+    const lector = new FileReader();
+
+
+    lector.onload = function(evento) {
+
+        document.getElementById(
+            "preview-imagen"
+        ).src = evento.target.result;
+
+    };
+
+
+    lector.readAsDataURL(
+        archivo
+    );
+
+}
+
 
 function actualizarVistaPrevia() {
 
