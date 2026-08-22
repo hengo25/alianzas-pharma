@@ -7,6 +7,8 @@
         </div>
 
     <style>
+        
+
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; padding: 20px; margin: 0; color: #333; }
         .encabezado-tienda { background: white; padding: 15px 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0; }
         .btn-premium-nav { color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; text-decoration: none; font-size: 0.9rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -29,6 +31,9 @@
         .btn-del { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; padding: 5px 9px; border-radius: 6px; cursor: pointer; font-weight: bold; }
         .btn-pagi { background: white; color: #3498db; border: 2px solid #3498db; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-weight: bold; }
         .btn-pagi:disabled { border-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        .banner-slide-activo {
+            display: flex !important;
+        }
     </style>
 </head>
 <body>
@@ -69,7 +74,7 @@
     {% for promo in banners %}
 
     <div
-        class="banner-slide"
+        class="banner-slide {% if loop.first %}banner-slide-activo{% endif %}"
         style="
             background:linear-gradient(135deg, #ffffff 0%, #f3f0ff 100%);
             border:1px solid #e5e7eb;
@@ -80,7 +85,7 @@
             gap:24px;
             flex-wrap:wrap;
             overflow:hidden;
-            display:flex;
+            display:none;
         "
     >
 
@@ -355,17 +360,26 @@ function mostrarBanner(indice) {
 
     bannerActual = indice;
 
-
     slidesBanner.forEach(
         function(slide, posicion) {
 
-            slide.style.display =
-                posicion === bannerActual
-                    ? "flex"
-                    : "none";
+            if (posicion === bannerActual) {
+
+                slide.classList.add(
+                    "banner-slide-activo"
+                );
+
+            } else {
+
+                slide.classList.remove(
+                    "banner-slide-activo"
+                );
+
+            }
 
         }
     );
+    
 
 
     puntosBanner.forEach(
