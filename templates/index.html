@@ -319,12 +319,20 @@
 
 let bannerActual = 0;
 
+
 const slidesBanner =
     document.querySelectorAll(
         ".banner-slide"
     );
 
-    puntosBanner.forEach(
+
+const puntosBanner =
+    document.querySelectorAll(
+        ".punto-banner"
+    );
+
+
+puntosBanner.forEach(
     function(punto, indice) {
 
         punto.addEventListener(
@@ -340,11 +348,6 @@ const slidesBanner =
 
     }
 );
-
-const puntosBanner =
-    document.querySelectorAll(
-        ".punto-banner"
-    );
 
 
 function mostrarBanner(indice) {
