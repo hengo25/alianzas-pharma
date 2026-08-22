@@ -7976,6 +7976,376 @@ def cancelar_pedido_admin(pedido_id):
         )
     )
 
+
+# =========================================================
+# ADMIN - CAMBIAR NIT DE DROGUERÍA
+# =========================================================
+
+@app.route(
+    "/cambiar-nit/<cliente_id>",
+    methods=["GET", "POST"]
+)
+def cambiar_nit_admin(cliente_id):
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # BUSCAR CLIENTE ACTUAL
+    # -----------------------------------------------------
+
+    cliente = obtener_documento(
+        "clientes",
+        cliente_id
+    )
+
+
+    if not cliente:
+
+        return """
+        <script>
+            alert("❌ La droguería no existe.");
+            window.location.href = "/ver-clientes";
+        </script>
+        """, 404
+
+
+    # -----------------------------------------------------
+    # MOSTRAR FORMULARIO
+    # -----------------------------------------------------
+
+    if request.method == "GET":
+
+        cliente_mostrar = dict(
+            cliente
+        )
+
+        cliente_mostrar[
+            "_id"
+        ] = cliente_id
+
+        return render_template(
+            "cambiar_nit.html",
+            cliente=cliente_mostrar
+        )
+
+
+    # -----------------------------------------------------
+    # RECIBIR NUEVO NIT
+    # -----------------------------------------------------
+
+    nuevo_nit = request.form.get(
+        "nuevo_nit",
+        ""
+    ).strip()
+
+
+    confirmar_nit = request.form.get(
+        "confirmar_nit",
+        ""
+    ).strip()
+
+
+    if (
+        not nuevo_nit
+        or not confirmar_nit
+    ):
+
+        return render_template(
+            "cambiar_nit.html",
+            cliente={
+                **cliente,
+                "_id": cliente_id
+            },
+            error="Debes completar los dos campos."
+        )
+
+
+    if nuevo_nit != confirmar_nit:
+
+        return render_template(
+            "cambiar_nit.html",
+            cliente={
+                **cliente,
+                "_id": cliente_id
+            },
+            error="Los NIT ingresados no coinciden."
+        )
+
+
+    nit_anterior = str(
+        cliente.get(
+            "nit",
+            cliente_id
+        )
+    ).strip()
+
+
+    if nuevo_nit == nit_anterior:
+
+        return render_template(
+            "cambiar_nit.html",
+            cliente={
+                **cliente,
+                "_id": cliente_id
+            },
+            error="El nuevo NIT es igual al NIT actual."
+        )
+
+
+    # -----------------------------------------------------
+    # COMPROBAR QUE EL NUEVO NIT NO EXISTA
+    # -----------------------------------------------------
+
+    cliente_existente = obtener_documento(
+        "clientes",
+        nuevo_nit
+    )
+
+
+    if cliente_existente:
+
+        return render_template(
+            "cambiar_nit.html",
+            cliente={
+                **cliente,
+                "_id": cliente_id
+            },
+            error="Ya existe una droguería registrada con ese NIT."
+        )
+
+
+    # -----------------------------------------------------
+    # CREAR DOCUMENTO CON NUEVO NIT
+    # -----------------------------------------------------
+
+    cliente_nuevo = dict(
+        cliente
+    )
+
+    cliente_nuevo.pop(
+        "_id",
+        None
+    )
+
+    cliente_nuevo[
+        "nit"
+    ] = nuevo_nit
+
+
+    creado = guardar_documento(
+        "clientes",
+        nuevo_nit,
+        cliente_nuevo
+    )
+
+
+    if not creado:
+
+        return render_template(
+            "cambiar_nit.html",
+            cliente={
+                **cliente,
+                "_id": cliente_id
+            },
+            error="No fue posible crear el nuevo NIT."
+        )
+
+
+    # -----------------------------------------------------
+    # ACTUALIZAR NIT EN TODOS LOS PEDIDOS
+    # -----------------------------------------------------
+
+    pedidos = obtener_coleccion(
+        "pedidos"
+    )
+
+
+    pedidos_actualizados = []
+
+
+    for pedido in pedidos:
+
+        datos_cliente = pedido.get(
+            "cliente",
+            {}
+        )
+
+
+        nit_pedido = str(
+            datos_cliente.get(
+                "nit",
+                ""
+            )
+        ).strip()
+
+
+        if nit_pedido != nit_anterior:
+
+            continue
+
+
+        pedido_id = pedido.get(
+            "_id",
+            ""
+        )
+
+
+        pedido_original = dict(
+            pedido
+        )
+
+        pedido.pop(
+            "_id",
+            None
+        )
+
+
+        datos_cliente_nuevo = dict(
+            datos_cliente
+        )
+
+        datos_cliente_nuevo[
+            "nit"
+        ] = nuevo_nit
+
+        pedido[
+            "cliente"
+        ] = datos_cliente_nuevo
+
+
+        actualizado = guardar_documento(
+            "pedidos",
+            pedido_id,
+            pedido
+        )
+
+
+        if not actualizado:
+
+            # ---------------------------------------------
+            # REVERTIR PEDIDOS YA MODIFICADOS
+            # ---------------------------------------------
+
+            for anterior in pedidos_actualizados:
+
+                pedido_revertir = dict(
+                    anterior["pedido"]
+                )
+
+                pedido_revertir.pop(
+                    "_id",
+                    None
+                )
+
+                guardar_documento(
+                    "pedidos",
+                    anterior["id"],
+                    pedido_revertir
+                )
+
+
+            # ---------------------------------------------
+            # BORRAR CLIENTE NUEVO
+            # ---------------------------------------------
+
+            url_nuevo = (
+                firestore_base_url()
+                + "/"
+                + quote(
+                    "clientes",
+                    safe=""
+                )
+                + "/"
+                + quote(
+                    nuevo_nit,
+                    safe=""
+                )
+            )
+
+
+            requests.delete(
+                url_nuevo,
+                headers=firestore_headers(),
+                timeout=10
+            )
+
+
+            return render_template(
+                "cambiar_nit.html",
+                cliente={
+                    **cliente,
+                    "_id": cliente_id
+                },
+                error="No fue posible actualizar todos los pedidos. No se realizó el cambio de NIT."
+            )
+
+
+        pedidos_actualizados.append({
+            "id":
+                pedido_id,
+            "pedido":
+                pedido_original
+        })
+
+
+    # -----------------------------------------------------
+    # ELIMINAR DOCUMENTO DEL NIT ANTERIOR
+    # -----------------------------------------------------
+
+    url_anterior = (
+        firestore_base_url()
+        + "/"
+        + quote(
+            "clientes",
+            safe=""
+        )
+        + "/"
+        + quote(
+            cliente_id,
+            safe=""
+        )
+    )
+
+
+    respuesta = requests.delete(
+        url_anterior,
+        headers=firestore_headers(),
+        timeout=10
+    )
+
+
+    if not respuesta.ok:
+
+        return """
+        <script>
+            alert("⚠️ El nuevo NIT fue creado, pero no fue posible eliminar el NIT anterior. No realice más cambios y revise Firebase.");
+            window.location.href = "/ver-clientes";
+        </script>
+        """, 500
+
+
+    # -----------------------------------------------------
+    # ÉXITO
+    # -----------------------------------------------------
+
+    return """
+    <script>
+        alert("✅ NIT actualizado correctamente. Los pedidos también fueron migrados al nuevo NIT.");
+        window.location.href = "/ver-clientes";
+    </script>
+    """
+
+
+
 # =========================================================
 # VERCEL / FLASK
 # =========================================================
