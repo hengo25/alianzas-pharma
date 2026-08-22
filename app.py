@@ -1301,12 +1301,38 @@ placeholder="Escribe el NIT de la Droguería"
 required
 >
 
-<input
-type="password"
-name="password"
-placeholder="Contraseña secreta"
-required
->
+<div style="position:relative;">
+
+    <input
+        type="password"
+        id="password_cliente"
+        name="password"
+        placeholder="Contraseña secreta"
+        required
+        style="padding-right:48px;"
+    >
+
+    <button
+        type="button"
+        onclick="mostrarClaveCliente()"
+        id="ojo_password_cliente"
+        style="
+            position:absolute;
+            right:12px;
+            top:50%;
+            transform:translateY(-50%);
+            border:none;
+            background:transparent;
+            cursor:pointer;
+            font-size:20px;
+            padding:0;
+        "
+        title="Mostrar contraseña"
+    >
+        👁️
+    </button>
+
+</div>
 
 <button
 type="submit"
@@ -1336,6 +1362,39 @@ Olvidé mi clave
 </div>
 
 </div>
+
+<script>
+
+    function mostrarClaveCliente() {
+
+        const campo =
+            document.getElementById(
+                "password_cliente"
+            );
+
+        const boton =
+            document.getElementById(
+                "ojo_password_cliente"
+            );
+
+        if (campo.type === "password") {
+
+            campo.type = "text";
+            boton.innerText = "🙈";
+            boton.title = "Ocultar contraseña";
+
+        } else {
+
+            campo.type = "password";
+            boton.innerText = "👁️";
+            boton.title = "Mostrar contraseña";
+
+        }
+
+    }
+
+</script>
+
 
 </body>
 
