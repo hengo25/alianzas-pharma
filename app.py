@@ -1793,15 +1793,9 @@ Intentar de Nuevo
             f"✅ LOGIN CORRECTO: {nit}"
         )
 
-
-        lista_productos = obtener_productos()
-
-
         resp = make_response(
-            render_template(
-                "index.html",
-                productos=lista_productos,
-                cliente=datos_cliente
+            redirect(
+                url_for("inicio")
             )
         )
 
