@@ -8592,6 +8592,229 @@ def cambiar_nit_admin(cliente_id):
     """
 
 # =========================================================
+# SUBIR IMAGEN A CLOUDINARY
+# =========================================================
+
+def subir_imagen_cloudinary(archivo):
+
+    cloud_name = os.environ.get(
+        "CLOUDINARY_CLOUD_NAME",
+        ""
+    ).strip()
+
+    api_key = os.environ.get(
+        "CLOUDINARY_API_KEY",
+        ""
+    ).strip()
+
+    api_secret = os.environ.get(
+        "CLOUDINARY_API_SECRET",
+        ""
+    ).strip()
+
+
+    # -----------------------------------------------------
+    # VERIFICAR CONFIGURACIÓN
+    # -----------------------------------------------------
+
+    if (
+        not cloud_name
+        or not api_key
+        or not api_secret
+    ):
+
+        return (
+            None,
+            "Cloudinary no está configurado correctamente."
+        )
+
+
+    if (
+        not archivo
+        or not archivo.filename
+    ):
+
+        return (
+            None,
+            "No se seleccionó ninguna imagen."
+        )
+
+
+    # -----------------------------------------------------
+    # VALIDAR TIPO DE ARCHIVO
+    # -----------------------------------------------------
+
+    tipos_permitidos = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ]
+
+
+    if archivo.mimetype not in tipos_permitidos:
+
+        return (
+            None,
+            "La imagen debe ser JPG, PNG o WEBP."
+        )
+
+
+    # -----------------------------------------------------
+    # LEER ARCHIVO
+    # -----------------------------------------------------
+
+    contenido = archivo.read()
+
+
+    # Máximo 3 MB
+
+    if len(contenido) > 3 * 1024 * 1024:
+
+        return (
+            None,
+            "La imagen no puede superar los 3 MB."
+        )
+
+
+    # -----------------------------------------------------
+    # CREAR FIRMA CLOUDINARY
+    # -----------------------------------------------------
+
+    timestamp = int(
+        datetime.now(
+            timezone.utc
+        ).timestamp()
+    )
+
+
+    carpeta = (
+        "alianzas_pharma/banners"
+    )
+
+
+    public_id = (
+        "banner_"
+        + uuid.uuid4().hex[:12]
+    )
+
+
+    texto_firma = (
+        "folder="
+        + carpeta
+        + "&public_id="
+        + public_id
+        + "&timestamp="
+        + str(timestamp)
+        + api_secret
+    )
+
+
+    firma = hashlib.sha1(
+        texto_firma.encode(
+            "utf-8"
+        )
+    ).hexdigest()
+
+
+    # -----------------------------------------------------
+    # SUBIR A CLOUDINARY
+    # -----------------------------------------------------
+
+    url = (
+        "https://api.cloudinary.com/v1_1/"
+        + cloud_name
+        + "/image/upload"
+    )
+
+
+    try:
+
+        respuesta = requests.post(
+
+            url,
+
+            data={
+                "api_key":
+                    api_key,
+
+                "timestamp":
+                    timestamp,
+
+                "signature":
+                    firma,
+
+                "folder":
+                    carpeta,
+
+                "public_id":
+                    public_id
+            },
+
+            files={
+                "file": (
+                    archivo.filename,
+                    contenido,
+                    archivo.mimetype
+                )
+            },
+
+            timeout=30
+
+        )
+
+
+        if not respuesta.ok:
+
+            print(
+                "❌ ERROR CLOUDINARY:",
+                respuesta.status_code,
+                respuesta.text
+            )
+
+            return (
+                None,
+                "No fue posible subir la imagen."
+            )
+
+
+        datos = respuesta.json()
+
+
+        imagen_url = datos.get(
+            "secure_url",
+            ""
+        )
+
+
+        if not imagen_url:
+
+            return (
+                None,
+                "Cloudinary no devolvió la URL de la imagen."
+            )
+
+
+        return (
+            imagen_url,
+            None
+        )
+
+
+    except Exception as e:
+
+        print(
+            "❌ ERROR SUBIENDO IMAGEN A CLOUDINARY:",
+            e
+        )
+
+        return (
+            None,
+            "Ocurrió un error al subir la imagen."
+        )
+
+
+
+# =========================================================
 # ADMIN - GESTIONAR BANNER PRINCIPAL
 # =========================================================
 
@@ -8695,6 +8918,66 @@ def gestionar_banner():
         "imagen",
         ""
     ).strip()
+
+
+    # -----------------------------------------------------
+    # IMAGEN SUBIDA DESDE EL COMPUTADOR
+    # -----------------------------------------------------
+
+    imagen_archivo = request.files.get(
+        "imagen_archivo"
+    )
+
+
+    if (
+        imagen_archivo
+        and imagen_archivo.filename
+    ):
+
+        imagen_cloudinary, error_imagen = (
+            subir_imagen_cloudinary(
+                imagen_archivo
+            )
+        )
+
+
+        if error_imagen:
+
+            return render_template(
+                "gestionar_banner.html",
+                banner={
+                    "activo":
+                        request.form.get("activo") == "on",
+
+                    "etiqueta":
+                        etiqueta,
+
+                    "titulo":
+                        titulo,
+
+                    "mensaje":
+                        mensaje,
+
+                    "imagen":
+                        imagen,
+
+                    "boton_texto":
+                        request.form.get(
+                            "boton_texto",
+                            ""
+                        ).strip(),
+
+                    "boton_link":
+                        request.form.get(
+                            "boton_link",
+                            ""
+                        ).strip()
+                },
+                error=error_imagen
+            )
+
+
+        imagen = imagen_cloudinary
 
 
     boton_texto = request.form.get(
