@@ -4856,21 +4856,46 @@ def admin_login():
                 action="/login"
             >
 
+            <div style="position:relative;">
 
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Contraseña de administrador"
-                    required
-                    style="
-                    box-sizing:border-box;
-                    width:100%;
-                    padding:12px;
-                    border:1px solid #cbd5e1;
-                    border-radius:8px;
-                    margin-bottom:15px;
-                    "
-                >
+    <input
+        type="password"
+        id="password_admin"
+        name="password"
+        placeholder="Contraseña de administrador"
+        required
+        style="
+            box-sizing:border-box;
+            width:100%;
+            padding:12px;
+            padding-right:48px;
+            border:1px solid #cbd5e1;
+            border-radius:8px;
+            margin-bottom:15px;
+        "
+    >
+
+    <button
+        type="button"
+        id="ojo_password_admin"
+        onclick="mostrarClaveAdmin()"
+        style="
+            position:absolute;
+            right:12px;
+            top:12px;
+            border:none;
+            background:transparent;
+            cursor:pointer;
+            font-size:20px;
+            padding:0;
+        "
+        title="Mostrar contraseña"
+    >
+        👁️
+    </button>
+
+</div>
+                
 
 
                 <button
@@ -4897,7 +4922,38 @@ def admin_login():
 
         </div>
 
+<script>
 
+    function mostrarClaveAdmin() {
+
+        const campo =
+            document.getElementById(
+                "password_admin"
+            );
+
+        const boton =
+            document.getElementById(
+                "ojo_password_admin"
+            );
+
+        if (campo.type === "password") {
+
+            campo.type = "text";
+            boton.innerText = "🙈";
+            boton.title = "Ocultar contraseña";
+
+        } else {
+
+            campo.type = "password";
+            boton.innerText = "👁️";
+            boton.title = "Mostrar contraseña";
+
+        }
+
+    }
+
+</script>
+        
     </body>
 
     </html>
