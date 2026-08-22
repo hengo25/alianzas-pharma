@@ -1273,7 +1273,25 @@ style="
 color:#2c3e50;
 margin:0 0 5px 0;
 font-size:1.4rem;
+
 "
+
+<div
+    style="
+        text-align:center;
+        margin-bottom:18px;
+    "
+>
+    <img
+        src="/public/logo.jpeg"
+        alt="Alianzas Pharma"
+        style="
+            max-width:90px;
+            max-height:90px;
+            object-fit:contain;
+        "
+    >
+</div>
 >
 ALIANZAS PHARMA
 </h2>
@@ -1286,7 +1304,7 @@ margin-bottom:25px;
 font-weight:bold;
 "
 >
-Portal de Pedidos para Droguerías Afiliadas
+Portal de Pedidos para Droguerías Aliadas
 </p>
 
 <form
