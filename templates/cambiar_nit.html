@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Cambiar NIT - Alianzas Pharma
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 30px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .contenedor {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            padding: 35px;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo img {
+            max-height: 65px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+            font-size: 27px;
+        }
+
+        .subtitulo {
+            text-align: center;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 25px;
+        }
+
+        .info {
+            background: #f8fafc;
+            border-left: 4px solid #3498db;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 22px;
+            color: #334155;
+        }
+
+        .nit-actual {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 17px;
+            border: 1px solid #cbd5e1;
+            border-radius: 9px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #3498db;
+        }
+
+        .aviso {
+            background: #fff7ed;
+            color: #9a3412;
+            padding: 13px;
+            border-radius: 9px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 12px;
+            border-radius: 9px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .boton {
+            width: 100%;
+            background: #f39c12;
+            color: white;
+            border: none;
+            padding: 13px;
+            border-radius: 9px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .boton:hover {
+            background: #d97706;
+        }
+
+        .volver {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .volver a {
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="contenedor">
+
+    <div class="logo">
+
+        <img
+            src="/public/logo.jpeg"
+            alt="Alianzas Pharma"
+        >
+
+    </div>
+
+
+    <h1>
+        🔄 Cambiar NIT
+    </h1>
+
+    <p class="subtitulo">
+        Esta opción cambia el identificador principal de la droguería
+        y actualiza sus pedidos asociados.
+    </p>
+
+
+    {% if error %}
+
+        <div class="error">
+            ⚠️ {{ error }}
+        </div>
+
+    {% endif %}
+
+
+    <div class="info">
+
+        <div>
+            Droguería:
+        </div>
+
+        <strong>
+            {{ cliente.get('nombre', '') }}
+        </strong>
+
+        <br><br>
+
+        <div>
+            NIT actual:
+        </div>
+
+        <div class="nit-actual">
+            {{ cliente.get('nit', cliente.get('_id', '')) }}
+        </div>
+
+    </div>
+
+
+    <div class="aviso">
+        ⚠️ Al cambiar el NIT, la droguería deberá iniciar sesión
+        nuevamente utilizando el nuevo NIT. La contraseña se conservará.
+    </div>
+
+
+    <form
+        method="POST"
+        action="/cambiar-nit/{{ cliente.get('_id', cliente.get('nit', '')) }}"
+        onsubmit="return confirm('¿Está seguro de cambiar el NIT de esta droguería? Los pedidos asociados serán migrados al nuevo NIT.');"
+    >
+
+        <label for="nuevo_nit">
+            Nuevo NIT
+        </label>
+
+        <input
+            type="text"
+            id="nuevo_nit"
+            name="nuevo_nit"
+            placeholder="Escribe el nuevo NIT"
+            required
+        >
+
+
+        <label for="confirmar_nit">
+            Confirmar nuevo NIT
+        </label>
+
+        <input
+            type="text"
+            id="confirmar_nit"
+            name="confirmar_nit"
+            placeholder="Escribe nuevamente el nuevo NIT"
+            required
+        >
+
+
+        <button
+            type="submit"
+            class="boton"
+        >
+            🔄 Confirmar cambio de NIT
+        </button>
+
+    </form>
+
+
+    <div class="volver">
+
+        <a href="/ver-clientes">
+            ← Volver a Droguerías
+        </a>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>
