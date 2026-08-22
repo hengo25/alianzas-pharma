@@ -8893,6 +8893,45 @@ def gestionar_banner():
 
 
     # -----------------------------------------------------
+    # IDENTIFICAR PROMOCIÓN 1, 2 O 3
+    # -----------------------------------------------------
+
+    if request.method == "POST":
+
+        promo_num = request.form.get(
+            "promo_num",
+            "1"
+        ).strip()
+
+    else:
+
+        promo_num = request.args.get(
+            "promo",
+            "1"
+        ).strip()
+
+
+    if promo_num not in [
+        "1",
+        "2",
+        "3"
+    ]:
+
+        promo_num = "1"
+
+
+    promo_orden = int(
+        promo_num
+    )
+
+
+    promo_id = (
+        "promocion_"
+        + promo_num
+    )
+
+
+    # -----------------------------------------------------
     # VALORES PREDETERMINADOS
     # -----------------------------------------------------
 
@@ -8905,10 +8944,10 @@ def gestionar_banner():
             "✨ Novedades Alianzas Pharma",
 
         "titulo":
-            "Promoción especial para nuestros afiliados",
+            "Nueva promoción",
 
         "mensaje":
-            "Aprovecha nuestras novedades, productos destacados y promociones disponibles para tu droguería.",
+            "Escribe aquí la información de esta promoción.",
 
         "imagen":
             "/public/logo.jpeg",
@@ -8917,7 +8956,10 @@ def gestionar_banner():
             "Ver promoción →",
 
         "boton_link":
-            ""
+            "",
+
+        "orden":
+            promo_orden
 
     }
 
@@ -8929,19 +8971,43 @@ def gestionar_banner():
     if request.method == "GET":
 
         banner = obtener_documento(
-            "configuracion",
-            "banner_principal"
+            "banners",
+            promo_id
         )
+
+
+        # -------------------------------------------------
+        # PROMOCIÓN 1:
+        # SI AÚN NO EXISTE, USAR EL BANNER ANTIGUO
+        # -------------------------------------------------
+
+        if (
+            not banner
+            and promo_num == "1"
+        ):
+
+            banner = obtener_documento(
+                "configuracion",
+                "banner_principal"
+            )
 
 
         if not banner:
 
-            banner = banner_default
+            banner = dict(
+                banner_default
+            )
+
+
+        banner[
+            "orden"
+        ] = promo_orden
 
 
         return render_template(
             "gestionar_banner.html",
             banner=banner,
+            promo_num=promo_num,
             exito=request.args.get(
                 "exito",
                 ""
@@ -9004,7 +9070,9 @@ def gestionar_banner():
                 "gestionar_banner.html",
                 banner={
                     "activo":
-                        request.form.get("activo") == "on",
+                        request.form.get(
+                            "activo"
+                        ) == "on",
 
                     "etiqueta":
                         etiqueta,
@@ -9028,8 +9096,12 @@ def gestionar_banner():
                         request.form.get(
                             "boton_link",
                             ""
-                        ).strip()
+                        ).strip(),
+
+                    "orden":
+                        promo_orden
                 },
+                promo_num=promo_num,
                 error=error_imagen
             )
 
@@ -9085,9 +9157,13 @@ def gestionar_banner():
                     boton_texto,
 
                 "boton_link":
-                    boton_link
+                    boton_link,
+
+                "orden":
+                    promo_orden
             },
-            error="El título del banner es obligatorio."
+            promo_num=promo_num,
+            error="El título de la promoción es obligatorio."
         )
 
 
@@ -9097,7 +9173,7 @@ def gestionar_banner():
 
 
     # -----------------------------------------------------
-    # GUARDAR EN FIRESTORE
+    # DATOS DE LA PROMOCIÓN
     # -----------------------------------------------------
 
     banner = {
@@ -9121,14 +9197,21 @@ def gestionar_banner():
             boton_texto,
 
         "boton_link":
-            boton_link
+            boton_link,
+
+        "orden":
+            promo_orden
 
     }
 
 
+    # -----------------------------------------------------
+    # GUARDAR PROMOCIÓN EN FIRESTORE
+    # -----------------------------------------------------
+
     guardado = guardar_documento(
-        "configuracion",
-        "banner_principal",
+        "banners",
+        promo_id,
         banner
     )
 
@@ -9138,36 +9221,32 @@ def gestionar_banner():
         return render_template(
             "gestionar_banner.html",
             banner=banner,
-            error="No fue posible guardar el banner."
+            promo_num=promo_num,
+            error="No fue posible guardar la promoción."
         )
 
+
     # -----------------------------------------------------
-    # GUARDAR TAMBIÉN COMO PROMOCIÓN 1 DEL CARRUSEL
+    # MANTENER COMPATIBILIDAD CON EL BANNER ANTERIOR
+    # SOLO PARA PROMOCIÓN 1
     # -----------------------------------------------------
 
-    promocion_1 = dict(
-        banner
-    )
+    if promo_num == "1":
+
+        banner_principal = dict(
+            banner
+        )
+
+        banner_principal.pop(
+            "orden",
+            None
+        )
 
 
-    promocion_1[
-        "orden"
-    ] = 1
-
-
-    guardado_promocion = guardar_documento(
-        "banners",
-        "promocion_1",
-        promocion_1
-    )
-
-
-    if not guardado_promocion:
-
-        return render_template(
-            "gestionar_banner.html",
-            banner=banner,
-            error="El banner se guardó, pero no fue posible crear la Promoción 1 del carrusel."
+        guardar_documento(
+            "configuracion",
+            "banner_principal",
+            banner_principal
         )
 
 
@@ -9178,9 +9257,11 @@ def gestionar_banner():
     return redirect(
         url_for(
             "gestionar_banner",
+            promo=promo_num,
             exito="1"
         )
     )
+
 
 # =========================================================
 # VERCEL / FLASK
