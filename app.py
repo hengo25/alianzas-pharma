@@ -1514,16 +1514,25 @@ Olvidé mi clave
     banners_activos = banners_activos[:3]
 
 
+        # -----------------------------------------------------
+    # COMPATIBILIDAD CON EL BANNER ANTIGUO
     # -----------------------------------------------------
-    # SI TODAVÍA NO HAY CARRUSEL,
-    # USAR EL BANNER ACTUAL
+    # Solo usar el banner antiguo si TODAVÍA NO EXISTE
+    # ninguna promoción en la colección "banners".
+    # Si ya existen promociones pero están desactivadas,
+    # deben permanecer ocultas.
     # -----------------------------------------------------
 
-    if not banners_activos:
+    if not banners:
 
-        banners_activos = [
-            banner
-        ]
+        if banner.get(
+            "activo",
+            False
+        ):
+
+            banners_activos = [
+                banner
+            ]
 
     return render_template(
         "index.html",
