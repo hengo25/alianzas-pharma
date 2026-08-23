@@ -474,6 +474,72 @@
                 oninput="actualizarVistaPrevia()"
             >{{ banner.get('mensaje', '') }}</textarea>
 
+            <div
+    style="
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:18px;
+        margin-bottom:18px;
+    "
+>
+
+    <div>
+
+        <label for="fecha_inicio">
+            📅 Fecha de inicio
+        </label>
+
+        <input
+            type="date"
+            id="fecha_inicio"
+            name="fecha_inicio"
+            value="{{ banner.get('fecha_inicio', '') }}"
+            style="
+                width:100%;
+                padding:12px 14px;
+                border:1px solid #cbd5e1;
+                border-radius:8px;
+                font-size:15px;
+                background:white;
+            "
+        >
+
+    </div>
+
+
+    <div>
+
+        <label for="fecha_fin">
+            📅 Fecha de finalización
+        </label>
+
+        <input
+            type="date"
+            id="fecha_fin"
+            name="fecha_fin"
+            value="{{ banner.get('fecha_fin', '') }}"
+            style="
+                width:100%;
+                padding:12px 14px;
+                border:1px solid #cbd5e1;
+                border-radius:8px;
+                font-size:15px;
+                background:white;
+            "
+        >
+
+    </div>
+
+</div>
+
+<div
+    class="ayuda"
+    style="margin-top:-10px;"
+>
+    Puedes dejar las fechas vacías si quieres que la promoción
+    permanezca disponible sin límite de tiempo.
+</div>
+
 
             <label for="imagen">
                 Imagen del banner
