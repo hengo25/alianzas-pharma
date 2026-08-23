@@ -896,22 +896,95 @@ document.addEventListener(
         // Bajar suavemente hasta el buscador.
 
         setTimeout(
-            function() {
+    function() {
 
-                buscador.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center"
-                });
+        const tarjetas =
+            document.querySelectorAll(
+                ".tarjeta-prod"
+            );
 
-                buscador.focus();
 
-            },
-            250
-        );
+        let productoEncontrado = null;
 
-    }
+
+        for (
+            let i = 0;
+            i < tarjetas.length;
+            i++
+        ) {
+
+            if (
+                tarjetas[i].style.display
+                !== "none"
+            ) {
+
+                productoEncontrado =
+                    tarjetas[i];
+
+                break;
+            }
+
+        }
+
+
+        if (productoEncontrado) {
+
+            productoEncontrado.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+
+            // Resaltar temporalmente
+            // el producto encontrado.
+
+            productoEncontrado.style.outline =
+                "3px solid #8b5cf6";
+
+            productoEncontrado.style.outlineOffset =
+                "4px";
+
+            productoEncontrado.style.boxShadow =
+                "0 0 0 7px rgba(139,92,246,0.15), 0 10px 30px rgba(0,0,0,0.12)";
+
+            productoEncontrado.style.transition =
+                "all 0.3s ease";
+
+
+            setTimeout(
+                function() {
+
+                    productoEncontrado.style.removeProperty(
+                        "outline"
+                    );
+
+                    productoEncontrado.style.removeProperty(
+                        "outline-offset"
+                    );
+
+                    productoEncontrado.style.removeProperty(
+                        "box-shadow"
+                    );
+
+                },
+                3000
+            );
+
+        } else {
+
+            buscador.scrollIntoView({
+                behavior: "smooth",
+                block: "center"
+            });
+
+        }
+
+    },
+    300
 );
+    }
 
+);
 </script>
 
 
