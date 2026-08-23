@@ -455,6 +455,25 @@ setInterval(
     <div class="layout-tienda">
         <div class="columna-izquierda">
             <input type="text" id="buscador" class="search-box" placeholder="🔍 Buscar medicamento por nombre..." onkeyup="filtrar()"><br>
+            <button
+    type="button"
+    id="btn-ver-todos"
+    onclick="volverCatalogoCompleto()"
+    style="
+        display:none;
+        margin:12px auto 18px auto;
+        border:1px solid #3498db;
+        background:white;
+        color:#3498db;
+        padding:9px 18px;
+        border-radius:20px;
+        font-weight:bold;
+        cursor:pointer;
+        font-size:14px;
+    "
+    >
+    ← Volver a ver todo el catálogo
+</button>
             <div class="row">
                 {% for p in productos %}
                 <div class="card {% if p.existencias <= 0 %}agotado{% endif %} tarjeta-prod">
@@ -657,14 +676,74 @@ setInterval(
         }
 
         function filtrar() {
-            let f = document.getElementById("buscador").value.toLowerCase(); 
-            let t = document.querySelectorAll(".tarjeta-prod");
-            if (f === "") { pagi(0); return; }
-            for(let i=0; i<t.length; i++) { 
-                let n = t[i].querySelector(".name-f").innerText.toLowerCase(); 
-                t[i].style.display = n.includes(f) ? "" : "none"; 
-            }
-        }
+    let f = document.getElementById("buscador").value.toLowerCase(); 
+    let t = document.querySelectorAll(".tarjeta-prod");
+
+    let botonVerTodos =
+        document.getElementById(
+            "btn-ver-todos"
+        );
+
+    if (botonVerTodos) {
+
+        botonVerTodos.style.display =
+            f.trim() !== ""
+                ? "block"
+                : "none";
+
+    }
+
+    if (f === "") { 
+        pagi(0); 
+        return; 
+    }
+
+    for(let i=0; i<t.length; i++) { 
+        let n = t[i].querySelector(".name-f").innerText.toLowerCase(); 
+        t[i].style.display = n.includes(f) ? "" : "none"; 
+    }
+}
+
+
+/* VOLVER A MOSTRAR TODO EL CATÁLOGO */
+
+function volverCatalogoCompleto() {
+
+    const buscador =
+        document.getElementById(
+            "buscador"
+        );
+
+    const boton =
+        document.getElementById(
+            "btn-ver-todos"
+        );
+
+    buscador.value = "";
+
+    pg = 1;
+
+    pagi(0);
+
+    if (boton) {
+
+        boton.style.display =
+            "none";
+
+    }
+
+    window.history.replaceState(
+        {},
+        "",
+        window.location.pathname
+    );
+
+    buscador.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+    });
+
+}
 
         function alterarCar(index, cambio) {
             let item = car[index]; 
