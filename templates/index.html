@@ -788,9 +788,30 @@ setInterval(
 });
         }
 
+        window.onload = function() {
+
+    const buscador =
+        document.getElementById(
+            "buscador"
+        );
+
+    if (
+        buscador
+        && buscador.value.trim() !== ""
+    ) {
+
+        filtrar();
+
+    } else {
+
+        pagi(0);
+
+    }
+
+};
 
         
-        window.onload = function() { pagi(0); };
+       
     </script>
 
     <!-- 🟢 MODAL DE CARGA MAESTRO DE ALIANZAS PHARMA -->
