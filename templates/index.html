@@ -819,5 +819,80 @@ setInterval(
     </style>
 
 
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        const parametros =
+            new URLSearchParams(
+                window.location.search
+            );
+
+
+        const productoBuscar =
+            parametros.get(
+                "buscar"
+            );
+
+
+        if (!productoBuscar) {
+            return;
+        }
+
+
+        const buscador =
+            document.getElementById(
+                "buscador"
+            );
+
+
+        if (!buscador) {
+            return;
+        }
+
+
+        // Colocar automáticamente el producto
+        // enviado desde la promoción.
+
+        buscador.value =
+            productoBuscar;
+
+
+        // Ejecutar el filtro que ya existe
+        // en el catálogo.
+
+        if (
+            typeof filtrar === "function"
+        ) {
+
+            filtrar();
+
+        }
+
+
+        // Bajar suavemente hasta el buscador.
+
+        setTimeout(
+            function() {
+
+                buscador.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center"
+                });
+
+                buscador.focus();
+
+            },
+            250
+        );
+
+    }
+);
+
+</script>
+
+
 </body>
 </html>
