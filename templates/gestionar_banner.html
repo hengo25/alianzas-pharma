@@ -525,6 +525,47 @@
                 por ejemplo: /public/logo.jpeg
             </div>
 
+            <label for="producto_promocion">
+    🛒 Producto relacionado
+</label>
+
+<select
+    id="producto_promocion"
+    onchange="seleccionarProductoPromocion()"
+    style="
+        width:100%;
+        padding:12px 14px;
+        border:1px solid #cbd5e1;
+        border-radius:8px;
+        font-size:15px;
+        margin-bottom:18px;
+        background:white;
+        color:#334155;
+        cursor:pointer;
+    "
+>
+    <option value="">
+        -- Selecciona un producto del catálogo --
+    </option>
+
+    {% for producto in productos %}
+
+        <option value="{{ producto.get('nombre', '') }}">
+            {{ producto.get('nombre', '') }}
+        </option>
+
+    {% endfor %}
+
+</select>
+
+<div
+    class="ayuda"
+    style="margin-top:-12px;"
+>
+    Al seleccionar un producto se configurará automáticamente
+    el botón para llevar al cliente directamente a ese producto.
+</div>
+
 
             <div class="fila">
 
@@ -763,6 +804,51 @@ function actualizarVistaPrevia() {
         imagen || "/public/logo.jpeg";
 
 }
+
+
+function seleccionarProductoPromocion() {
+
+    const selector =
+        document.getElementById(
+            "producto_promocion"
+        );
+
+    const nombreProducto =
+        selector.value.trim();
+
+
+    if (!nombreProducto) {
+        return;
+    }
+
+
+    const campoTexto =
+        document.getElementById(
+            "boton_texto"
+        );
+
+
+    const campoEnlace =
+        document.getElementById(
+            "boton_link"
+        );
+
+
+    campoTexto.value =
+        "Ver producto →";
+
+
+    campoEnlace.value =
+        "/?buscar="
+        + encodeURIComponent(
+            nombreProducto
+        );
+
+
+    actualizarVistaPrevia();
+
+}
+
 
 </script>
 
