@@ -1477,21 +1477,117 @@ Olvidé mi clave
         "banners"
     )
 
-
     banners_activos = []
 
 
-    for item in banners:
+    # -----------------------------------------------------
+    # FECHA ACTUAL DE COLOMBIA
+    # -----------------------------------------------------
 
-        if item.get(
+    zona_colombia = timezone(
+        timedelta(
+            hours=-5
+        )
+    )
+
+
+    hoy_colombia = datetime.now(
+        zona_colombia
+    ).date()
+
+
+    # -----------------------------------------------------
+    # VERIFICAR SI UNA PROMOCIÓN ESTÁ VIGENTE
+    # -----------------------------------------------------
+
+    def promocion_esta_vigente(item):
+
+        if not item.get(
             "activo",
             False
+        ):
+
+            return False
+
+
+        fecha_inicio = str(
+            item.get(
+                "fecha_inicio",
+                ""
+            )
+        ).strip()
+
+
+        fecha_fin = str(
+            item.get(
+                "fecha_fin",
+                ""
+            )
+        ).strip()
+
+
+        # ---------------------------------------------
+        # FECHA DE INICIO
+        # ---------------------------------------------
+
+        if fecha_inicio:
+
+            try:
+
+                inicio = datetime.strptime(
+                    fecha_inicio,
+                    "%Y-%m-%d"
+                ).date()
+
+
+                if hoy_colombia < inicio:
+
+                    return False
+
+            except:
+
+                pass
+
+
+        # ---------------------------------------------
+        # FECHA DE FINALIZACIÓN
+        # ---------------------------------------------
+
+        if fecha_fin:
+
+            try:
+
+                fin = datetime.strptime(
+                    fecha_fin,
+                    "%Y-%m-%d"
+                ).date()
+
+
+                if hoy_colombia > fin:
+
+                    return False
+
+            except:
+
+                pass
+
+
+        return True
+
+
+    # -----------------------------------------------------
+    # PROMOCIONES ACTIVAS Y DENTRO DE SU FECHA
+    # -----------------------------------------------------
+
+    for item in banners:
+
+        if promocion_esta_vigente(
+            item
         ):
 
             banners_activos.append(
                 item
             )
-
 
     # -----------------------------------------------------
     # ORDENAR PROMOCIONES
@@ -1525,9 +1621,8 @@ Olvidé mi clave
 
     if not banners:
 
-        if banner.get(
-            "activo",
-            False
+        if promocion_esta_vigente(
+            banner
         ):
 
             banners_activos = [
@@ -8970,11 +9065,16 @@ def gestionar_banner():
             "Ver promoción →",
 
         "boton_link":
+             "",
+
+        "fecha_inicio":
+            "",
+
+        "fecha_fin":
             "",
 
         "orden":
             promo_orden
-
     }
 
 
@@ -9033,6 +9133,144 @@ def gestionar_banner():
     # -----------------------------------------------------
     # RECIBIR DATOS DEL FORMULARIO
     # -----------------------------------------------------
+
+    fecha_inicio = request.form.get(
+        "fecha_inicio",
+        ""
+    ).strip()
+
+
+    fecha_fin = request.form.get(
+        "fecha_fin",
+        ""
+    ).strip()
+
+    # -----------------------------------------------------
+    # VALIDAR FECHAS DE LA PROMOCIÓN
+    # -----------------------------------------------------
+
+    if (
+        fecha_inicio
+        and fecha_fin
+    ):
+
+        try:
+
+            inicio_validar = datetime.strptime(
+                fecha_inicio,
+                "%Y-%m-%d"
+            ).date()
+
+
+            fin_validar = datetime.strptime(
+                fecha_fin,
+                "%Y-%m-%d"
+            ).date()
+
+
+            if fin_validar < inicio_validar:
+
+                return render_template(
+                    "gestionar_banner.html",
+                    banner={
+                        "activo":
+                            request.form.get(
+                                "activo"
+                            ) == "on",
+
+                        "etiqueta":
+                            etiqueta,
+
+                        "titulo":
+                            titulo,
+
+                        "mensaje":
+                            mensaje,
+
+                        "fecha_inicio":
+                            fecha_inicio,
+
+                        "fecha_fin":
+                            fecha_fin,
+
+                        "imagen":
+                            request.form.get(
+                                "imagen",
+                                ""
+                            ).strip(),
+
+                        "boton_texto":
+                            request.form.get(
+                                "boton_texto",
+                                ""
+                            ).strip(),
+
+                        "boton_link":
+                            request.form.get(
+                                "boton_link",
+                                ""
+                            ).strip(),
+
+                        "orden":
+                            promo_orden
+                    },
+                    promo_num=promo_num,
+                    productos=lista_productos,
+                    error="La fecha de finalización no puede ser anterior a la fecha de inicio."
+                )
+
+
+        except ValueError:
+
+            return render_template(
+                "gestionar_banner.html",
+                banner={
+                    "activo":
+                        request.form.get(
+                            "activo"
+                        ) == "on",
+
+                    "etiqueta":
+                        etiqueta,
+
+                    "titulo":
+                        titulo,
+
+                    "mensaje":
+                        mensaje,
+
+                    "fecha_inicio":
+                        fecha_inicio,
+
+                    "fecha_fin":
+                        fecha_fin,
+
+                    "imagen":
+                        request.form.get(
+                            "imagen",
+                            ""
+                        ).strip(),
+
+                    "boton_texto":
+                        request.form.get(
+                            "boton_texto",
+                            ""
+                        ).strip(),
+
+                    "boton_link":
+                        request.form.get(
+                            "boton_link",
+                            ""
+                        ).strip(),
+
+                    "orden":
+                        promo_orden
+                },
+                promo_num=promo_num,
+                productos=lista_productos,
+                error="Las fechas ingresadas no son válidas."
+            )
+
 
     etiqueta = request.form.get(
         "etiqueta",
@@ -9097,6 +9335,12 @@ def gestionar_banner():
 
                     "mensaje":
                         mensaje,
+
+                    "fecha_inicio":
+                      fecha_inicio,
+
+                    "fecha_fin":
+                        fecha_fin,
 
                     "imagen":
                         imagen,
