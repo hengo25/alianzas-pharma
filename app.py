@@ -8900,6 +8900,11 @@ def gestionar_banner():
             url_for("admin_login")
         )
 
+    # -----------------------------------------------------
+    # PRODUCTOS DISPONIBLES PARA RELACIONAR PROMOCIÓN
+    # -----------------------------------------------------
+
+    lista_productos = obtener_productos()
 
     # -----------------------------------------------------
     # IDENTIFICAR PROMOCIÓN 1, 2 O 3
@@ -9017,6 +9022,7 @@ def gestionar_banner():
             "gestionar_banner.html",
             banner=banner,
             promo_num=promo_num,
+            productos=lista_productos,
             exito=request.args.get(
                 "exito",
                 ""
