@@ -849,6 +849,75 @@ function seleccionarProductoPromocion() {
 
 }
 
+function recordarProductoRelacionado() {
+
+    const selector =
+        document.getElementById(
+            "producto_promocion"
+        );
+
+    const campoEnlace =
+        document.getElementById(
+            "boton_link"
+        );
+
+
+    if (
+        !selector
+        || !campoEnlace
+    ) {
+        return;
+    }
+
+
+    const enlace =
+        campoEnlace.value.trim();
+
+
+    if (!enlace) {
+        return;
+    }
+
+
+    try {
+
+        const url =
+            new URL(
+                enlace,
+                window.location.origin
+            );
+
+
+        const producto =
+            url.searchParams.get(
+                "buscar"
+            );
+
+
+        if (!producto) {
+            return;
+        }
+
+
+        selector.value =
+            producto;
+
+    } catch (error) {
+
+        console.log(
+            "No fue posible identificar el producto relacionado."
+        );
+
+    }
+
+}
+
+
+document.addEventListener(
+    "DOMContentLoaded",
+    recordarProductoRelacionado
+);
+
 
 </script>
 
