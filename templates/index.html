@@ -58,6 +58,19 @@
 
 }
 
+@media (max-width: 700px) {
+
+    .galeria-institucional {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+    }
+
+    .galeria-institucional > div {
+        height: 160px !important;
+    }
+
+}
+
 
     </style>
 </head>
@@ -721,6 +734,7 @@ setInterval(
     <!-- GALERÍA -->
 
     <div
+    class="galeria-institucional"
     style="
         display:grid;
         grid-template-columns:repeat(
