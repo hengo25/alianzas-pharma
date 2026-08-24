@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Sección Institucional - Alianzas Pharma
+    </title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px;
+            background: #f4f6f9;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #243b53;
+        }
+
+        .contenedor {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .superior {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .titulo-superior {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .titulo-superior img {
+            width: 65px;
+            height: 65px;
+            object-fit: contain;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .volver {
+            background: #3498db;
+            color: white;
+            padding: 11px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+            margin-bottom: 25px;
+        }
+
+        .panel h2 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #334155;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 18px;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .activo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 9px;
+            margin-bottom: 22px;
+        }
+
+        .activo input {
+            width: 20px;
+            height: 20px;
+        }
+
+        .activo label {
+            margin: 0;
+        }
+
+        .galeria-admin {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .foto-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px;
+            background: #f8fafc;
+        }
+
+        .foto-card h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+        }
+
+        .preview {
+            width: 100%;
+            height: 190px;
+            background: white;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .sin-foto {
+            color: #94a3b8;
+            font-size: 14px;
+            text-align: center;
+            padding: 15px;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 11px;
+            border: 1px dashed #8b5cf6;
+            border-radius: 8px;
+            background: #faf8ff;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .eliminar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #b91c1c;
+        }
+
+        .eliminar label {
+            color: #b91c1c;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .guardar {
+            width: 100%;
+            border: none;
+            background: #8b5cf6;
+            color: white;
+            padding: 14px;
+            border-radius: 9px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 25px;
+        }
+
+        .mensaje-exito {
+            background: #dcfce7;
+            color: #166534;
+            padding: 14px;
+            border-radius: 9px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .mensaje-error {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 14px;
+            border-radius: 9px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .ayuda {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 700px) {
+
+            body {
+                padding: 15px;
+            }
+
+            .galeria-admin {
+                grid-template-columns: 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="contenedor">
+
+    <div class="superior">
+
+        <div class="titulo-superior">
+
+            <img
+                src="/public/logo.jpeg"
+                alt="Alianzas Pharma"
+            >
+
+            <div>
+
+                <h1>
+                    🏢 Sección Institucional
+                </h1>
+
+                <div style="color:#64748b;margin-top:5px;">
+                    Conoce Alianzas Pharma
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <a
+            href="/admin"
+            class="volver"
+        >
+            ← Volver al Panel
+        </a>
+
+    </div>
+
+
+    {% if exito %}
+
+        <div class="mensaje-exito">
+            ✅ Sección institucional actualizada correctamente.
+        </div>
+
+    {% endif %}
+
+
+    {% if error %}
+
+        <div class="mensaje-error">
+            ⚠️ {{ error }}
+        </div>
+
+    {% endif %}
+
+
+    <form
+        method="POST"
+        action="/admin/institucional"
+        enctype="multipart/form-data"
+    >
+
+        <div class="panel">
+
+            <h2>
+                ✏️ Información de la empresa
+            </h2>
+
+
+            <div class="activo">
+
+                <input
+                    type="checkbox"
+                    id="activo"
+                    name="activo"
+                    {% if institucional.get('activo', False) %}checked{% endif %}
+                >
+
+                <label for="activo">
+                    Mostrar esta sección en el portal de clientes
+                </label>
+
+            </div>
+
+
+            <label for="titulo">
+                Título
+            </label>
+
+            <input
+                type="text"
+                id="titulo"
+                name="titulo"
+                value="{{ institucional.get('titulo', '') }}"
+                placeholder="Ej. Conoce Alianzas Pharma"
+                required
+            >
+
+
+            <label for="subtitulo">
+                Subtítulo
+            </label>
+
+            <input
+                type="text"
+                id="subtitulo"
+                name="subtitulo"
+                value="{{ institucional.get('subtitulo', '') }}"
+                placeholder="Ej. Más que un proveedor, un aliado para tu droguería"
+            >
+
+
+            <label for="texto">
+                Texto institucional
+            </label>
+
+            <textarea
+                id="texto"
+                name="texto"
+                placeholder="Cuenta brevemente quiénes son y qué ofrecen..."
+            >{{ institucional.get('texto', '') }}</textarea>
+
+
+            <div class="ayuda">
+                Puedes cambiar estos textos cuando quieras desde el administrador.
+            </div>
+
+        </div>
+
+
+        <div class="panel">
+
+            <h2>
+                📷 Fotografías de la empresa
+            </h2>
+
+            <p style="color:#64748b;">
+                Puedes usar hasta 4 fotografías. No es obligatorio llenar
+                todos los espacios.
+            </p>
+
+
+            <div class="galeria-admin">
+
+
+                <!-- FOTO 1 -->
+
+                <div class="foto-card">
+
+                    <h3>Foto 1</h3>
+
+                    <input
+                        type="hidden"
+                        name="foto_1"
+                        value="{{ institucional.get('foto_1', '') }}"
+                    >
+
+                    <div class="preview" id="preview-contenedor-1">
+
+                        {% if institucional.get('foto_1', '') %}
+
+                            <img
+                                id="preview-foto-1"
+                                src="{{ institucional.get('foto_1') }}"
+                                alt="Foto 1"
+                            >
+
+                        {% else %}
+
+                            <div
+                                class="sin-foto"
+                                id="sin-foto-1"
+                            >
+                                📷 Sin fotografía
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    <input
+                        type="file"
+                        name="foto_1_archivo"
+                        accept="image/jpeg,image/png,image/webp"
+                        onchange="previsualizarFoto(this, 1)"
+                    >
+
+                    {% if institucional.get('foto_1', '') %}
+
+                    <div class="eliminar">
+
+                        <input
+                            type="checkbox"
+                            id="eliminar_foto_1"
+                            name="eliminar_foto_1"
+                        >
+
+                        <label for="eliminar_foto_1">
+                            Quitar esta foto
+                        </label>
+
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- FOTO 2 -->
+
+                <div class="foto-card">
+
+                    <h3>Foto 2</h3>
+
+                    <input
+                        type="hidden"
+                        name="foto_2"
+                        value="{{ institucional.get('foto_2', '') }}"
+                    >
+
+                    <div class="preview" id="preview-contenedor-2">
+
+                        {% if institucional.get('foto_2', '') %}
+
+                            <img
+                                id="preview-foto-2"
+                                src="{{ institucional.get('foto_2') }}"
+                                alt="Foto 2"
+                            >
+
+                        {% else %}
+
+                            <div class="sin-foto">
+                                📷 Sin fotografía
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    <input
+                        type="file"
+                        name="foto_2_archivo"
+                        accept="image/jpeg,image/png,image/webp"
+                        onchange="previsualizarFoto(this, 2)"
+                    >
+
+                    {% if institucional.get('foto_2', '') %}
+
+                    <div class="eliminar">
+
+                        <input
+                            type="checkbox"
+                            id="eliminar_foto_2"
+                            name="eliminar_foto_2"
+                        >
+
+                        <label for="eliminar_foto_2">
+                            Quitar esta foto
+                        </label>
+
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- FOTO 3 -->
+
+                <div class="foto-card">
+
+                    <h3>Foto 3</h3>
+
+                    <input
+                        type="hidden"
+                        name="foto_3"
+                        value="{{ institucional.get('foto_3', '') }}"
+                    >
+
+                    <div class="preview" id="preview-contenedor-3">
+
+                        {% if institucional.get('foto_3', '') %}
+
+                            <img
+                                id="preview-foto-3"
+                                src="{{ institucional.get('foto_3') }}"
+                                alt="Foto 3"
+                            >
+
+                        {% else %}
+
+                            <div class="sin-foto">
+                                📷 Sin fotografía
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    <input
+                        type="file"
+                        name="foto_3_archivo"
+                        accept="image/jpeg,image/png,image/webp"
+                        onchange="previsualizarFoto(this, 3)"
+                    >
+
+                    {% if institucional.get('foto_3', '') %}
+
+                    <div class="eliminar">
+
+                        <input
+                            type="checkbox"
+                            id="eliminar_foto_3"
+                            name="eliminar_foto_3"
+                        >
+
+                        <label for="eliminar_foto_3">
+                            Quitar esta foto
+                        </label>
+
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- FOTO 4 -->
+
+                <div class="foto-card">
+
+                    <h3>Foto 4</h3>
+
+                    <input
+                        type="hidden"
+                        name="foto_4"
+                        value="{{ institucional.get('foto_4', '') }}"
+                    >
+
+                    <div class="preview" id="preview-contenedor-4">
+
+                        {% if institucional.get('foto_4', '') %}
+
+                            <img
+                                id="preview-foto-4"
+                                src="{{ institucional.get('foto_4') }}"
+                                alt="Foto 4"
+                            >
+
+                        {% else %}
+
+                            <div class="sin-foto">
+                                📷 Sin fotografía
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    <input
+                        type="file"
+                        name="foto_4_archivo"
+                        accept="image/jpeg,image/png,image/webp"
+                        onchange="previsualizarFoto(this, 4)"
+                    >
+
+                    {% if institucional.get('foto_4', '') %}
+
+                    <div class="eliminar">
+
+                        <input
+                            type="checkbox"
+                            id="eliminar_foto_4"
+                            name="eliminar_foto_4"
+                        >
+
+                        <label for="eliminar_foto_4">
+                            Quitar esta foto
+                        </label>
+
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+
+            </div>
+
+
+            <button
+                type="submit"
+                class="guardar"
+            >
+                💾 Guardar Sección Institucional
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+<script>
+
+function previsualizarFoto(input, numero) {
+
+    if (
+        !input.files
+        || !input.files[0]
+    ) {
+        return;
+    }
+
+
+    const archivo =
+        input.files[0];
+
+
+    const tiposPermitidos = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
+
+
+    if (
+        !tiposPermitidos.includes(
+            archivo.type
+        )
+    ) {
+
+        alert(
+            "La fotografía debe ser JPG, PNG o WEBP."
+        );
+
+        input.value = "";
+
+        return;
+    }
+
+
+    if (
+        archivo.size
+        > 3 * 1024 * 1024
+    ) {
+
+        alert(
+            "La fotografía no puede superar los 3 MB."
+        );
+
+        input.value = "";
+
+        return;
+    }
+
+
+    const lector =
+        new FileReader();
+
+
+    lector.onload = function(evento) {
+
+        const contenedor =
+            document.getElementById(
+                "preview-contenedor-"
+                + numero
+            );
+
+
+        contenedor.innerHTML = "";
+
+
+        const imagen =
+            document.createElement(
+                "img"
+            );
+
+
+        imagen.src =
+            evento.target.result;
+
+
+        imagen.style.width =
+            "100%";
+
+
+        imagen.style.height =
+            "100%";
+
+
+        imagen.style.objectFit =
+            "cover";
+
+
+        contenedor.appendChild(
+            imagen
+        );
+
+    };
+
+
+    lector.readAsDataURL(
+        archivo
+    );
+
+}
+
+</script>
+
+</body>
+
+</html>
