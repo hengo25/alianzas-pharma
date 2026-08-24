@@ -9120,6 +9120,129 @@ def gestionar_banner():
     )
 
 
+        # -----------------------------------------------------
+    # ESTADO DE LAS 3 PROMOCIONES
+    # -----------------------------------------------------
+
+    zona_colombia = timezone(
+        timedelta(
+            hours=-5
+        )
+    )
+
+    hoy_colombia = datetime.now(
+        zona_colombia
+    ).date()
+
+
+    def calcular_estado_promocion(datos):
+
+        if not datos:
+
+            return "sin_configurar"
+
+
+        if not datos.get(
+            "activo",
+            False
+        ):
+
+            return "desactivada"
+
+
+        fecha_inicio = str(
+            datos.get(
+                "fecha_inicio",
+                ""
+            )
+        ).strip()
+
+
+        fecha_fin = str(
+            datos.get(
+                "fecha_fin",
+                ""
+            )
+        ).strip()
+
+
+        def convertir_fecha(valor):
+
+            if not valor:
+
+                return None
+
+
+            for formato in [
+                "%Y-%m-%d",
+                "%d/%m/%Y"
+            ]:
+
+                try:
+
+                    return datetime.strptime(
+                        valor,
+                        formato
+                    ).date()
+
+                except ValueError:
+
+                    continue
+
+
+            return None
+
+
+        inicio = convertir_fecha(
+            fecha_inicio
+        )
+
+        fin = convertir_fecha(
+            fecha_fin
+        )
+
+
+        if (
+            inicio
+            and hoy_colombia < inicio
+        ):
+
+            return "programada"
+
+
+        if (
+            fin
+            and hoy_colombia > fin
+        ):
+
+            return "vencida"
+
+
+        return "activa"
+
+
+    estados_promociones = {}
+
+
+    for numero in [
+        "1",
+        "2",
+        "3"
+    ]:
+
+        datos_promocion = obtener_documento(
+            "banners",
+            "promocion_" + numero
+        )
+
+
+        estados_promociones[
+            numero
+        ] = calcular_estado_promocion(
+            datos_promocion
+        )
+
+
     # -----------------------------------------------------
     # VALORES PREDETERMINADOS
     # -----------------------------------------------------
@@ -9203,6 +9326,7 @@ def gestionar_banner():
             banner=banner,
             promo_num=promo_num,
             productos=lista_productos,
+            estados_promociones=estados_promociones,
             exito=request.args.get(
                 "exito",
                 ""
