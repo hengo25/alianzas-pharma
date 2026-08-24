@@ -36,6 +36,29 @@
         .banner-slide-activo {
             display: flex !important;
         }
+
+        @media (max-width: 700px) {
+
+    .layout-tienda {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 18px !important;
+    }
+
+    .layout-tienda > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .layout-tienda > div:last-child {
+        position: static !important;
+        top: auto !important;
+    }
+
+}
+
+
     </style>
 </head>
 <body>
