@@ -696,15 +696,16 @@ setInterval(
     <!-- GALERÍA -->
 
     <div
-        style="
-            display:grid;
-            grid-template-columns:repeat(
-                auto-fit,
-                minmax(220px, 1fr)
-            );
-            gap:18px;
-        "
-    >
+    style="
+        display:grid;
+        grid-template-columns:repeat(
+            auto-fit,
+            minmax(240px, 320px)
+        );
+        justify-content:center;
+        gap:20px;
+    "
+>
 
         {% if institucional.get('foto_1', '') %}
 
