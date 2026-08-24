@@ -1666,12 +1666,55 @@ Olvidé mi clave
                 banner
             ]
 
+    # -----------------------------------------------------
+    # SECCIÓN INSTITUCIONAL - CONOCE ALIANZAS PHARMA
+    # -----------------------------------------------------
+
+    institucional = obtener_documento(
+        "configuracion",
+        "institucional"
+    )
+
+
+    if not institucional:
+
+        institucional = {
+
+            "activo":
+                False,
+
+            "titulo":
+                "Conoce Alianzas Pharma",
+
+            "subtitulo":
+                "Más que un proveedor, un aliado para tu droguería",
+
+            "texto":
+                "Trabajamos para brindar atención personalizada, productos de calidad y soluciones para nuestras droguerías afiliadas.",
+
+            "foto_1":
+                "",
+
+            "foto_2":
+                "",
+
+            "foto_3":
+                "",
+
+            "foto_4":
+                ""
+
+        }
+
+
+
     return render_template(
         "index.html",
         productos=lista,
         cliente=cliente,
         banner=banner,
-        banners=banners_activos
+        banners=banners_activos,
+        institucional=institucional
     ) 
 
 # =========================================================
@@ -9560,6 +9603,354 @@ def gestionar_banner():
         url_for(
             "gestionar_banner",
             promo=promo_num,
+            exito="1"
+        )
+    )
+
+
+
+# =========================================================
+# ADMIN - SECCIÓN INSTITUCIONAL
+# =========================================================
+
+@app.route(
+    "/admin/institucional",
+    methods=["GET", "POST"]
+)
+def gestionar_institucional():
+
+    # -----------------------------------------------------
+    # VERIFICAR SESIÓN ADMIN
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # VALORES PREDETERMINADOS
+    # -----------------------------------------------------
+
+    institucional_default = {
+
+        "activo":
+            False,
+
+        "titulo":
+            "Conoce Alianzas Pharma",
+
+        "subtitulo":
+            "Más que un proveedor, un aliado para tu droguería",
+
+        "texto":
+            "Trabajamos para brindar atención personalizada, productos de calidad y soluciones para nuestras droguerías afiliadas.",
+
+        "foto_1":
+            "",
+
+        "foto_2":
+            "",
+
+        "foto_3":
+            "",
+
+        "foto_4":
+            ""
+
+    }
+
+
+    # -----------------------------------------------------
+    # MOSTRAR FORMULARIO
+    # -----------------------------------------------------
+
+    if request.method == "GET":
+
+        institucional = obtener_documento(
+            "configuracion",
+            "institucional"
+        )
+
+
+        if not institucional:
+
+            institucional = institucional_default
+
+
+        return render_template(
+            "gestionar_institucional.html",
+            institucional=institucional,
+            exito=request.args.get(
+                "exito",
+                ""
+            )
+        )
+
+
+    # -----------------------------------------------------
+    # RECIBIR DATOS
+    # -----------------------------------------------------
+
+    activo = (
+        request.form.get(
+            "activo"
+        )
+        == "on"
+    )
+
+
+    titulo = request.form.get(
+        "titulo",
+        ""
+    ).strip()
+
+
+    subtitulo = request.form.get(
+        "subtitulo",
+        ""
+    ).strip()
+
+
+    texto = request.form.get(
+        "texto",
+        ""
+    ).strip()
+
+
+    # -----------------------------------------------------
+    # CONSERVAR FOTOS ACTUALES
+    # -----------------------------------------------------
+
+    fotos = {}
+
+
+    for numero in range(
+        1,
+        5
+    ):
+
+        campo = (
+            "foto_"
+            + str(numero)
+        )
+
+
+        fotos[
+            campo
+        ] = request.form.get(
+            campo,
+            ""
+        ).strip()
+
+
+    # -----------------------------------------------------
+    # SUBIR / QUITAR FOTOS
+    # -----------------------------------------------------
+
+    for numero in range(
+        1,
+        5
+    ):
+
+        campo = (
+            "foto_"
+            + str(numero)
+        )
+
+
+        campo_archivo = (
+            campo
+            + "_archivo"
+        )
+
+
+        campo_eliminar = (
+            "eliminar_"
+            + campo
+        )
+
+
+        archivo = request.files.get(
+            campo_archivo
+        )
+
+
+        eliminar = (
+            request.form.get(
+                campo_eliminar
+            )
+            == "on"
+        )
+
+
+        # ---------------------------------------------
+        # NUEVA FOTO SELECCIONADA
+        # ---------------------------------------------
+
+        if (
+            archivo
+            and archivo.filename
+        ):
+
+            foto_url, error_foto = (
+                subir_imagen_cloudinary(
+                    archivo
+                )
+            )
+
+
+            if error_foto:
+
+                institucional = {
+
+                    "activo":
+                        activo,
+
+                    "titulo":
+                        titulo,
+
+                    "subtitulo":
+                        subtitulo,
+
+                    "texto":
+                        texto,
+
+                    **fotos
+
+                }
+
+
+                return render_template(
+                    "gestionar_institucional.html",
+                    institucional=institucional,
+                    error=(
+                        "Foto "
+                        + str(numero)
+                        + ": "
+                        + error_foto
+                    )
+                )
+
+
+            fotos[
+                campo
+            ] = foto_url
+
+
+        # ---------------------------------------------
+        # QUITAR FOTO
+        # ---------------------------------------------
+
+        elif eliminar:
+
+            fotos[
+                campo
+            ] = ""
+
+
+    # -----------------------------------------------------
+    # VALIDAR
+    # -----------------------------------------------------
+
+    if not titulo:
+
+        institucional = {
+
+            "activo":
+                activo,
+
+            "titulo":
+                titulo,
+
+            "subtitulo":
+                subtitulo,
+
+            "texto":
+                texto,
+
+            **fotos
+
+        }
+
+
+        return render_template(
+            "gestionar_institucional.html",
+            institucional=institucional,
+            error="El título de la sección es obligatorio."
+        )
+
+
+    # -----------------------------------------------------
+    # GUARDAR EN FIRESTORE
+    # -----------------------------------------------------
+
+    institucional = {
+
+        "activo":
+            activo,
+
+        "titulo":
+            titulo,
+
+        "subtitulo":
+            subtitulo,
+
+        "texto":
+            texto,
+
+        "foto_1":
+            fotos.get(
+                "foto_1",
+                ""
+            ),
+
+        "foto_2":
+            fotos.get(
+                "foto_2",
+                ""
+            ),
+
+        "foto_3":
+            fotos.get(
+                "foto_3",
+                ""
+            ),
+
+        "foto_4":
+            fotos.get(
+                "foto_4",
+                ""
+            )
+
+    }
+
+
+    guardado = guardar_documento(
+        "configuracion",
+        "institucional",
+        institucional
+    )
+
+
+    if not guardado:
+
+        return render_template(
+            "gestionar_institucional.html",
+            institucional=institucional,
+            error="No fue posible guardar la sección institucional."
+        )
+
+
+    # -----------------------------------------------------
+    # ÉXITO
+    # -----------------------------------------------------
+
+    return redirect(
+        url_for(
+            "gestionar_institucional",
             exito="1"
         )
     )
