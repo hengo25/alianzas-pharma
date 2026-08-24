@@ -297,7 +297,15 @@
                 min-width: 100%;
             }
 
+
         }
+
+      .estado-promo {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 700;
+}  
 
     </style>
 
@@ -357,6 +365,9 @@
      SELECTOR DE PROMOCIONES
 =============================================== -->
 
+{% set estados = estados_promociones|default({}) %}
+
+
 <div
     style="
         background:white;
@@ -375,7 +386,22 @@
     href="/admin/banner?promo=1"
     class="promo-tab {% if promo_num == '1' %}promo-tab-activa{% endif %}"
 >
-    1️⃣ Promoción 1
+  1️⃣ Promoción 1
+
+<span class="estado-promo">
+    {% if estados.get('1') == 'activa' %}
+        🟢 Activa
+    {% elif estados.get('1') == 'programada' %}
+        🟡 Programada
+    {% elif estados.get('1') == 'vencida' %}
+        🔴 Vencida
+    {% elif estados.get('1') == 'desactivada' %}
+        ⚫ Desactivada
+    {% else %}
+        ⚪ Sin configurar
+    {% endif %}
+</span>
+
 </a>
     
 
@@ -383,14 +409,42 @@
     href="/admin/banner?promo=2"
     class="promo-tab {% if promo_num == '2' %}promo-tab-activa{% endif %}"
 >
-    2️⃣ Promoción 2
+   2️⃣ Promoción 2
+
+<span class="estado-promo">
+    {% if estados.get('2') == 'activa' %}
+        🟢 Activa
+    {% elif estados.get('2') == 'programada' %}
+        🟡 Programada
+    {% elif estados.get('2') == 'vencida' %}
+        🔴 Vencida
+    {% elif estados.get('2') == 'desactivada' %}
+        ⚫ Desactivada
+    {% else %}
+        ⚪ Sin configurar
+    {% endif %}
+</span>
 </a>   
 
 <a
     href="/admin/banner?promo=3"
     class="promo-tab {% if promo_num == '3' %}promo-tab-activa{% endif %}"
 >
-    3️⃣ Promoción 3
+   3️⃣ Promoción 3
+
+<span class="estado-promo">
+    {% if estados.get('3') == 'activa' %}
+        🟢 Activa
+    {% elif estados.get('3') == 'programada' %}
+        🟡 Programada
+    {% elif estados.get('3') == 'vencida' %}
+        🔴 Vencida
+    {% elif estados.get('3') == 'desactivada' %}
+        ⚫ Desactivada
+    {% else %}
+        ⚪ Sin configurar
+    {% endif %}
+</span>
 </a>
 
 </div>
