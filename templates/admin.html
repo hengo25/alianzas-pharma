@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Alianzas Pharma</title>
+    <meta charset="UTF-8"><title>Admin - Alianzas Pharma</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #333; margin: 0; padding: 40px 20px; text-align: center; }
         .container { max-width: 950px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
@@ -31,92 +29,13 @@
         /* 🟢 ESTILOS PREMIUM PARA LA VENTANA FLOTANTE DE EDICIÓN */
         .modal-edicion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; }
         .modal-contenido { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); width: 400px; text-align: left; }
-
-        @media (max-width: 700px) {
-
-    table {
-        width: 100% !important;
-        min-width: 0 !important;
-        display: block;
-    }
-
-    table thead {
-        display: none;
-    }
-
-    #tabla-cuerpo-admin {
-        display: block;
-        width: 100%;
-    }
-
-    #tabla-cuerpo-admin .tarjeta-bodega-global {
-        display: block !important;
-        width: 100%;
-        box-sizing: border-box;
-        margin-bottom: 16px;
-        padding: 14px;
-        background: white;
-        border: 1px solid #dbe4ee;
-        border-radius: 12px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-    }
-
-    #tabla-cuerpo-admin .tarjeta-bodega-global[style*="display: none"] {
-        display: none !important;
-    }
-
-    #tabla-cuerpo-admin .tarjeta-bodega-global td {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 15px;
-        width: 100%;
-        box-sizing: border-box;
-        padding: 9px 0;
-        border: none;
-        border-bottom: 1px solid #eef2f7;
-        text-align: right;
-    }
-
-    #tabla-cuerpo-admin .tarjeta-bodega-global td::before {
-        content: attr(data-label);
-        flex: 0 0 90px;
-        font-weight: bold;
-        color: #24415c;
-        text-align: left;
-    }
-
-    #tabla-cuerpo-admin .tarjeta-bodega-global td:last-child {
-        border-bottom: none;
-    }
-
-    #tabla-cuerpo-admin .nombre-producto-td {
-        text-align: right;
-    }
-
-    #tabla-cuerpo-admin .col-stock {
-        min-width: 0 !important;
-        padding: 0 !important;
-    }
-
-    #tabla-cuerpo-admin td[data-label="Acciones"] {
-        align-items: flex-start;
-    }
-}
-
     </style>
 </head>
 <body>
     <div class="container">
         <div style="display:flex; justify-content:space-between; margin-bottom:25px; flex-wrap:wrap; gap:10px; align-items:center;">
             <a href="/" style="color:#3498db; font-weight:bold; text-decoration:none;">← Catálogo Público</a> 
-            <div style="
-                display:flex;
-                gap:12px;
-                align-items:center;
-                flex-wrap:wrap;
-                justify-content:flex-end;
-            ">
+            <div style="display:flex; gap:12px; align-items:center;">
                 <a href="/ver-clientes" style="background:#f39c12; color:white; padding:10px 16px; border-radius:20px; text-decoration:none; font-weight:bold;">👥 Ver Droguerías</a>
                  
         <a
@@ -162,6 +81,21 @@
     "
 >
     🏢 Sección Institucional
+</a>
+
+<a
+    href="/admin/portafolio-pdf"
+    style="
+        background:#16a085;
+        color:white;
+        padding:10px 16px;
+        border-radius:20px;
+        text-decoration:none;
+        font-weight:bold;
+        white-space:nowrap;
+    "
+>
+    📄 Descargar Portafolio
 </a>
 
                 <button
@@ -211,22 +145,11 @@
             <tbody id="tabla-cuerpo-admin">
                  {% for p in productos %}{% set idx = loop.index0 %}
                 <tr class="f-adm tarjeta-bodega-global" data-index="{{ idx }}" style="display: none;">
-                    
 
-                <td data-label="Foto">
-                    <img src="{{ p.imagen }}" style="max-height:45px; border-radius:4px;">
-                </td>
-
-                <td data-label="Producto" class="nombre-producto-td">
-                    <b>{{ p.nombre }}</b>
-                </td>
-
-                <td data-label="Precio">
-                     ${{ p.precio }}
-                </td>
-                
-                <td data-label="Existencias">
-
+                    <td><img src="{{ p.imagen }}" style="max-height:45px; border-radius:4px;"></td>
+                    <td class="nombre-producto-td"><b>{{ p.nombre }}</b></td>
+                    <td>${{ p.precio }}</td>
+                    <td>
                         <div class="col-stock">
                             <span class="{% if p.existencias > 0 %}texto-verde{% else %}texto-rojo{% endif %}">{{ p.existencias }} uds</span>
                             <div class="fila-botones">
@@ -235,8 +158,7 @@
                             </div>
                         </div>
                     </td>
-                   <td data-label="Acciones">
-
+                    <td>
                         <!-- BOTÓN CON DATOS STANDARIZADOS HTML5 -->
                         <button type="button" class="btn-action-edit" 
                                 data-id="{{ p.id }}" 
