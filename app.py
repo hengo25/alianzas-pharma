@@ -7324,10 +7324,7 @@ def descargar_portafolio_pdf():
             imagen = "/" + imagen
 
 
-        return (
-            base_url
-            + imagen
-        )
+        return imagen
 
     def leer_imagen_local(
         ruta_web
