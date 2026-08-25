@@ -7278,6 +7278,16 @@ def descargar_portafolio_pdf():
                     timeout=8
                 )
 
+                print(
+                    "📷 PORTAFOLIO IMAGEN:",
+                    imagen_url,
+                    respuesta_imagen.status_code,
+                    respuesta_imagen.headers.get(
+                        "Content-Type",
+                        ""
+                    )
+                )
+
 
                 if respuesta_imagen.ok:
 
