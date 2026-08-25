@@ -1693,17 +1693,12 @@ Olvidé mi clave
             "texto":
                 "Trabajamos para brindar atención personalizada, productos de calidad y soluciones para nuestras droguerías afiliadas.",
 
-            "foto_1":
-                "",
-
-            "foto_2":
-                "",
-
-            "foto_3":
-                "",
-
-            "foto_4":
-                ""
+            "foto_1": "",
+            "foto_2": "",
+            "foto_3": "",
+            "foto_4": "",
+            "beneficio_1": "Atención personalizada",
+            "beneficio_2": "Productos de calidad"
 
         }
 
@@ -10754,6 +10749,17 @@ def gestionar_institucional():
         ""
     ).strip()
 
+    beneficio_1 = request.form.get(
+            "beneficio_1",
+            "Atención personalizada"
+     ).strip()
+
+
+    beneficio_2 = request.form.get(
+            "beneficio_2",
+            "Productos de calidad"
+        ).strip()
+
 
     # -----------------------------------------------------
     # CONSERVAR FOTOS ACTUALES
@@ -10936,6 +10942,11 @@ def gestionar_institucional():
         "texto":
             texto,
 
+        "beneficio_1": 
+            beneficio_1,
+       "beneficio_2":
+            beneficio_2,
+
         "foto_1":
             fotos.get(
                 "foto_1",
@@ -10959,6 +10970,7 @@ def gestionar_institucional():
                 "foto_4",
                 ""
             )
+            
 
     }
 

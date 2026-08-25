@@ -370,6 +370,30 @@
                 placeholder="Cuenta brevemente quiénes son y qué ofrecen..."
             >{{ institucional.get('texto', '') }}</textarea>
 
+    <label for="beneficio_1">
+        🤝 Beneficio 1
+    </label>
+
+    <input
+        type="text"
+        id="beneficio_1"
+        name="beneficio_1"
+        value="{{ institucional.get('beneficio_1', 'Atención personalizada') }}"
+        placeholder="Ej. Atención personalizada"
+    >
+
+
+    <label for="beneficio_2">
+        📦 Beneficio 2
+    </label>
+
+    <input
+        type="text"
+        id="beneficio_2"
+        name="beneficio_2"
+        value="{{ institucional.get('beneficio_2', 'Productos de calidad') }}"
+        placeholder="Ej. Productos de calidad"
+    >
 
             <div class="ayuda">
                 Puedes cambiar estos textos cuando quieras desde el administrador.

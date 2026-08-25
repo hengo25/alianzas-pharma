@@ -874,9 +874,27 @@ setInterval(
             line-height:1.7;
         "
     >
-        🤝 Atención personalizada
-        &nbsp;•&nbsp;
-        📦 Productos de calidad
+         {% set beneficio_1 = institucional.get(
+            'beneficio_1',
+            'Atención personalizada'
+        ) %}
+
+        {% set beneficio_2 = institucional.get(
+            'beneficio_2',
+            'Productos de calidad'
+        ) %}
+
+        {% if beneficio_1 %}
+            🤝 {{ beneficio_1 }}
+        {% endif %}
+
+        {% if beneficio_1 and beneficio_2 %}
+            &nbsp;•&nbsp;
+        {% endif %}
+
+        {% if beneficio_2 %}
+            📦 {{ beneficio_2 }}
+        {% endif %}
             
     </div>
 
