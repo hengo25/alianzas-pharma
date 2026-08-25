@@ -6883,6 +6883,582 @@ def descargar_pdf_pedido(pedido_id):
 
     return respuesta
 
+
+# =========================================================
+# ADMIN - DESCARGAR PORTAFOLIO DE PRODUCTOS PDF
+# =========================================================
+
+@app.route(
+    "/admin/portafolio-pdf"
+)
+def descargar_portafolio_pdf():
+
+    # -----------------------------------------------------
+    # VERIFICAR ADMINISTRADOR
+    # -----------------------------------------------------
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    # -----------------------------------------------------
+    # OBTENER PRODUCTOS ACTUALES
+    # -----------------------------------------------------
+
+    productos = obtener_productos()
+
+
+    productos.sort(
+        key=lambda p: str(
+            p.get(
+                "nombre",
+                ""
+            )
+        ).lower()
+    )
+
+
+    # -----------------------------------------------------
+    # CREAR PDF EN MEMORIA
+    # -----------------------------------------------------
+
+    buffer = BytesIO()
+
+    pdf = canvas.Canvas(
+        buffer,
+        pagesize=letter
+    )
+
+    ancho, alto = letter
+
+
+    # -----------------------------------------------------
+    # FECHA ACTUAL DE COLOMBIA
+    # -----------------------------------------------------
+
+    zona_colombia = timezone(
+        timedelta(
+            hours=-5
+        )
+    )
+
+    ahora_colombia = datetime.now(
+        zona_colombia
+    )
+
+    fecha_actualizacion = ahora_colombia.strftime(
+        "%d/%m/%Y - %I:%M %p"
+    )
+
+
+    # -----------------------------------------------------
+    # FUNCIÓN PARA DIVIDIR TEXTOS LARGOS
+    # -----------------------------------------------------
+
+    def dividir_texto(
+        texto,
+        ancho_maximo,
+        fuente="Helvetica-Bold",
+        tamano=9
+    ):
+
+        palabras = str(
+            texto
+        ).split()
+
+        lineas = []
+
+        linea = ""
+
+
+        for palabra in palabras:
+
+            if linea:
+
+                prueba = (
+                    linea
+                    + " "
+                    + palabra
+                )
+
+            else:
+
+                prueba = palabra
+
+
+            if pdf.stringWidth(
+                prueba,
+                fuente,
+                tamano
+            ) <= ancho_maximo:
+
+                linea = prueba
+
+            else:
+
+                if linea:
+
+                    lineas.append(
+                        linea
+                    )
+
+                linea = palabra
+
+
+        if linea:
+
+            lineas.append(
+                linea
+            )
+
+
+        return lineas
+
+
+    # -----------------------------------------------------
+    # ENCABEZADO DE CADA PÁGINA
+    # -----------------------------------------------------
+
+    def dibujar_encabezado():
+
+        try:
+
+            logo_url = (
+                request.host_url.rstrip("/")
+                + "/public/logo.jpeg"
+            )
+
+            respuesta_logo = requests.get(
+                logo_url,
+                timeout=8
+            )
+
+
+            if respuesta_logo.ok:
+
+                logo = ImageReader(
+                    BytesIO(
+                        respuesta_logo.content
+                    )
+                )
+
+                pdf.drawImage(
+                    logo,
+                    40,
+                    alto - 95,
+                    width=80,
+                    height=55,
+                    preserveAspectRatio=True,
+                    mask="auto"
+                )
+
+
+        except Exception as e:
+
+            print(
+                "⚠️ Error cargando logo en portafolio:",
+                str(e)
+            )
+
+
+        pdf.setFont(
+            "Helvetica-Bold",
+            20
+        )
+
+        pdf.drawString(
+            140,
+            alto - 55,
+            "ALIANZAS PHARMA"
+        )
+
+
+        pdf.setFont(
+            "Helvetica-Bold",
+            13
+        )
+
+        pdf.drawString(
+            140,
+            alto - 77,
+            "PORTAFOLIO DE PRODUCTOS"
+        )
+
+
+        pdf.setFont(
+            "Helvetica",
+            8
+        )
+
+        pdf.drawRightString(
+            ancho - 40,
+            alto - 55,
+            "Actualizado:"
+        )
+
+        pdf.drawRightString(
+            ancho - 40,
+            alto - 68,
+            fecha_actualizacion
+        )
+
+
+        pdf.line(
+            40,
+            alto - 105,
+            ancho - 40,
+            alto - 105
+        )
+
+
+    # -----------------------------------------------------
+    # PIE DE PÁGINA
+    # -----------------------------------------------------
+
+    def dibujar_pie():
+
+        pdf.line(
+            40,
+            48,
+            ancho - 40,
+            48
+        )
+
+
+        pdf.setFont(
+            "Helvetica",
+            8
+        )
+
+        pdf.drawString(
+            40,
+            34,
+            "Consulta disponibilidad al momento de realizar tu pedido."
+        )
+
+
+        pdf.drawRightString(
+            ancho - 40,
+            34,
+            "Página "
+            + str(
+                pdf.getPageNumber()
+            )
+        )
+
+
+    # -----------------------------------------------------
+    # MEDIDAS DE LAS TARJETAS
+    # -----------------------------------------------------
+
+    margen_izquierdo = 40
+
+    espacio_columnas = 14
+
+    ancho_tarjeta = (
+        (
+            ancho
+            - 80
+            - espacio_columnas
+        )
+        / 2
+    )
+
+    alto_tarjeta = 125
+
+    inicio_y = alto - 130
+
+    columna = 0
+
+    y = inicio_y
+
+
+    # -----------------------------------------------------
+    # DIBUJAR PRIMER ENCABEZADO
+    # -----------------------------------------------------
+
+    dibujar_encabezado()
+
+
+    # -----------------------------------------------------
+    # SI NO HAY PRODUCTOS
+    # -----------------------------------------------------
+
+    if not productos:
+
+        pdf.setFont(
+            "Helvetica",
+            12
+        )
+
+        pdf.drawCentredString(
+            ancho / 2,
+            alto / 2,
+            "No hay productos disponibles."
+        )
+
+
+    # -----------------------------------------------------
+    # PRODUCTOS
+    # -----------------------------------------------------
+
+    for producto in productos:
+
+        # -------------------------------------------------
+        # NUEVA PÁGINA
+        # -------------------------------------------------
+
+        if (
+            columna == 0
+            and y - alto_tarjeta < 65
+        ):
+
+            dibujar_pie()
+
+            pdf.showPage()
+
+            dibujar_encabezado()
+
+            y = inicio_y
+
+
+        if columna == 0:
+
+            x = margen_izquierdo
+
+        else:
+
+            x = (
+                margen_izquierdo
+                + ancho_tarjeta
+                + espacio_columnas
+            )
+
+
+        # -------------------------------------------------
+        # TARJETA
+        # -------------------------------------------------
+
+        pdf.setLineWidth(
+            0.5
+        )
+
+        pdf.roundRect(
+            x,
+            y - alto_tarjeta,
+            ancho_tarjeta,
+            alto_tarjeta,
+            8,
+            stroke=1,
+            fill=0
+        )
+
+
+        # -------------------------------------------------
+        # FOTO DEL PRODUCTO
+        # -------------------------------------------------
+
+        imagen_url = str(
+            producto.get(
+                "imagen",
+                ""
+            )
+        ).strip()
+
+
+        if imagen_url:
+
+            try:
+
+                respuesta_imagen = requests.get(
+                    imagen_url,
+                    timeout=8
+                )
+
+
+                if respuesta_imagen.ok:
+
+                    imagen_producto = ImageReader(
+                        BytesIO(
+                            respuesta_imagen.content
+                        )
+                    )
+
+                    pdf.drawImage(
+                        imagen_producto,
+                        x + 10,
+                        y - 102,
+                        width=72,
+                        height=82,
+                        preserveAspectRatio=True,
+                        mask="auto"
+                    )
+
+
+            except Exception as e:
+
+                print(
+                    "⚠️ Imagen no cargada en portafolio:",
+                    str(e)
+                )
+
+
+        # -------------------------------------------------
+        # NOMBRE
+        # -------------------------------------------------
+
+        nombre = str(
+            producto.get(
+                "nombre",
+                "Producto"
+            )
+        ).strip()
+
+
+        lineas_nombre = dividir_texto(
+            nombre,
+            ancho_tarjeta - 105,
+            "Helvetica-Bold",
+            9
+        )
+
+
+        texto_x = x + 92
+
+        texto_y = y - 28
+
+
+        pdf.setFont(
+            "Helvetica-Bold",
+            9
+        )
+
+
+        for linea in lineas_nombre[:4]:
+
+            pdf.drawString(
+                texto_x,
+                texto_y,
+                linea
+            )
+
+            texto_y -= 12
+
+
+        # -------------------------------------------------
+        # PRECIO
+        # -------------------------------------------------
+
+        try:
+
+            precio = int(
+                producto.get(
+                    "precio",
+                    0
+                )
+            )
+
+        except:
+
+            precio = 0
+
+
+        precio_texto = (
+            f"${precio:,.0f}"
+            .replace(
+                ",",
+                "."
+            )
+        )
+
+
+        pdf.setFont(
+            "Helvetica-Bold",
+            11
+        )
+
+        pdf.drawString(
+            texto_x,
+            y - 102,
+            precio_texto
+        )
+
+
+        # -------------------------------------------------
+        # SIGUIENTE TARJETA
+        # -------------------------------------------------
+
+        if columna == 0:
+
+            columna = 1
+
+        else:
+
+            columna = 0
+
+            y -= (
+                alto_tarjeta
+                + 14
+            )
+
+
+    # Si terminó en columna derecha,
+    # bajar para cerrar correctamente
+    if columna == 1:
+
+        y -= (
+            alto_tarjeta
+            + 14
+        )
+
+
+    # -----------------------------------------------------
+    # PIE FINAL
+    # -----------------------------------------------------
+
+    dibujar_pie()
+
+
+    # -----------------------------------------------------
+    # FINALIZAR PDF
+    # -----------------------------------------------------
+
+    pdf.save()
+
+    buffer.seek(0)
+
+
+    respuesta = make_response(
+        buffer.getvalue()
+    )
+
+
+    respuesta.headers[
+        "Content-Type"
+    ] = "application/pdf"
+
+
+    nombre_fecha = ahora_colombia.strftime(
+        "%Y-%m-%d"
+    )
+
+
+    respuesta.headers[
+        "Content-Disposition"
+    ] = (
+        'attachment; filename="'
+        + "Portafolio_Alianzas_Pharma_"
+        + nombre_fecha
+        + '.pdf"'
+    )
+
+
+    return respuesta
+
+
 # =========================================================
 # ADMIN - BORRAR PEDIDO
 # =========================================================
