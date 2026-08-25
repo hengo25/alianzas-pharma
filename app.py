@@ -7248,14 +7248,15 @@ def descargar_portafolio_pdf():
 
             return imagen
 
-
         if not imagen.startswith("/"):
 
             imagen = "/" + imagen
 
 
-        return imagen
-
+        return (
+            base_url
+            + imagen
+        )
 
     def leer_imagen_local(
         ruta_web
@@ -7434,7 +7435,7 @@ def descargar_portafolio_pdf():
     if urls_externas:
 
         with ThreadPoolExecutor(
-            max_workers=6
+            max_workers=16
         ) as executor:
 
             resultados = executor.map(
