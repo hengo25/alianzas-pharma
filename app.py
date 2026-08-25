@@ -11,6 +11,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import requests
 from concurrent.futures import ThreadPoolExecutor
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from flask import (
     Flask,
@@ -1958,12 +1959,108 @@ Intentar de Nuevo
         ).strip()
 
 
+        password_hash_db = str(
+            datos_cliente.get(
+                "password_hash",
+                ""
+            )
+        ).strip()
+
+
         print(
             "✅ Cliente encontrado en Firebase"
         )
 
 
-        if pass_db != password:
+        password_correcta = False
+
+
+        # ---------------------------------------------
+        # CLIENTE YA MIGRADO A HASH
+        # ---------------------------------------------
+
+        if password_hash_db:
+
+            try:
+
+                password_correcta = check_password_hash(
+                    password_hash_db,
+                    password
+                )
+
+            except Exception as e:
+
+                print(
+                    "❌ Error verificando hash:",
+                    str(e)
+                )
+
+                password_correcta = False
+
+
+        # ---------------------------------------------
+        # CLIENTE ANTIGUO - CONTRASEÑA EN TEXTO PLANO
+        # ---------------------------------------------
+
+        else:
+
+            password_correcta = hmac.compare_digest(
+                pass_db,
+                password
+            )
+
+
+            # Si la contraseña antigua es correcta,
+            # migrarla automáticamente a hash
+            if password_correcta:
+
+                try:
+
+                    nuevo_hash = generate_password_hash(
+                        password
+                    )
+
+
+                    datos_cliente[
+                        "password_hash"
+                    ] = nuevo_hash
+
+
+                    datos_cliente.pop(
+                        "password",
+                        None
+                    )
+
+
+                    migrado = guardar_documento(
+                        "clientes",
+                        nit,
+                        datos_cliente
+                    )
+
+
+                    if migrado:
+
+                        print(
+                            f"🔐 CONTRASEÑA MIGRADA A HASH: {nit}"
+                        )
+
+                    else:
+
+                        print(
+                            f"⚠️ No se pudo guardar la migración de contraseña: {nit}"
+                        )
+
+
+                except Exception as e:
+
+                    print(
+                        "⚠️ Error migrando contraseña:",
+                        str(e)
+                    )
+
+
+        if not password_correcta:
 
             print(
                 f"❌ Contraseña incorrecta para {nit}"
@@ -2264,9 +2361,15 @@ def recuperar_clave():
     # -----------------------------------------------------
 
     cliente[
-        "password"
-    ] = nueva_password
+         "password_hash"
+     ] = generate_password_hash(
+            nueva_password
+    )
 
+    cliente.pop(
+            "password",
+            None
+        )
 
     guardado = guardar_documento(
         "clientes",
@@ -2361,7 +2464,7 @@ def registro_cliente():
 
             "telefono": telefono,
 
-            "password": password
+            "password_hash": generate_password_hash(password)
 
         }
 
