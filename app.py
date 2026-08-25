@@ -7009,6 +7009,54 @@ def descargar_portafolio_pdf():
         "SinImagen=",
         cantidad_sin_imagen
     )
+
+
+        # -----------------------------------------------------
+    # DIAGNÓSTICO TEMPORAL - RUTA REAL DE PUBLIC EN VERCEL
+    # -----------------------------------------------------
+
+    if productos:
+
+        imagen_prueba = str(
+            productos[0].get(
+                "imagen",
+                ""
+            )
+        ).strip()
+
+        imagen_prueba = imagen_prueba.replace(
+            "/static/",
+            "/public/"
+        )
+
+        ruta_relativa_prueba = (
+            imagen_prueba.lstrip("/")
+        )
+
+        ruta_root = os.path.join(
+            app.root_path,
+            ruta_relativa_prueba
+        )
+
+        ruta_cwd = os.path.join(
+            os.getcwd(),
+            ruta_relativa_prueba
+        )
+
+        print(
+            "🔎 RUTA PDF:",
+            "root=",
+            app.root_path,
+            "cwd=",
+            os.getcwd(),
+            "imagen=",
+            imagen_prueba,
+            "existe_root=",
+            os.path.isfile(ruta_root),
+            "existe_cwd=",
+            os.path.isfile(ruta_cwd)
+        )
+
      
     productos.sort(
         key=lambda p: str(
