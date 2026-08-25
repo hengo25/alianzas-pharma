@@ -7317,32 +7317,16 @@ def descargar_portafolio_pdf():
             return ""
 
 
-        # Si viene como URL del mismo portal,
-        # convertirla nuevamente en ruta local
-        if imagen.startswith(
-            base_url + "/public/"
-        ):
-
-            imagen = imagen.replace(
-                base_url,
-                "",
-                1
-            )
+        cloud_name = os.environ.get(
+            "CLOUDINARY_CLOUD_NAME",
+            ""
+        ).strip()
 
 
-        if imagen.startswith(
-            base_url + "/static/"
-        ):
+        # ---------------------------------------------
+        # COMPATIBILIDAD CON IMÁGENES ANTIGUAS
+        # ---------------------------------------------
 
-            imagen = imagen.replace(
-                base_url,
-                "",
-                1
-            )
-
-
-        # Imágenes antiguas guardadas como /static/
-        # actualmente están disponibles en /public/
         if imagen.startswith("/static/"):
 
             imagen = (
@@ -7359,19 +7343,66 @@ def descargar_portafolio_pdf():
             )
 
 
-        # Las URLs externas, como Cloudinary,
-        # permanecen sin cambios
-        if imagen.lower().startswith(
+        # ---------------------------------------------
+        # CONVERTIR RUTA LOCAL EN URL COMPLETA
+        # ---------------------------------------------
+
+        if not imagen.lower().startswith(
             ("http://", "https://")
         ):
 
-            return imagen
+            if not imagen.startswith("/"):
 
-        if not imagen.startswith("/"):
-
-            imagen = "/" + imagen
+                imagen = "/" + imagen
 
 
+            imagen = (
+                base_url
+                + imagen
+            )
+
+
+        # ---------------------------------------------
+        # SI YA ES CLOUDINARY:
+        # PEDIR VERSIÓN PEQUEÑA OPTIMIZADA
+        # ---------------------------------------------
+
+        if (
+            "res.cloudinary.com/" in imagen
+            and "/image/upload/" in imagen
+        ):
+
+            return imagen.replace(
+                "/image/upload/",
+                "/image/upload/c_limit,w_180,q_auto,f_jpg/",
+                1
+            )
+
+
+        # ---------------------------------------------
+        # IMAGEN LOCAL O EXTERNA:
+        # PASARLA POR CLOUDINARY FETCH
+        # ---------------------------------------------
+
+        if cloud_name:
+
+            imagen_codificada = quote(
+                imagen,
+                safe=""
+            )
+
+
+            return (
+                "https://res.cloudinary.com/"
+                + cloud_name
+                + "/image/fetch/"
+                + "c_limit,w_180,q_auto,f_jpg/"
+                + imagen_codificada
+            )
+
+
+        # Si faltara Cloudinary,
+        # conservar URL original
         return imagen
 
     def leer_imagen_local(
