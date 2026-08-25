@@ -5989,9 +5989,6 @@ def cambiar_estado_pedido_admin(pedido_id):
         url_for("ver_pedidos_admin")
     )
 
-# =========================================================
-# ADMIN - DESCARGAR PEDIDO EN PDF
-# =========================================================
 
 # =========================================================
 # ADMIN - DESCARGAR PEDIDO EN PDF
@@ -7181,8 +7178,9 @@ def descargar_portafolio_pdf():
         )
 
 
+ 
     # -----------------------------------------------------
-    # DESCARGAR IMÁGENES EN PARALELO
+    # PREPARAR IMÁGENES DEL PORTAFOLIO
     # -----------------------------------------------------
 
     base_url = request.host_url.rstrip("/")
@@ -7190,31 +7188,153 @@ def descargar_portafolio_pdf():
 
     def preparar_url_imagen(valor):
 
-        imagen_url = str(
+        imagen = str(
             valor or ""
         ).strip()
 
 
-        if not imagen_url:
+        if not imagen:
 
             return ""
 
 
-        if not imagen_url.lower().startswith(
-            ("http://", "https://")
+        # Si viene como URL del mismo portal,
+        # convertirla nuevamente en ruta local
+        if imagen.startswith(
+            base_url + "/public/"
         ):
 
-            imagen_url = (
-                base_url
-                + "/"
-                + imagen_url.lstrip("/")
+            imagen = imagen.replace(
+                base_url,
+                "",
+                1
             )
 
 
-        return imagen_url
+        if imagen.startswith(
+            base_url + "/static/"
+        ):
+
+            imagen = imagen.replace(
+                base_url,
+                "",
+                1
+            )
 
 
-    def descargar_imagen_portafolio(
+        # Imágenes antiguas guardadas como /static/
+        # actualmente están disponibles en /public/
+        if imagen.startswith("/static/"):
+
+            imagen = (
+                "/public/"
+                + imagen[len("/static/"):]
+            )
+
+
+        elif imagen.startswith("static/"):
+
+            imagen = (
+                "/public/"
+                + imagen[len("static/"):]
+            )
+
+
+        # Las URLs externas, como Cloudinary,
+        # permanecen sin cambios
+        if imagen.lower().startswith(
+            ("http://", "https://")
+        ):
+
+            return imagen
+
+
+        if not imagen.startswith("/"):
+
+            imagen = "/" + imagen
+
+
+        return imagen
+
+
+    def leer_imagen_local(
+        ruta_web
+    ):
+
+        ruta_relativa = ruta_web.lstrip("/")
+
+
+        candidatos = [
+
+            os.path.join(
+                app.root_path,
+                ruta_relativa
+            )
+
+        ]
+
+
+        # Compatibilidad adicional
+        # entre carpetas public y static
+
+        if ruta_relativa.startswith(
+            "public/"
+        ):
+
+            candidatos.append(
+                os.path.join(
+                    app.root_path,
+                    "static",
+                    ruta_relativa[
+                        len("public/"):
+                    ]
+                )
+            )
+
+
+        elif ruta_relativa.startswith(
+            "static/"
+        ):
+
+            candidatos.append(
+                os.path.join(
+                    app.root_path,
+                    "public",
+                    ruta_relativa[
+                        len("static/"):
+                    ]
+                )
+            )
+
+
+        for ruta_archivo in candidatos:
+
+            try:
+
+                if os.path.isfile(
+                    ruta_archivo
+                ):
+
+                    with open(
+                        ruta_archivo,
+                        "rb"
+                    ) as archivo:
+
+                        return archivo.read()
+
+
+            except Exception as e:
+
+                print(
+                    "⚠️ Error leyendo imagen local:",
+                    str(e)
+                )
+
+
+        return None
+
+
+    def descargar_imagen_externa(
         imagen_url
     ):
 
@@ -7234,7 +7354,7 @@ def descargar_portafolio_pdf():
         except Exception as e:
 
             print(
-                "⚠️ Error descargando imagen del portafolio:",
+                "⚠️ Error descargando imagen externa:",
                 str(e)
             )
 
@@ -7242,12 +7362,18 @@ def descargar_portafolio_pdf():
         return None
 
 
-    urls_imagenes = []
+    # -----------------------------------------------------
+    # CARGAR IMÁGENES LOCALES DIRECTAMENTE DEL DISCO
+    # -----------------------------------------------------
+
+    imagenes_portafolio = {}
+
+    urls_externas = []
 
 
     for producto in productos:
 
-        imagen_url = preparar_url_imagen(
+        imagen = preparar_url_imagen(
             producto.get(
                 "imagen",
                 ""
@@ -7255,42 +7381,66 @@ def descargar_portafolio_pdf():
         )
 
 
-        if imagen_url:
+        if not imagen:
 
-            urls_imagenes.append(
-                imagen_url
+            continue
+
+
+        # Evitar procesar imágenes repetidas
+        if imagen in imagenes_portafolio:
+
+            continue
+
+
+        if imagen.lower().startswith(
+            ("http://", "https://")
+        ):
+
+            urls_externas.append(
+                imagen
             )
 
 
-    # Evitar descargar dos veces una misma imagen
-    urls_imagenes = list(
+        else:
+
+            imagenes_portafolio[
+                imagen
+            ] = leer_imagen_local(
+                imagen
+            )
+
+
+    # -----------------------------------------------------
+    # DESCARGAR SOLO LAS IMÁGENES EXTERNAS EN PARALELO
+    # -----------------------------------------------------
+
+    urls_externas = list(
         dict.fromkeys(
-            urls_imagenes
+            urls_externas
         )
     )
 
 
-    imagenes_portafolio = {}
-
-
-    if urls_imagenes:
+    if urls_externas:
 
         with ThreadPoolExecutor(
             max_workers=6
         ) as executor:
 
             resultados = executor.map(
-                descargar_imagen_portafolio,
-                urls_imagenes
+                descargar_imagen_externa,
+                urls_externas
             )
 
 
-            imagenes_portafolio = dict(
-                zip(
-                    urls_imagenes,
-                    resultados
-                )
-            )
+            for imagen_url, contenido in zip(
+                urls_externas,
+                resultados
+            ):
+
+                imagenes_portafolio[
+                    imagen_url
+                ] = contenido
 
     # -----------------------------------------------------
     # MEDIDAS DE LAS TARJETAS
