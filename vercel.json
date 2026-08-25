@@ -3,12 +3,7 @@
   "builds": [
     {
       "src": "app.py",
-      "use": "@vercel/python",
-      "config": {
-        "includeFiles": [
-          "public/**"
-        ]
-      }
+      "use": "@vercel/python"
     },
     {
       "src": "public/**/*",
