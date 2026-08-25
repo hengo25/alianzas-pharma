@@ -6938,6 +6938,77 @@ def descargar_portafolio_pdf():
 
 
     productos = productos_disponibles
+
+        # -----------------------------------------------------
+    # DIAGNÓSTICO DE ORIGEN DE IMÁGENES
+    # -----------------------------------------------------
+
+    cantidad_locales = 0
+    cantidad_cloudinary = 0
+    cantidad_otras_web = 0
+    cantidad_sin_imagen = 0
+
+
+    for producto in productos:
+
+        imagen = str(
+            producto.get(
+                "imagen",
+                ""
+            )
+        ).strip().lower()
+
+
+        if not imagen:
+
+            cantidad_sin_imagen += 1
+
+
+        elif (
+            imagen.startswith(
+                ("http://", "https://")
+            )
+            and "res.cloudinary.com" in imagen
+        ):
+
+            cantidad_cloudinary += 1
+
+
+        elif imagen.startswith(
+            (
+                "/public/",
+                "/static/",
+                "public/",
+                "static/"
+            )
+        ):
+
+            cantidad_locales += 1
+
+
+        elif imagen.startswith(
+            ("http://", "https://")
+        ):
+
+            cantidad_otras_web += 1
+
+
+        else:
+
+            cantidad_locales += 1
+
+
+    print(
+        "📊 RESUMEN IMAGENES PORTAFOLIO:",
+        "Locales=",
+        cantidad_locales,
+        "Cloudinary=",
+        cantidad_cloudinary,
+        "OtrasWeb=",
+        cantidad_otras_web,
+        "SinImagen=",
+        cantidad_sin_imagen
+    )
      
     productos.sort(
         key=lambda p: str(
