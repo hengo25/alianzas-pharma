@@ -10,6 +10,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 import requests
+from concurrent.futures import ThreadPoolExecutor
 
 from flask import (
     Flask,
@@ -7181,6 +7182,117 @@ def descargar_portafolio_pdf():
 
 
     # -----------------------------------------------------
+    # DESCARGAR IMÁGENES EN PARALELO
+    # -----------------------------------------------------
+
+    base_url = request.host_url.rstrip("/")
+
+
+    def preparar_url_imagen(valor):
+
+        imagen_url = str(
+            valor or ""
+        ).strip()
+
+
+        if not imagen_url:
+
+            return ""
+
+
+        if not imagen_url.lower().startswith(
+            ("http://", "https://")
+        ):
+
+            imagen_url = (
+                base_url
+                + "/"
+                + imagen_url.lstrip("/")
+            )
+
+
+        return imagen_url
+
+
+    def descargar_imagen_portafolio(
+        imagen_url
+    ):
+
+        try:
+
+            respuesta = requests.get(
+                imagen_url,
+                timeout=8
+            )
+
+
+            if respuesta.ok:
+
+                return respuesta.content
+
+
+        except Exception as e:
+
+            print(
+                "⚠️ Error descargando imagen del portafolio:",
+                str(e)
+            )
+
+
+        return None
+
+
+    urls_imagenes = []
+
+
+    for producto in productos:
+
+        imagen_url = preparar_url_imagen(
+            producto.get(
+                "imagen",
+                ""
+            )
+        )
+
+
+        if imagen_url:
+
+            urls_imagenes.append(
+                imagen_url
+            )
+
+
+    # Evitar descargar dos veces una misma imagen
+    urls_imagenes = list(
+        dict.fromkeys(
+            urls_imagenes
+        )
+    )
+
+
+    imagenes_portafolio = {}
+
+
+    if urls_imagenes:
+
+        with ThreadPoolExecutor(
+            max_workers=6
+        ) as executor:
+
+            resultados = executor.map(
+                descargar_imagen_portafolio,
+                urls_imagenes
+            )
+
+
+            imagenes_portafolio = dict(
+                zip(
+                    urls_imagenes,
+                    resultados
+                )
+            )
+
+    # -----------------------------------------------------
     # MEDIDAS DE LAS TARJETAS
     # -----------------------------------------------------
 
@@ -7291,62 +7403,44 @@ def descargar_portafolio_pdf():
         # FOTO DEL PRODUCTO
         # -------------------------------------------------
 
-        imagen_url = str(
+       
+        # -------------------------------------------------
+        # FOTO DEL PRODUCTO
+        # -------------------------------------------------
+
+        imagen_url = preparar_url_imagen(
             producto.get(
                 "imagen",
                 ""
             )
-        ).strip()
+        )
 
 
-        if imagen_url:
+        contenido_imagen = imagenes_portafolio.get(
+            imagen_url
+        )
 
-                    # Convertir rutas locales en URL completa
-            if not imagen_url.lower().startswith(
-                ("http://", "https://")
-            ):
 
-                imagen_url = (
-                    request.host_url.rstrip("/")
-                    + "/"
-                    + imagen_url.lstrip("/")
-                )
+        if contenido_imagen:
 
             try:
 
-                respuesta_imagen = requests.get(
-                    imagen_url,
-                    timeout=8
-                )
-
-                print(
-                    "📷 PORTAFOLIO IMAGEN:",
-                    imagen_url,
-                    respuesta_imagen.status_code,
-                    respuesta_imagen.headers.get(
-                        "Content-Type",
-                        ""
+                imagen_producto = ImageReader(
+                    BytesIO(
+                        contenido_imagen
                     )
                 )
 
 
-                if respuesta_imagen.ok:
-
-                    imagen_producto = ImageReader(
-                        BytesIO(
-                            respuesta_imagen.content
-                        )
-                    )
-
-                    pdf.drawImage(
-                        imagen_producto,
-                        x + 10,
-                        y - 102,
-                        width=72,
-                        height=82,
-                        preserveAspectRatio=True,
-                        mask="auto"
-                    )
+                pdf.drawImage(
+                    imagen_producto,
+                    x + 10,
+                    y - 102,
+                    width=72,
+                    height=82,
+                    preserveAspectRatio=True,
+                    mask="auto"
+                )
 
 
             except Exception as e:
@@ -7355,7 +7449,6 @@ def descargar_portafolio_pdf():
                     "⚠️ Imagen no cargada en portafolio:",
                     str(e)
                 )
-
 
         # -------------------------------------------------
         # NOMBRE
