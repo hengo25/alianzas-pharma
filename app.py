@@ -6910,7 +6910,37 @@ def descargar_portafolio_pdf():
 
     productos = obtener_productos()
 
+        # -----------------------------------------------------
+    # MOSTRAR SOLO PRODUCTOS CON EXISTENCIAS
+    # -----------------------------------------------------
 
+    productos_disponibles = []
+
+    for producto in productos:
+
+        try:
+
+            existencias = int(
+                producto.get(
+                    "existencias",
+                    0
+                )
+            )
+
+        except:
+
+            existencias = 0
+
+
+        if existencias > 0:
+
+            productos_disponibles.append(
+                producto
+            )
+
+
+    productos = productos_disponibles
+     
     productos.sort(
         key=lambda p: str(
             p.get(
