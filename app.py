@@ -7263,6 +7263,16 @@ def descargar_portafolio_pdf():
 
         ruta_relativa = ruta_web.lstrip("/")
 
+        print(
+            "📁 PORTAFOLIO RUTAS:",
+            "root_path=",
+            app.root_path,
+            "cwd=",
+            os.getcwd(),
+            "imagen=",
+            ruta_relativa
+        )
+
 
         candidatos = [
 
