@@ -7271,6 +7271,17 @@ def descargar_portafolio_pdf():
 
         if imagen_url:
 
+                    # Convertir rutas locales en URL completa
+            if not imagen_url.lower().startswith(
+                ("http://", "https://")
+            ):
+
+                imagen_url = (
+                    request.host_url.rstrip("/")
+                    + "/"
+                    + imagen_url.lstrip("/")
+                )
+
             try:
 
                 respuesta_imagen = requests.get(
