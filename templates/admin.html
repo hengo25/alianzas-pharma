@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8"><title>Admin - Alianzas Pharma</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Alianzas Pharma</title>
     <style>
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; color: #333; margin: 0; padding: 40px 20px; text-align: center; }
         .container { max-width: 950px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
@@ -29,14 +31,89 @@
         /* 🟢 ESTILOS PREMIUM PARA LA VENTANA FLOTANTE DE EDICIÓN */
         .modal-edicion { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; }
         .modal-contenido { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); width: 400px; text-align: left; }
-        .btn-portafolio {
-            max-width: 100% !important;
-            box-sizing: border-box !important;
-            white-space: normal !important;
-            text-align: center !important;
-            padding: 10px 13px !important;
-            font-size: 0.85rem !important;
-        }
+        @media (max-width: 700px) {
+
+    /* Botón Descargar Portafolio */
+    .btn-portafolio {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        white-space: normal !important;
+        text-align: center !important;
+        padding: 10px 13px !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* Medicamentos en Bodega como tarjetas */
+    table {
+        width: 100% !important;
+        min-width: 0 !important;
+        display: block;
+    }
+
+    table thead {
+        display: none;
+    }
+
+    #tabla-cuerpo-admin {
+        display: block;
+        width: 100%;
+    }
+
+    #tabla-cuerpo-admin .tarjeta-bodega-global {
+        display: block !important;
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 16px;
+        padding: 14px;
+        background: white;
+        border: 1px solid #dbe4ee;
+        border-radius: 12px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+
+    #tabla-cuerpo-admin .tarjeta-bodega-global[style*="display: none"] {
+        display: none !important;
+    }
+
+    #tabla-cuerpo-admin .tarjeta-bodega-global td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 9px 0;
+        border: none;
+        border-bottom: 1px solid #eef2f7;
+        text-align: right;
+    }
+
+    #tabla-cuerpo-admin .tarjeta-bodega-global td::before {
+        content: attr(data-label);
+        flex: 0 0 90px;
+        font-weight: bold;
+        color: #24415c;
+        text-align: left;
+    }
+
+    #tabla-cuerpo-admin .tarjeta-bodega-global td:last-child {
+        border-bottom: none;
+    }
+
+    #tabla-cuerpo-admin .nombre-producto-td {
+        text-align: right;
+    }
+
+    #tabla-cuerpo-admin .col-stock {
+        min-width: 0 !important;
+        padding: 0 !important;
+    }
+
+    #tabla-cuerpo-admin td[data-label="Acciones"] {
+        align-items: flex-start;
+    }
+
+}
     </style>
 </head>
 <body>
