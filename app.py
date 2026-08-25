@@ -3,6 +3,7 @@ import json
 import uuid
 import hashlib
 import hmac
+import zipfile
 from datetime import datetime, timezone, timedelta
 from urllib.parse import quote
 from io import BytesIO
@@ -21,6 +22,7 @@ from flask import (
     url_for,
     make_response,
     send_from_directory,
+    send_file,
     jsonify
 )
 
@@ -5060,6 +5062,84 @@ def verificar_sesion_admin():
     return hmac.compare_digest(
         token_actual,
         token_esperado
+    )
+
+# =========================================================
+# DESCARGAR RESPALDO DE FIRESTORE
+# =========================================================
+
+@app.route("/admin/respaldo")
+def descargar_respaldo():
+
+    if not verificar_sesion_admin():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+
+    colecciones = [
+        "clientes",
+        "productos",
+        "pedidos",
+        "banners",
+        "configuracion"
+    ]
+
+
+    memoria_zip = BytesIO()
+
+
+    with zipfile.ZipFile(
+        memoria_zip,
+        "w",
+        zipfile.ZIP_DEFLATED
+    ) as archivo_zip:
+
+        for coleccion in colecciones:
+
+            datos = obtener_coleccion(
+                coleccion
+            )
+
+
+            contenido_json = json.dumps(
+                datos,
+                ensure_ascii=False,
+                indent=2
+            )
+
+
+            archivo_zip.writestr(
+                f"{coleccion}.json",
+                contenido_json
+            )
+
+
+    memoria_zip.seek(0)
+
+
+    zona_colombia = timezone(
+        timedelta(hours=-5)
+    )
+
+
+    fecha_respaldo = datetime.now(
+        zona_colombia
+    ).strftime(
+        "%Y-%m-%d_%H-%M"
+    )
+
+
+    return send_file(
+        memoria_zip,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name=(
+            "Respaldo_Alianzas_Pharma_"
+            + fecha_respaldo
+            + ".zip"
+        )
     )
 
 
