@@ -55,6 +55,21 @@ base_dir = os.path.dirname(
 # =========================================================
 # SERVIR IMÁGENES DESDE PUBLIC
 # =========================================================
+@app.route("/manifest.json")
+def servir_manifest():
+
+    carpeta_public = os.path.join(
+        base_dir,
+        "public"
+    )
+
+    return send_from_directory(
+        carpeta_public,
+        "manifest.json",
+        mimetype="application/manifest+json"
+    )
+
+
 @app.route("/imagenes/<path:nombre>")
 def servir_imagen(nombre):
 
@@ -1122,7 +1137,7 @@ Ingreso - Alianzas Pharma
 
 <link
     rel="manifest"
-    href="/public/manifest.json"
+    href="/manifest.json"
 >
 
 <link
@@ -5303,7 +5318,7 @@ def admin_login():
 
         <link
             rel="manifest"
-            href="/public/manifest.json"
+            href="/manifest.json"
         >
 
         
