@@ -1204,8 +1204,15 @@ Ingreso - Alianzas Pharma
 
 <link
     rel="icon"
-    type="image/jpeg"
-    href="/public/logo.jpeg"
+    type="image/png"
+    sizes="192x192"
+    href="/public/icon-cliente-192.png?v=2"
+>
+
+<link
+    rel="shortcut icon"
+    type="image/png"
+    href="/public/icon-cliente-192.png?v=2"
 >
 
 
