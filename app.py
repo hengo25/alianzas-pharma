@@ -7741,42 +7741,50 @@ def descargar_portafolio_pdf():
 
     for producto in productos:
 
-        imagen = preparar_url_imagen(
+        imagen_original = str(
             producto.get(
                 "imagen",
                 ""
-            )
-        )
+            ) or ""
+        ).strip()
 
-
-        if not imagen:
-
+        if not imagen_original:
             continue
 
+        imagen = preparar_url_imagen(
+            imagen_original
+        )
+
+        if not imagen:
+            continue
 
         # Evitar procesar imágenes repetidas
         if imagen in imagenes_portafolio:
-
             continue
 
-
-        if imagen.lower().startswith(
+        # ---------------------------------------------
+        # IMAGEN LOCAL DEL PROYECTO
+        # Leerla directamente del disco
+        # ---------------------------------------------
+        if not imagen_original.lower().startswith(
             ("http://", "https://")
         ):
-
-            urls_externas.append(
-                imagen
-            )
-
-
-        else:
 
             imagenes_portafolio[
                 imagen
             ] = leer_imagen_local(
-                imagen
+                imagen_original
             )
 
+        # ---------------------------------------------
+        # IMAGEN EXTERNA / CLOUDINARY
+        # Descargarla por Internet
+        # ---------------------------------------------
+        else:
+
+            urls_externas.append(
+                imagen
+            )
 
     # -----------------------------------------------------
     # DESCARGAR SOLO LAS IMÁGENES EXTERNAS EN PARALELO
