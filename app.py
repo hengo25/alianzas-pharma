@@ -5161,6 +5161,10 @@ def verificar_sesion_admin():
 # DESCARGAR RESPALDO DE FIRESTORE
 # =========================================================
 
+
+
+
+
 @app.route("/admin/respaldo")
 def descargar_respaldo():
 
@@ -5239,6 +5243,14 @@ def descargar_respaldo():
 # =========================================================
 # LOGIN ADMINISTRADOR
 # =========================================================
+
+@app.route("/admin-acceso")
+def admin_acceso():
+
+    return redirect(
+        url_for("admin_login")
+    )
+
 
 @app.route(
     "/login",
