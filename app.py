@@ -1114,6 +1114,22 @@ content="width=device-width, initial-scale=1.0"
 Ingreso - Alianzas Pharma
 </title>
 
+<link
+    rel="icon"
+    type="image/jpeg"
+    href="/public/logo.jpeg"
+>
+
+<link
+    rel="manifest"
+    href="/public/manifest.json"
+>
+
+<link
+    rel="apple-touch-icon"
+    href="/public/logo.jpeg"
+>
+
 <style>
 
 body{
@@ -5277,6 +5293,22 @@ def admin_login():
         <title>
             Administrador - Alianzas Pharma
         </title>
+
+        <link
+            rel="icon"
+            type="image/jpeg"
+            href="/public/logo.jpeg"
+        >
+
+        <link
+            rel="manifest"
+            href="/public/manifest.json"
+        >
+
+        <link
+            rel="apple-touch-icon"
+            href="/public/logo.jpeg"
+        >
 
     </head>
 
