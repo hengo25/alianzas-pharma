@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8"><title>Registro de Droguería - Alianzas Pharma</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center; width: 340px; }
@@ -13,6 +14,30 @@
         /* 🔔 MODAL DE CARGA ANIDADO */
         .notif-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(244, 246, 249, 0.85); backdrop-filter: blur(4px); z-index: 99999; align-items: center; justify-content: center; flex-direction: column; }
         @keyframes progresoRegistro { 0% { left: -100%; } 50% { left: 0%; } 100% { left: 100%; } }
+
+        @media (max-width: 700px) {
+
+    body {
+        padding: 20px 14px;
+        min-height: 100vh;
+        box-sizing: border-box;
+    }
+
+    .box {
+        width: 100% !important;
+        max-width: 420px !important;
+        padding: 24px 18px !important;
+        box-sizing: border-box !important;
+    }
+
+    input,
+    button {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        font-size: 16px !important;
+    }
+}
+
     </style>
 </head>
 <body>
