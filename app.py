@@ -58,16 +58,39 @@ base_dir = os.path.dirname(
 @app.route("/manifest.json")
 def servir_manifest():
 
-    carpeta_public = os.path.join(
-        base_dir,
-        "public"
+    manifest = {
+        "name": "Alianzas Pharma",
+        "short_name": "Alianzas Pharma",
+        "start_url": "/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#3498db",
+        "icons": [
+            {
+                "src": "/public/icon-192.png",
+                "sizes": "192x192",
+                "type": "image/png"
+            },
+            {
+                "src": "/public/icon-512.png",
+                "sizes": "512x512",
+                "type": "image/png"
+            }
+        ]
+    }
+
+    respuesta = make_response(
+        json.dumps(
+            manifest,
+            ensure_ascii=False
+        )
     )
 
-    return send_from_directory(
-        carpeta_public,
-        "manifest.json",
-        mimetype="application/manifest+json"
-    )
+    respuesta.headers[
+        "Content-Type"
+    ] = "application/manifest+json"
+
+    return respuesta
 
 
 @app.route("/imagenes/<path:nombre>")
