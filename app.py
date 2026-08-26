@@ -7770,16 +7770,28 @@ def descargar_portafolio_pdf():
             ("http://", "https://")
         ):
 
-            imagenes_portafolio[
-                imagen
-            ] = leer_imagen_local(
+            nombre_imagen = (
                 imagen_original
+                .replace("\\", "/")
+                .replace("/static/", "")
+                .replace("static/", "")
+                .replace("/public/", "")
+                .replace("public/", "")
+                .lstrip("/")
             )
 
-        # ---------------------------------------------
-        # IMAGEN EXTERNA / CLOUDINARY
-        # Descargarla por Internet
-        # ---------------------------------------------
+            imagen = (
+                "https://alianzas-pharma-v3.vercel.app/public/"
+                + quote(
+                    nombre_imagen,
+                    safe="/"
+                )
+             )
+
+            urls_externas.append(
+                 imagen
+             )
+        
         else:
 
             urls_externas.append(
