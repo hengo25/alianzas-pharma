@@ -7968,7 +7968,7 @@ def descargar_portafolio_pdf():
                 )
 
                 imagen_url = (
-                    "https://alianzas-pharma-v3.vercel.app/public/"
+                    "https://alianzas-pharma-admin.vercel.app/public/"
                     + quote(
                         nombre_imagen,
                         safe="/"
