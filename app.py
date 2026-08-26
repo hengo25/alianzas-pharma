@@ -7502,8 +7502,9 @@ def descargar_portafolio_pdf():
     # PREPARAR IMÁGENES DEL PORTAFOLIO
     # -----------------------------------------------------
 
-    base_url = request.host_url.rstrip("/")
-
+    base_url = (
+        "https://alianzas-pharma-v3.vercel.app"
+    )
 
     def preparar_url_imagen(valor):
 
