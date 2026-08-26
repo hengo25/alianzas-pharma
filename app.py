@@ -93,6 +93,47 @@ def servir_manifest():
     return respuesta
 
 
+@app.route("/manifest-admin.json")
+def servir_manifest_admin():
+
+    manifest = {
+        "id": "/admin-login",
+        "name": "Alianzas Pharma Admin",
+        "short_name": "AP Admin",
+        "start_url": "/admin-login",
+        "scope": "/",
+        "display": "standalone",
+        "background_color": "#ffffff",
+        "theme_color": "#3498db",
+        "icons": [
+            {
+                "src": "/public/icon-192.png",
+                "sizes": "192x192",
+                "type": "image/png"
+            },
+            {
+                "src": "/public/icon-512.png",
+                "sizes": "512x512",
+                "type": "image/png"
+            }
+        ]
+    }
+
+    respuesta = make_response(
+        json.dumps(
+            manifest,
+            ensure_ascii=False
+        )
+    )
+
+    respuesta.headers[
+        "Content-Type"
+    ] = "application/manifest+json"
+
+    return respuesta
+
+
+
 @app.route("/imagenes/<path:nombre>")
 def servir_imagen(nombre):
 
