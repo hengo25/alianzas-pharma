@@ -1199,10 +1199,7 @@ Ingreso - Alianzas Pharma
     href="/public/logo.jpeg"
 >
 
-<link
-    rel="manifest"
-    href="/manifest.json"
->
+
 
 <link
     rel="apple-touch-icon"
