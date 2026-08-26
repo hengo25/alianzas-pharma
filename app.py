@@ -7946,12 +7946,40 @@ def descargar_portafolio_pdf():
         # FOTO DEL PRODUCTO
         # -------------------------------------------------
 
-        imagen_url = preparar_url_imagen(
-            producto.get(
-                "imagen",
-                ""
-            )
-        )
+        imagen_original = str(
+                producto.get(
+                    "imagen",
+                    ""
+                ) or ""
+        ).strip()
+
+        if not imagen_original.lower().startswith(
+                ("http://", "https://")
+        ):
+
+                nombre_imagen = (
+                    imagen_original
+                    .replace("\\", "/")
+                    .replace("/static/", "")
+                    .replace("static/", "")
+                    .replace("/public/", "")
+                    .replace("public/", "")
+                    .lstrip("/")
+                )
+
+                imagen_url = (
+                    "https://alianzas-pharma-v3.vercel.app/public/"
+                    + quote(
+                        nombre_imagen,
+                        safe="/"
+                    )
+                )
+
+        else:
+
+                imagen_url = preparar_url_imagen(
+                    imagen_original
+                )
 
 
         contenido_imagen = imagenes_portafolio.get(
