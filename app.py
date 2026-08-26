@@ -50,7 +50,10 @@ main = app
 base_dir = os.path.dirname(
     os.path.abspath(__file__)
 )
-
+APP_MODE = os.getenv(
+    "APP_MODE",
+    "cliente"
+).strip().lower()
 
 # =========================================================
 # SERVIR IMÁGENES DESDE PUBLIC
@@ -1165,6 +1168,12 @@ def obtener_productos():
 
 @app.route("/")
 def inicio():
+
+    if APP_MODE == "admin":
+
+        return redirect(
+        url_for("admin_login")
+    )
 
     cliente = obtener_cliente_logueado()
 
