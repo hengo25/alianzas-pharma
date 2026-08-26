@@ -7703,6 +7703,15 @@ def descargar_portafolio_pdf():
                 imagen_url,
                 timeout=8
             )
+            print(
+                    "🖼️ PORTAFOLIO IMAGEN:",
+                    respuesta.status_code,
+                    respuesta.headers.get(
+                        "Content-Type",
+                        ""
+                     ),
+                         imagen_url
+            )
 
 
             if respuesta.ok:
