@@ -1127,7 +1127,8 @@ Ingreso - Alianzas Pharma
 
 <link
     rel="apple-touch-icon"
-    href="/public/logo.jpeg"
+    sizes="180x180"
+    href="/public/apple-touch-icon.png"
 >
 
 <style>
@@ -5305,9 +5306,11 @@ def admin_login():
             href="/public/manifest.json"
         >
 
+        
         <link
             rel="apple-touch-icon"
-            href="/public/logo.jpeg"
+            sizes="180x180"
+            href="/public/apple-touch-icon.png"
         >
 
     </head>
