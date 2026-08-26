@@ -1,0 +1,15 @@
+{
+  "name": "Alianzas Pharma",
+  "short_name": "Alianzas Pharma",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3498db",
+  "icons": [
+    {
+      "src": "/public/logo.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
