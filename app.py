@@ -7755,9 +7755,16 @@ def descargar_portafolio_pdf():
                 .lstrip("/")
             )
 
-            nombre_imagen = unquote(
+            for _ in range(3):
+
+                nombre_decodificado = unquote(
                 nombre_imagen
             )
+
+            if nombre_decodificado == nombre_imagen:
+                break
+
+            nombre_imagen = nombre_decodificado
 
             imagen = (
                 "https://alianzas-pharma-v3.vercel.app/public/"
@@ -7946,7 +7953,18 @@ def descargar_portafolio_pdf():
                     .lstrip("/")
                 )
 
-                imagen_url = (
+                for _ in range(3):
+
+                    nombre_decodificado = unquote(
+                        nombre_imagen
+                    )
+
+                    if nombre_decodificado == nombre_imagen:
+                        break
+
+                    nombre_imagen = nombre_decodificado
+
+                imagen = (
                     "https://alianzas-pharma-v3.vercel.app/public/"
                     + quote(
                         nombre_imagen,
