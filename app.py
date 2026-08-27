@@ -1070,8 +1070,7 @@ def obtener_productos():
             existencias = 0
 
 
-       
-                # -------------------------------------------------
+        # -------------------------------------------------
         # IMAGEN
         # -------------------------------------------------
 
@@ -1082,40 +1081,58 @@ def obtener_productos():
             )
         ).strip()
 
-        # Normalizar barras
-        imagen_original = (
-            imagen_original
-            .replace("\\", "/")
-        )
-
-        # Quitar rutas antiguas
-        imagen_original = (
-            imagen_original
-            .replace("/static/", "")
-            .replace("static/", "")
-            .replace("/public/", "")
-            .replace("public/", "")
-            .lstrip("/")
-        )
 
         # -------------------------------------------------
-        # RUTA CORRECTA
+        # URL DE CLOUDINARY O EXTERNA
         # -------------------------------------------------
 
-        imagen = (
-          "/public/"
-          + quote(
-               imagen_original,
-                safe="/"
-           )
-       )
+        if imagen_original.lower().startswith(
+            ("http://", "https://")
+        ):
 
+            imagen = imagen_original
+
+
+        # -------------------------------------------------
+        # IMÁGENES ANTIGUAS DE PUBLIC / STATIC
+        # -------------------------------------------------
+
+        else:
+
+            imagen_original = (
+                imagen_original
+                .replace("\\", "/")
+            )
+
+            imagen_original = (
+                imagen_original
+                .replace("/static/", "")
+                .replace("static/", "")
+                .replace("/public/", "")
+                .replace("public/", "")
+                .lstrip("/")
+            )
+
+            if not imagen_original:
+
+                imagen_original = (
+                    "placeholder.jpg"
+                )
+
+            imagen = (
+                "/public/"
+                + quote(
+                    imagen_original,
+                    safe="/"
+                )
+            )         
+       
        
         # -------------------------------------------------
         # AGREGAR PRODUCTO
         # -------------------------------------------------
 
-        lista.append({
+    lista.append({
             "id": producto.get(
                 "_id",
                 ""
@@ -5578,38 +5595,177 @@ def administrador():
             )
         )
 
-
-    # -----------------------------------------------------
-    # TODAVÍA NO ACTIVAMOS CREAR PRODUCTOS
+        # -----------------------------------------------------
+    # CREAR PRODUCTO NUEVO
     # -----------------------------------------------------
 
     if request.method == "POST":
 
-        return """
-        <html>
+        nombre = str(
+            request.form.get(
+                "nombre",
+                ""
+            )
+        ).strip()
 
-        <body
-            style="
-            font-family:sans-serif;
-            text-align:center;
-            padding:50px;
-            "
-        >
+        precio_form = str(
+            request.form.get(
+                "precio",
+                ""
+            )
+        ).strip()
 
-            <h2>
-                ℹ️ Esta función se habilitará
-                en el siguiente paso.
-            </h2>
+        existencias_form = str(
+            request.form.get(
+                "existencias",
+                "0"
+            )
+        ).strip()
 
-            <a href="/admin">
-                Volver al administrador
-            </a>
+        foto = request.files.get(
+            "foto"
+        )
 
-        </body>
 
-        </html>
-        """
+        # -------------------------------------------------
+        # VALIDAR DATOS
+        # -------------------------------------------------
 
+        if not nombre or not precio_form:
+
+            return """
+            <script>
+                alert("❌ Debes ingresar nombre y precio.");
+                window.location.href = "/admin";
+            </script>
+            """, 400
+
+
+        try:
+
+            precio = int(
+                precio_form
+            )
+
+            existencias = int(
+                existencias_form or 0
+            )
+
+        except:
+
+            return """
+            <script>
+                alert("❌ Precio o existencias no son válidos.");
+                window.location.href = "/admin";
+            </script>
+            """, 400
+
+
+        if precio < 0:
+            precio = 0
+
+        if existencias < 0:
+            existencias = 0
+
+
+        # -------------------------------------------------
+        # VALIDAR FOTO
+        # -------------------------------------------------
+
+        if (
+            not foto
+            or not foto.filename
+        ):
+
+            return """
+            <script>
+                alert("❌ Debes seleccionar una fotografía.");
+                window.location.href = "/admin";
+            </script>
+            """, 400
+
+
+        # -------------------------------------------------
+        # SUBIR FOTO A CLOUDINARY
+        # -------------------------------------------------
+
+        imagen_url, error_imagen = (
+            subir_imagen_cloudinary(
+                foto
+            )
+        )
+
+
+        if error_imagen:
+
+            return f"""
+            <script>
+                alert("❌ {error_imagen}");
+                window.location.href = "/admin";
+            </script>
+            """, 400
+
+
+        # -------------------------------------------------
+        # CREAR ID
+        # -------------------------------------------------
+
+        producto_id = (
+            "PROD-"
+            + uuid.uuid4()
+            .hex[:12]
+            .upper()
+        )
+
+
+        # -------------------------------------------------
+        # DATOS DEL PRODUCTO
+        # -------------------------------------------------
+
+        producto = {
+
+            "nombre":
+                nombre,
+
+            "precio":
+                precio,
+
+            "existencias":
+                existencias,
+
+            "imagen":
+                imagen_url
+
+        }
+
+
+        # -------------------------------------------------
+        # GUARDAR EN FIREBASE
+        # -------------------------------------------------
+
+        guardado = guardar_documento(
+            "productos",
+            producto_id,
+            producto
+        )
+
+
+        if not guardado:
+
+            return """
+            <script>
+                alert("❌ No fue posible guardar el producto.");
+                window.location.href = "/admin";
+            </script>
+            """, 500
+
+
+        return redirect(
+            url_for(
+                "administrador"
+            )
+        )
+   
 
     # -----------------------------------------------------
     # CARGAR PRODUCTOS ACTUALES
@@ -10119,7 +10275,11 @@ def cambiar_nit_admin(cliente_id):
 # SUBIR IMAGEN A CLOUDINARY
 # =========================================================
 
-def subir_imagen_cloudinary(archivo):
+def subir_imagen_cloudinary(
+    archivo,
+    carpeta="alianzas_pharma/banners",
+    prefijo="banner_"
+):
 
     cloud_name = os.environ.get(
         "CLOUDINARY_CLOUD_NAME",
@@ -10211,15 +10371,10 @@ def subir_imagen_cloudinary(archivo):
     )
 
 
-    carpeta = (
-        "alianzas_pharma/banners"
-    )
-
-
     public_id = (
-        "banner_"
-        + uuid.uuid4().hex[:12]
-    )
+    prefijo
+    + uuid.uuid4().hex[:12]
+)
 
 
     texto_firma = (
