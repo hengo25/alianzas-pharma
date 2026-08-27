@@ -7764,13 +7764,13 @@ def descargar_portafolio_pdf():
             for _ in range(3):
 
                 nombre_decodificado = unquote(
-                nombre_imagen
-            )
+                        nombre_imagen
+                )
 
-            if nombre_decodificado == nombre_imagen:
-                break
+                if nombre_decodificado == nombre_imagen:
+                        break
 
-            nombre_imagen = nombre_decodificado
+                nombre_imagen = nombre_decodificado
 
             imagen = (
                 "https://alianzas-pharma-v3.vercel.app/public/"
@@ -7821,6 +7821,8 @@ def descargar_portafolio_pdf():
                 imagenes_portafolio[
                     imagen_url
                 ] = contenido
+
+                
             print(
                 "📊 RESUMEN PORTAFOLIO:",
                 "URLs:",
