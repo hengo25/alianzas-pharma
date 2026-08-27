@@ -7815,7 +7815,17 @@ def descargar_portafolio_pdf():
                 imagenes_portafolio[
                     imagen_url
                 ] = contenido
-
+            print(
+                "📊 RESUMEN PORTAFOLIO:",
+                "URLs:",
+                len(urls_externas),
+                "CARGADAS:",
+                sum(
+                    1
+                    for contenido in imagenes_portafolio.values()
+                    if contenido
+                )
+            )
     # -----------------------------------------------------
     # MEDIDAS DE LAS TARJETAS
     # -----------------------------------------------------
