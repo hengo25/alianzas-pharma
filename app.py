@@ -1132,22 +1132,24 @@ def obtener_productos():
         # AGREGAR PRODUCTO
         # -------------------------------------------------
             lista.append({
-                        "id": producto.get(
-                            "_id",
-                            ""
-                        ),
 
-                        "nombre": producto.get(
-                            "nombre",
-                            "Medicamento sin nombre"
-                        ),
+                "id": producto.get(
+                     "_id",
+                     ""
+                ),
 
-                        "precio": precio,
+                "nombre": producto.get(
+                    "nombre",
+                    "Medicamento sin nombre"
+                ),
 
-                        "imagen": imagen,
+                "precio": precio,
 
-                        "existencias": existencias
-                    })
+                "imagen": imagen,
+
+                "existencias": existencias
+
+            })
 
     # -----------------------------------------------------
     # ORDENAR
