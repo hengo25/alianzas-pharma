@@ -5,7 +5,7 @@ import hashlib
 import hmac
 import zipfile
 from datetime import datetime, timezone, timedelta
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 from io import BytesIO
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.pagesizes import letter
@@ -7778,6 +7778,10 @@ def descargar_portafolio_pdf():
                 .replace("/public/", "")
                 .replace("public/", "")
                 .lstrip("/")
+            )
+
+            nombre_imagen = unquote(
+                nombre_imagen
             )
 
             imagen = (
