@@ -7595,17 +7595,7 @@ def descargar_portafolio_pdf():
 
         ruta_relativa = ruta_web.lstrip("/")
 
-        print(
-            "📁 PORTAFOLIO RUTAS:",
-            "root_path=",
-            app.root_path,
-            "cwd=",
-            os.getcwd(),
-            "imagen=",
-            ruta_relativa
-        )
-
-
+      
         candidatos = [
 
             os.path.join(
@@ -7693,11 +7683,7 @@ def descargar_portafolio_pdf():
 
                 return respuesta.content
 
-            print(
-            "❌ IMAGEN FALLIDA:",
-            respuesta.status_code,
-            imagen_url
-        )
+       
 
 
         except Exception as e:
@@ -7823,17 +7809,7 @@ def descargar_portafolio_pdf():
                 ] = contenido
 
                 
-            print(
-                "📊 RESUMEN PORTAFOLIO:",
-                "URLs:",
-                len(urls_externas),
-                "CARGADAS:",
-                sum(
-                    1
-                    for contenido in imagenes_portafolio.values()
-                    if contenido
-                )
-            )
+         
     # -----------------------------------------------------
     # MEDIDAS DE LAS TARJETAS
     # -----------------------------------------------------
@@ -8011,21 +7987,7 @@ def descargar_portafolio_pdf():
         )
 
 
-        print(
-            "🔎 PDF PRODUCTO:",
-            producto.get(
-                "nombre",
-                ""
-            ),
-            "| URL:",
-            imagen_url,
-            "| CARGADA:",
-            bool(
-                contenido_imagen
-            )
-        )
-
-
+       
         if contenido_imagen:
 
             try:
@@ -8362,9 +8324,7 @@ def eliminar_pedido_admin(pedido_id):
 
         if not respuesta.ok:
 
-            print(
-                "❌ ERROR BORRANDO PEDIDO:"
-            )
+          
 
             print(
                 respuesta.status_code
