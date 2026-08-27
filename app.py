@@ -7866,7 +7866,6 @@ def descargar_portafolio_pdf():
             "No hay productos disponibles."
         )
 
-
     # -----------------------------------------------------
     # PRODUCTOS
     # -----------------------------------------------------
@@ -7927,21 +7926,22 @@ def descargar_portafolio_pdf():
         # FOTO DEL PRODUCTO
         # -------------------------------------------------
 
-       
-        # -------------------------------------------------
-        # FOTO DEL PRODUCTO
-        # -------------------------------------------------
-
         imagen_original = str(
-                producto.get(
-                    "imagen",
-                    ""
-                ) or ""
+            producto.get(
+                "imagen",
+                ""
+            ) or ""
         ).strip()
 
-        if not imagen_original.lower().startswith(
+
+        imagen_url = ""
+
+
+        if imagen_original:
+
+            if not imagen_original.lower().startswith(
                 ("http://", "https://")
-        ):
+            ):
 
                 nombre_imagen = (
                     imagen_original
@@ -7953,107 +7953,25 @@ def descargar_portafolio_pdf():
                     .lstrip("/")
                 )
 
-    for producto in productos:
 
-        imagen_original = str(
-            producto.get(
-                "imagen",
-                ""
-            ) or ""
-        ).strip()
+                for _ in range(3):
 
-        if not imagen_original:
-            continue
+                    nombre_decodificado = unquote(
+                        nombre_imagen
+                    )
 
-        imagen = preparar_url_imagen(
-            imagen_original
-        )
+                    if (
+                        nombre_decodificado
+                        == nombre_imagen
+                    ):
+                        break
 
-        if not imagen:
-            continue
+                    nombre_imagen = (
+                        nombre_decodificado
+                    )
 
-        # Evitar procesar imágenes repetidas
-        if imagen in imagenes_portafolio:
-            continue
 
-    # ---------------------------------------------
-    # IMAGEN LOCAL DEL PROYECTO
-    # Convertirla a URL pública correcta
-    # ---------------------------------------------
-    if not imagen_original.lower().startswith(
-        ("http://", "https://")
-    ):
-
-        nombre_imagen = (
-            imagen_original
-            .replace("\\", "/")
-            .replace("/static/", "")
-            .replace("static/", "")
-            .replace("/public/", "")
-            .replace("public/", "")
-            .lstrip("/")
-        )
-
-        for _ in range(3):
-
-            nombre_decodificado = unquote(
-                nombre_imagen
-            )
-
-            if nombre_decodificado == nombre_imagen:
-                break
-
-            nombre_imagen = nombre_decodificado
-
-        imagen = (
-            "https://alianzas-pharma-v3.vercel.app/public/"
-            + quote(
-                nombre_imagen,
-                safe="/"
-            )
-        )
-
-        urls_externas.append(
-            imagen
-        )
-
-    else:
-
-        urls_externas.append(
-            imagen
-        )
-
-# -----------------------------------------------------
-# DESCARGAR SOLO LAS IMÁGENES EXTERNAS EN PARALELO
-# -----------------------------------------------------
-
-        urls_externas = list(
-            dict.fromkeys(
-                urls_externas
-            )
-        )
-
-        if urls_externas:
-
-            with ThreadPoolExecutor(
-                max_workers=16
-            ) as executor:
-
-                resultados = executor.map(
-                    descargar_imagen_externa,
-                    urls_externas
-                )
-
-                for imagen_url, contenido in zip(
-                    urls_externas,
-                    resultados
-                ):
-
-                    imagenes_portafolio[
-                        imagen_url
-                    ] = contenido
-
-                    imagen = (
+                imagen_url = (
                     "https://alianzas-pharma-v3.vercel.app/public/"
                     + quote(
                         nombre_imagen,
@@ -8061,25 +7979,34 @@ def descargar_portafolio_pdf():
                     )
                 )
 
-        else:
+            else:
 
                 imagen_url = preparar_url_imagen(
                     imagen_original
                 )
 
 
-        contenido_imagen = imagenes_portafolio.get(
-            imagen_url
+        contenido_imagen = (
+            imagenes_portafolio.get(
+                imagen_url
+            )
         )
+
 
         print(
             "🔎 PDF PRODUCTO:",
-            producto.get("nombre", ""),
+            producto.get(
+                "nombre",
+                ""
+            ),
             "| URL:",
             imagen_url,
             "| CARGADA:",
-            bool(contenido_imagen)
+            bool(
+                contenido_imagen
+            )
         )
+
 
         if contenido_imagen:
 
@@ -8091,7 +8018,6 @@ def descargar_portafolio_pdf():
                     )
                 )
 
-
                 pdf.drawImage(
                     imagen_producto,
                     x + 10,
@@ -8102,13 +8028,13 @@ def descargar_portafolio_pdf():
                     mask="auto"
                 )
 
-
             except Exception as e:
 
                 print(
                     "⚠️ Imagen no cargada en portafolio:",
                     str(e)
                 )
+
 
         # -------------------------------------------------
         # NOMBRE
@@ -8207,8 +8133,7 @@ def descargar_portafolio_pdf():
                 alto_tarjeta
                 + 14
             )
-
-
+ 
     # Si terminó en columna derecha,
     # bajar para cerrar correctamente
     if columna == 1:
