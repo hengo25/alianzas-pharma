@@ -1026,11 +1026,9 @@ def obtener_productos():
 
     lista = []
 
-
     documentos = obtener_coleccion(
         "productos"
     )
-
 
     for producto in documentos:
 
@@ -1039,16 +1037,13 @@ def obtener_productos():
         # -------------------------------------------------
 
         try:
-
             precio = int(
                 producto.get(
                     "precio",
                     0
                 )
             )
-
         except:
-
             precio = 0
 
 
@@ -1057,16 +1052,13 @@ def obtener_productos():
         # -------------------------------------------------
 
         try:
-
             existencias = int(
                 producto.get(
                     "existencias",
                     0
                 )
             )
-
         except:
-
             existencias = 0
 
 
@@ -1082,30 +1074,19 @@ def obtener_productos():
         ).strip()
 
 
-        # -------------------------------------------------
-        # URL DE CLOUDINARY O EXTERNA
-        # -------------------------------------------------
-
+        # Imagen nueva de Cloudinary
         if imagen_original.lower().startswith(
             ("http://", "https://")
         ):
 
             imagen = imagen_original
 
-
-        # -------------------------------------------------
-        # IMÁGENES ANTIGUAS DE PUBLIC / STATIC
-        # -------------------------------------------------
-
+        # Imagen antigua local
         else:
 
             imagen_original = (
                 imagen_original
                 .replace("\\", "/")
-            )
-
-            imagen_original = (
-                imagen_original
                 .replace("/static/", "")
                 .replace("static/", "")
                 .replace("/public/", "")
@@ -1114,10 +1095,7 @@ def obtener_productos():
             )
 
             if not imagen_original:
-
-                imagen_original = (
-                    "placeholder.jpg"
-                )
+                imagen_original = "placeholder.jpg"
 
             imagen = (
                 "/public/"
@@ -1125,31 +1103,27 @@ def obtener_productos():
                     imagen_original,
                     safe="/"
                 )
-            )         
-       
-       
+            )
+
+
         # -------------------------------------------------
-        # AGREGAR PRODUCTO
+        # AGREGAR SIEMPRE EL PRODUCTO
         # -------------------------------------------------
-            lista.append({
 
-                "id": producto.get(
-                     "_id",
-                     ""
-                ),
+        lista.append({
+            "id": producto.get(
+                "_id",
+                ""
+            ),
+            "nombre": producto.get(
+                "nombre",
+                "Medicamento sin nombre"
+            ),
+            "precio": precio,
+            "imagen": imagen,
+            "existencias": existencias
+        })
 
-                "nombre": producto.get(
-                    "nombre",
-                    "Medicamento sin nombre"
-                ),
-
-                "precio": precio,
-
-                "imagen": imagen,
-
-                "existencias": existencias
-
-            })
 
     # -----------------------------------------------------
     # ORDENAR
