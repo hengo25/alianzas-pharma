@@ -1110,24 +1110,7 @@ def obtener_productos():
            )
        )
 
-        print(
-            "🖼️ IMAGEN PRODUCTO:"
-        )
-
-        print(
-            f"   Producto: "
-            f"{producto.get('nombre', '')}"
-        )
-
-        print(
-            f"   Firebase: "
-            f"{producto.get('imagen', '')}"
-        )
-
-        print(
-            f"   Navegador: {imagen}"
-        )
-
+       
         # -------------------------------------------------
         # AGREGAR PRODUCTO
         # -------------------------------------------------
