@@ -7953,18 +7953,107 @@ def descargar_portafolio_pdf():
                     .lstrip("/")
                 )
 
-                for _ in range(3):
+    for producto in productos:
 
-                    nombre_decodificado = unquote(
-                        nombre_imagen
-                    )
+        imagen_original = str(
+            producto.get(
+                "imagen",
+                ""
+            ) or ""
+        ).strip()
 
-                    if nombre_decodificado == nombre_imagen:
-                        break
+        if not imagen_original:
+            continue
 
-                    nombre_imagen = nombre_decodificado
+        imagen = preparar_url_imagen(
+            imagen_original
+        )
 
-                imagen = (
+        if not imagen:
+            continue
+
+        # Evitar procesar imágenes repetidas
+        if imagen in imagenes_portafolio:
+            continue
+
+    # ---------------------------------------------
+    # IMAGEN LOCAL DEL PROYECTO
+    # Convertirla a URL pública correcta
+    # ---------------------------------------------
+    if not imagen_original.lower().startswith(
+        ("http://", "https://")
+    ):
+
+        nombre_imagen = (
+            imagen_original
+            .replace("\\", "/")
+            .replace("/static/", "")
+            .replace("static/", "")
+            .replace("/public/", "")
+            .replace("public/", "")
+            .lstrip("/")
+        )
+
+        for _ in range(3):
+
+            nombre_decodificado = unquote(
+                nombre_imagen
+            )
+
+            if nombre_decodificado == nombre_imagen:
+                break
+
+            nombre_imagen = nombre_decodificado
+
+        imagen = (
+            "https://alianzas-pharma-v3.vercel.app/public/"
+            + quote(
+                nombre_imagen,
+                safe="/"
+            )
+        )
+
+        urls_externas.append(
+            imagen
+        )
+
+    else:
+
+        urls_externas.append(
+            imagen
+        )
+
+# -----------------------------------------------------
+# DESCARGAR SOLO LAS IMÁGENES EXTERNAS EN PARALELO
+# -----------------------------------------------------
+
+        urls_externas = list(
+            dict.fromkeys(
+                urls_externas
+            )
+        )
+
+        if urls_externas:
+
+            with ThreadPoolExecutor(
+                max_workers=16
+            ) as executor:
+
+                resultados = executor.map(
+                    descargar_imagen_externa,
+                    urls_externas
+                )
+
+                for imagen_url, contenido in zip(
+                    urls_externas,
+                    resultados
+                ):
+
+                    imagenes_portafolio[
+                        imagen_url
+                    ] = contenido
+
+                    imagen = (
                     "https://alianzas-pharma-v3.vercel.app/public/"
                     + quote(
                         nombre_imagen,
