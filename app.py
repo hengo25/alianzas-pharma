@@ -7693,6 +7693,12 @@ def descargar_portafolio_pdf():
 
                 return respuesta.content
 
+            print(
+            "❌ IMAGEN FALLIDA:",
+            respuesta.status_code,
+            imagen_url
+        )
+
 
         except Exception as e:
 
