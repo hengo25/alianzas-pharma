@@ -7990,6 +7990,14 @@ def descargar_portafolio_pdf():
             imagen_url
         )
 
+        print(
+            "🔎 PDF PRODUCTO:",
+            producto.get("nombre", ""),
+            "| URL:",
+            imagen_url,
+            "| CARGADA:",
+            bool(contenido_imagen)
+        )
 
         if contenido_imagen:
 
