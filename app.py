@@ -7798,7 +7798,7 @@ def descargar_portafolio_pdf():
     if urls_externas:
 
         with ThreadPoolExecutor(
-            max_workers=16
+            max_workers=4
         ) as executor:
 
             resultados = executor.map(
