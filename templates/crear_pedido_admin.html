@@ -252,6 +252,13 @@
         }));
 
 
+        selectCliente.innerHTML = `
+            <option value="">
+                -- Escriba arriba para buscar una droguería --
+            </option>
+        `;
+
+
     function normalizarTexto(texto) {
 
         return String(texto || "")
@@ -276,6 +283,17 @@
             normalizarTexto(
                 buscador.value
             );
+
+                if (!textoBusqueda) {
+
+            selectCliente.innerHTML = `
+                <option value="">
+                    -- Escriba arriba para buscar una droguería --
+                </option>
+            `;
+
+            return;
+        }
 
 
         selectCliente.innerHTML = `
