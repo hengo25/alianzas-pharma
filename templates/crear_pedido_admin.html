@@ -205,38 +205,46 @@
 
     <script>
 
-        function continuarPedido() {
+    // =====================================================
+    // CONTINUAR CON EL PEDIDO
+    // =====================================================
 
-            const cliente =
-                document.getElementById(
-                    "cliente"
-                ).value;
+    function continuarPedido() {
 
-            if (!cliente) {
+        const cliente =
+            document.getElementById(
+                "cliente"
+            ).value;
 
-                alert(
-                    "Seleccione una droguería para continuar."
-                );
+        if (!cliente) {
 
-                return;
-            }
+            alert(
+                "Seleccione una droguería para continuar."
+            );
 
-
-            window.location.href =
-                "/crear-pedido-admin/"
-                + encodeURIComponent(cliente);
-
+            return;
         }
 
-    </script>
+        window.location.href =
+            "/crear-pedido-admin/"
+            + encodeURIComponent(cliente);
+    }
 
-   <script>
+
+    // =====================================================
+    // BUSCADOR DE DROGUERÍAS
+    // =====================================================
 
     const selectCliente =
-        document.getElementById("cliente");
+        document.getElementById(
+            "cliente"
+        );
+
 
     const opcionesOriginales =
-        Array.from(selectCliente.options)
+        Array.from(
+            selectCliente.options
+        )
         .slice(1)
         .map(opcion => ({
             value: opcion.value,
@@ -249,7 +257,10 @@
         return String(texto || "")
             .toLowerCase()
             .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
+            .replace(
+                /[\u0300-\u036f]/g,
+                ""
+            )
             .trim();
     }
 
@@ -282,6 +293,7 @@
                         opcion.texto
                     );
 
+
                 if (
                     textoOpcion.includes(
                         textoBusqueda
@@ -308,6 +320,7 @@
     }
 
 </script>
+
 
 </body>
 
