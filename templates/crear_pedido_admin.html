@@ -146,6 +146,25 @@
                 Seleccione la droguería
             </label>
 
+           <input
+                type="text"
+                id="buscador-drogueria"
+                placeholder="🔍 Buscar droguería por nombre o NIT..."
+                autocomplete="off"
+                oninput="filtrarDroguerias()"
+                style="
+                    width:100%;
+                    box-sizing:border-box;
+                    padding:13px 16px;
+                    margin-bottom:12px;
+                    border:1px solid #cbd5e1;
+                    border-radius:10px;
+                    font-size:1rem;
+                    outline:none;
+                    background:white;
+                "
+            >
+
             <select id="cliente">
 
                 <option value="">
@@ -163,43 +182,7 @@
 
                 {% endfor %}
 
-                <input
-                    type="text"
-                    id="buscador-drogueria"
-                    placeholder="🔍 Buscar droguería por nombre o NIT..."
-                    autocomplete="off"
-                    oninput="filtrarDroguerias()"
-                    style="
-                        width:100%;
-                        box-sizing:border-box;
-                        padding:13px 16px;
-                        margin-bottom:12px;
-                        border:1px solid #cbd5e1;
-                        border-radius:10px;
-                        font-size:1rem;
-                        outline:none;
-                        background:white;
-                    "
-                >
-
-                <select id="cliente">
-
-                    <option value="">
-                        -- Seleccione una droguería --
-                    </option>
-
-                    {% for cliente in clientes %}
-
-                        <option
-                            value="{{ cliente.get('_id', cliente.get('nit', '')) }}"
-                        >
-                            {{ cliente.get('nombre', 'Sin nombre') }}
-                            - NIT {{ cliente.get('nit', '') }}
-                        </option>
-
-                    {% endfor %}
-
-                </select>
+            </select>
 
 
             <div class="ayuda">
@@ -248,111 +231,7 @@
     </script>
 
     <script>
-
-    const selectorDrogueria =
-        document.getElementById(
-            "selector-drogueria"
-        );
-
-
-    const opcionesDroguerias =
-        Array.from(
-            selectorDrogueria.options
-        )
-        .slice(1)
-        .map(opcion => ({
-            value: opcion.value,
-            texto: opcion.textContent
-        }));
-
-
-    function normalizarTexto(texto) {
-
-        return String(texto || "")
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(
-                /[\u0300-\u036f]/g,
-                ""
-            )
-            .trim();
-    }
-
-
-    function filtrarDroguerias() {
-
-        const buscador =
-            document.getElementById(
-                "buscador-drogueria"
-            );
-
-        const textoBusqueda =
-            normalizarTexto(
-                buscador.value
-            );
-
-
-        const valorSeleccionado =
-            selectorDrogueria.value;
-
-
-        selectorDrogueria.innerHTML = `
-            <option value="">
-                -- Seleccione una droguería --
-            </option>
-        `;
-
-
-        opcionesDroguerias.forEach(
-            opcion => {
-
-                const textoOpcion =
-                    normalizarTexto(
-                        opcion.texto
-                    );
-
-
-                if (
-                    textoOpcion.includes(
-                        textoBusqueda
-                    )
-                ) {
-
-                    const nuevaOpcion =
-                        document.createElement(
-                            "option"
-                        );
-
-                    nuevaOpcion.value =
-                        opcion.value;
-
-                    nuevaOpcion.textContent =
-                        opcion.texto;
-
-                    selectorDrogueria.appendChild(
-                        nuevaOpcion
-                    );
-                }
-            }
-        );
-
-
-        const existeSeleccionada =
-            Array.from(
-                selectorDrogueria.options
-            ).some(
-                opcion =>
-                    opcion.value ===
-                    valorSeleccionado
-            );
-
-
-        if (existeSeleccionada) {
-
-            selectorDrogueria.value =
-                valorSeleccionado;
-        }
-    }
+   
 
 </script>
 
