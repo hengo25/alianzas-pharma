@@ -13,6 +13,8 @@ from reportlab.pdfgen import canvas
 import requests
 from concurrent.futures import ThreadPoolExecutor
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime, timezone
+
 
 from flask import (
     Flask,
@@ -2485,6 +2487,16 @@ def recuperar_clave():
 # REGISTRO
 # =========================================================
 
+@app.route("/politica-datos")
+def politica_datos():
+
+    return render_template(
+        "politica_datos.html"
+    )
+
+
+
+
 @app.route(
     "/registro-cliente",
     methods=["GET", "POST"]
@@ -2503,24 +2515,25 @@ def registro_cliente():
             ""
         ).strip()
 
-
         direccion = request.form.get(
             "direccion",
             ""
         ).strip()
-
 
         telefono = request.form.get(
             "telefono",
             ""
         ).strip()
 
-
         password = request.form.get(
             "password",
             ""
         ).strip()
-        
+
+        # ✅ AUTORIZACIÓN DE DATOS PERSONALES
+        autoriza_datos = request.form.get(
+            "autoriza_datos"
+        )
 
 
         if (
@@ -2540,6 +2553,23 @@ def registro_cliente():
             """
 
 
+        # ✅ NO PERMITE REGISTRO SIN AUTORIZACIÓN
+        if autoriza_datos != "si":
+
+            return """
+            <h2>Autorización requerida</h2>
+
+            <p>
+            Debes autorizar el tratamiento de datos personales
+            para completar el registro.
+            </p>
+
+            <a href="/registro-cliente">
+            Volver
+            </a>
+            """
+
+
         datos = {
 
             "nit": nit,
@@ -2550,7 +2580,16 @@ def registro_cliente():
 
             "telefono": telefono,
 
-            "password_hash": generate_password_hash(password)
+            "password_hash": generate_password_hash(password),
+
+            # ✅ EVIDENCIA DE AUTORIZACIÓN
+            "autoriza_datos": True,
+
+            "fecha_autorizacion_datos": datetime.now(
+                timezone.utc
+            ).isoformat(),
+
+            "version_politica_datos": "1.0"
 
         }
 
